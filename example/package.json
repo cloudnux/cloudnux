@@ -1,0 +1,25 @@
+{
+    "name": "example",
+    "version": "1.0.0",
+    "author": "Mina W Alphonce",
+    "license": "MIT",
+    "private": true,
+    "type": "module",
+    "engines": {
+        "node": ">=18.0.0"
+    },
+    "workspaces": [
+        "packages/*"
+    ],
+    "dependencies": {
+        "@aws-sdk/client-location": "^3.670.0",
+        "@aws-sdk/client-s3": "^3.552.0"
+    },
+    "scripts": {
+        "start": "epf develop",
+        "build": "epf production",
+        "plan": "terraform plan",
+        "deploy": "terraform apply",
+        "destroy": "terraform destroy"
+    }
+}

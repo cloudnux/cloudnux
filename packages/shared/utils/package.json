@@ -1,0 +1,14 @@
+{
+  "name": "@cloudnux/utils",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "license": "MIT",
+  "private": true,
+  "dependencies": {
+    "dotenv": "^16.2.0",
+    "lodash": "^4.17.21"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.17.0"
+  }
+}

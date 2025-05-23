@@ -1,0 +1,16 @@
+{
+    "compilerOptions": {
+        "baseUrl": ".",
+        "paths": {
+            "@@cloud": [
+                "packages/cloud-providers/aws-cloud-provider/src/index.ts"
+            ],
+            "@@cloudcore": [
+                "packages/sdk/src/index.ts"
+            ],
+            "@@types": [
+                "packages/cloud-providers/types/index.ts"
+            ]
+        }
+    }
+}

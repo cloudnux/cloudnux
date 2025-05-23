@@ -1,0 +1,67 @@
+terraform {
+  backend "s3" {
+    key                  = "<%= module %>/terraform.state"
+    workspace_key_prefix = "state/<%= module %>"
+  }
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = ">= 4.0"
+    }
+  }
+
+  required_version = ">= 0.13.1"
+}
+
+data "aws_lambda_function" "this" {
+    function_name = "<%= module %>"
+}
+
+data "aws_apigatewayv2_apis" "this" {
+   tags = {
+     application = "epf"
+   }
+}
+
+<% const httpEntries = Object.entries(entries).filter(([k,e]) => e.trigger.type.toLowerCase() === "http")  %>
+<% if(httpEntries.length > 0) { %>
+module "http_trigger_for_<%= module %>" {
+  source         = "../.deploy/aws/http"
+  api_gateway_id = sort(data.aws_apigatewayv2_apis.this.ids)[0]
+  lambda_arn     = data.aws_lambda_function.this.arn
+  lambda_name    =   "<%= module %>"
+  entrypoints = {
+  <% for(const [key,entry] of httpEntries){ %>
+    "<%= key %>" = {
+      description        = "<% entry.trigger.options.description %>"
+      method             = "<%= entry.trigger.options.method %>"
+      path               = "<%= entry.trigger.options.route %>"
+    }
+    <% } %>
+  }
+}
+
+<% } %>
+
+<% const scheduleEntries = Object.entries(entries).filter(([k,e]) => e.trigger.type.toLowerCase() === "schedule") %>
+<% if(scheduleEntries.length > 0) { %>
+module "schedule_trigger_for_<%= module %>" {
+   source              = "../.deploy/aws/scheduler"
+   component           = "<%= module %>"
+   target_arn          = data.aws_lambda_function.this.arn
+   schedules = {
+   <% for(const [key,entry] of scheduleEntries) { %>
+     "<%= key %>" = {
+       name     = "<%= key %>"
+       pattern  = "<%= entry.trigger.options.pattern %>"
+       timezone = "UTC"
+       state    = "DISABLED"
+       retry_policy = {
+         maximum_retry_attempts = 3
+       }
+     }
+   <% } %>
+ }
+}
+<% } %>

@@ -1,0 +1,33 @@
+<%# Template generated a single endpoint entry
+    input: 
+      - entry : entry to be rendered
+%>
+    app.route({
+      method: "<%= entry.trigger.options.method %>" as any,
+      url: `/http<%= $$convertRouteParamstoFastifyRouteTemplate(entry.trigger.options.route) %>`,
+      handler: async function (request, reply) {
+        const baseAddress = app.server.address() as AddressInfo;
+        const routePath = `/http<%= $$convertRouteParamstoFastifyRouteTemplate(entry.trigger.options.route) %>`;
+        const ctx = createHttpContext({
+            body: request.rawBody as string,
+            headers: request.headers,
+            method: request.method as HttpMethod,
+            url: `http://${request.hostname}:${baseAddress!.port}/api${routePath}`,
+            matchingKey: "<%= entry.trigger.options.route %>",
+            params: request.params as Record<string, string>,
+            rawQueryString : querystring.stringify(request.query),
+            host: request.hostname
+          }, buildAuth(request.headers));
+
+        try {
+          await src["<%= entry.handler %>"](ctx);
+          reply
+            .headers(ctx.response.headers || {})
+            .status(ctx.response.status)
+            .send(ctx.response.body);
+        }
+        catch(e){
+          reply.send(e);
+        }
+      }
+  });

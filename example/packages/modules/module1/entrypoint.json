@@ -1,0 +1,24 @@
+{
+    "entries": {
+        "token": {
+            "handler": "token",
+            "trigger": {
+                "type": "http",
+                "options": {
+                    "method": "POST",
+                    "route": "/identity/token"
+                }
+            }
+        },
+        "revoke": {
+            "handler": "revoke",
+            "trigger": {
+                "type": "http",
+                "options": {
+                    "method": "DELETE",
+                    "route": "/identity/revoke"
+                }
+            }
+        }
+    }
+}

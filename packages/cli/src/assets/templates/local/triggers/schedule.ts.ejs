@@ -1,0 +1,15 @@
+    logEntryURL('GET','/schedule/<%= name %>');
+    app.route({
+      method: "GET",
+      url: `/schedule/<%= name %>`,
+      handler: async function (request, reply) {
+        const ctx = createScheduleContext("<%= name %>");
+        try {
+          await src["<%= entry.handler %>"](ctx);
+          reply.status(200).send("success");
+        }
+        catch (e) {
+          reply.send(e);
+        }
+      }
+    });

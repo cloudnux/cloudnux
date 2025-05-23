@@ -1,0 +1,106 @@
+import Fastify from "fastify";
+import pino from "pino";
+
+<%_ for(const module of moduleNames){ _%>
+import <%=module%>Entries from "./<%=module%>/index.ts"  
+<%_ } _%>
+
+// Create a custom logger
+const customLogger = pino({
+  level: 'info', // Set the log level (e.g., 'info', 'error', 'debug')
+  base: null, // Remove default metadata like pid and hostname
+  hooks: {
+    logMethod(args, method) {
+      // Intercept log messages and send them to the parent process
+      const [message, ...rest] = args;
+      const safePayload = JSON.stringify(message, getCircularReplacer());
+
+      sendMessage('LOG', { level: method.name, message:safePayload, additionalData: rest });
+      return method.apply(this, args);
+    },
+  },
+});
+
+// Function to send logs to the parent process
+function sendMessage(type: string, payload: any) {
+
+  if (process && process.send) {
+    process.send({ type, payload: payload });
+  } else {
+    console.log(`[${type}]`, payload); // Fallback for non-parent process
+  }
+}
+
+function getCircularReplacer() {
+  const seen = new WeakSet();
+  return (key: string, value: any) => {
+    if (typeof value === 'object' && value !== null) {
+      if (seen.has(value)) {
+        return '[Circular]';
+      }
+      seen.add(value);
+    }
+    return value;
+  };
+}
+
+const fastify = Fastify({ 
+    maxParamLength : 1000,
+    loggerInstance:customLogger,
+});
+
+// Add fastify hooks
+fastify.addHook('onRegister', async (instance, opts) => {
+    sendMessage("APP_REGISTERED", { prefix: instance.prefix, opts });
+});
+
+fastify.addHook('onRoute', (routeOptions) => {
+    sendMessage('ROUTE_REGISTERED', {
+        method: routeOptions.method,
+        url: routeOptions.url,
+        handler: routeOptions.handler.name,
+      });
+});
+
+fastify.addHook('onListen', function (done) {
+    try{
+        sendMessage('LISTENING', {
+            port: 3000,
+            host:"::"
+          });
+    }catch(err){
+        sendMessage('ERROR', {err});
+    }finally{
+        const err = null; // to be updated later to handle crash errors
+        done(err)
+    }
+});
+
+fastify.addHook('preHandler', (request, reply, done) => {
+    sendMessage('REQUEST', { id: request.id, params: request.params, query: request.query, body: request.body, headers: request.headers, url: request.url, method:request.method, time: new Date().toLocaleTimeString() });
+    done();
+});
+
+fastify.addHook('onResponse', (request, reply, done) => {
+    sendMessage('RESPONSE', { id: request.id, status: reply.statusCode, body: reply.raw, time: new Date().toLocaleTimeString() });
+    done();
+});
+
+fastify.addHook('onError', (request, reply, error, done) => {
+    sendMessage('ERROR', {error, request, reply});
+    done();
+});
+
+// Register the fastify-raw-body plugin
+fastify.register(require('fastify-raw-body'), {
+  field: 'rawBody',
+  encoding: 'utf8',
+});
+
+<%_ for(const module of moduleNames){ _%>
+fastify.register(<%=module%>Entries, { prefix: "<%=module%>/" });
+<%_ } _%>
+
+fastify.listen({ port: 3000, host : "::" }).then((address) => {
+    // init in entrypoint
+});

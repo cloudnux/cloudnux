@@ -1,0 +1,134 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Task Configuration Schema",
+    "type": "object",
+    "definitions": {
+        "TaskParamBase": {
+            "type": "object",
+            "properties": {
+                "modulesPath": {
+                    "type": "string",
+                    "description": "Path to find all modules"
+                },
+                "cloudProvider": {
+                    "type": "string",
+                    "description": "Cloud provider package to use. aws/azure/gcp are aliases for respective @entrypoint-framework packages"
+                },
+                "workingDir": {
+                    "type": "string",
+                    "description": "Path to store the current environment build artifacts",
+                    "default": ".epf/<environment>"
+                },
+                "title": {
+                    "type": "string",
+                    "description": "Task title (set by task manager)"
+                },
+                "environment": {
+                    "type": "string",
+                    "description": "Environment name"
+                },
+                "children": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Task"
+                    }
+                }
+            },
+            "required": [
+                "modulesPath",
+                "cloudProvider",
+                "workingDir",
+                "environment"
+            ],
+            "additionalProperties": true
+        },
+        "Task": {
+            "type": "object",
+            "properties": {
+                "title": {
+                    "oneOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "object",
+                            "description": "Function that returns a string based on task parameters"
+                        }
+                    ]
+                },
+                "skip": {
+                    "type": "object",
+                    "description": "Function that determines if task should be skipped"
+                },
+                "action": {
+                    "type": "object",
+                    "description": "Async function that executes the task"
+                },
+                "children": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Task"
+                    }
+                }
+            },
+            "required": [
+                "title",
+                "action"
+            ]
+        },
+        "Environment": {
+            "type": "object",
+            "properties": {
+                "tasks": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Task"
+                    },
+                    "description": "Tasks to be executed for this environment"
+                }
+            },
+            "required": [
+                "tasks"
+            ],
+            "additionalProperties": true
+        }
+    },
+    "properties": {
+        "modulesPath": {
+            "type": "string",
+            "description": "Glob path to find all modules (package.json) having entrypoints",
+            "default": "./packages/modules/**/package.json"
+        },
+        "cloudProvider": {
+            "type": "string",
+            "description": "Cloud provider package to use",
+            "default": "aws"
+        },
+        "workingDir": {
+            "type": "string",
+            "description": "Path to store the build artifacts for all environments",
+            "default": "./.epf"
+        },
+        "environments": {
+            "type": "object",
+            "description": "Environment configuration with key as environment name",
+            "additionalProperties": {
+                "$ref": "#/definitions/Environment"
+            },
+            "default": {
+                "develop": {
+                    "tasks": []
+                },
+                "prod": {
+                    "tasks": []
+                }
+            }
+        }
+    },
+    "required": [
+        "modulesPath",
+        "cloudProvider",
+        "workingDir",
+        "environments"
+    ]
+}

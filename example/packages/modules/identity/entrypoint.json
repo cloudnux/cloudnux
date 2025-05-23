@@ -1,0 +1,24 @@
+{
+    "entries": {
+        "get-me": {
+            "handler": "getMe",
+            "trigger": {
+                "type": "http",
+                "options": {
+                    "method": "GET",
+                    "route": "/v1/me"
+                }
+            }
+        },
+        "set-me": {
+            "handler": "setMe",
+            "trigger": {
+                "type": "http",
+                "options": {
+                    "method": "POST",
+                    "route": "/v1/me"
+                }
+            }
+        }
+    }
+}

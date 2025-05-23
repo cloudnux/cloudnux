@@ -1,0 +1,131 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Entrypoint",
+    "description": "Component entrypoint configuration",
+    "type": "object",
+    "properties": {
+        "entries": {
+            "$ref": "#/definitions/Record"
+        }
+    },
+    "required": [
+        "entries"
+    ],
+    "definitions": {
+        "MethodType": {
+            "enum": [
+                "GET",
+                "PUT",
+                "POST",
+                "PATCH",
+                "DELETE"
+            ]
+        },
+        "HttpTrigger": {
+            "type": "object",
+            "properties": {
+                "options": {
+                    "type": "object",
+                    "properties": {
+                        "route": {
+                            "type": "string"
+                        },
+                        "method": {
+                            "$ref": "#/definitions/MethodType"
+                        }
+                    },
+                    "required": [
+                        "route",
+                        "method"
+                    ],
+                    "additionalProperties": false
+                }
+            },
+            "required": [
+                "options"
+            ]
+        },
+        "ScheduleTrigger": {
+            "type": "object",
+            "properties": {
+                "options": {
+                    "type": "object",
+                    "properties": {
+                        "pattern": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "pattern"
+                    ],
+                    "additionalProperties": false
+                }
+            },
+            "required": [
+                "options"
+            ]
+        },
+        "Trigger": {
+            "type": "object",
+            "properties": {
+                "type": {
+                    "enum": [
+                        "http",
+                        "schedule"
+                    ]
+                }
+            },
+            "allOf": [
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "http"
+                            }
+                        }
+                    },
+                    "then": {
+                        "$ref": "#/definitions/HttpTrigger"
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "schedule"
+                            }
+                        }
+                    },
+                    "then": {
+                        "$ref": "#/definitions/ScheduleTrigger"
+                    }
+                }
+            ],
+            "required": [
+                "type"
+            ]
+        },
+        "Entry": {
+            "type": "object",
+            "properties": {
+                "trigger": {
+                    "$ref": "#/definitions/Trigger"
+                },
+                "handler": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "trigger",
+                "handler"
+            ],
+            "additionalProperties": false
+        },
+        "Record": {
+            "type": "object",
+            "additionalProperties": {
+                "$ref": "#/definitions/Entry"
+            }
+        }
+    }
+}

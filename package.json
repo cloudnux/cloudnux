@@ -1,0 +1,21 @@
+{
+  "name": "cloudnux",
+  "version": "1.0.0",
+  "author": "Mina W Alphonce",
+  "license": "MIT",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "packages/cloud-providers/*",
+    "packages/shared/*"
+  ],
+  "scripts": {
+    "cli": "yarn workspace @cloudnux//cli",
+    "core": "yarn workspace @cloudnux//cloud-core",
+    "aws": "yarn workspace @cloudnux//aws-cloud-provider",
+    "datastore": "yarn workspace @cloudnux//datastore",
+    "utils": "yarn workspace @cloudnux//utils"
+  },
+  "dependencies": {},
+  "packageManager": "yarn@1.22.22"
+}

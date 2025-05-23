@@ -1,0 +1,564 @@
+import fs from "fs/promises";
+import path from "path";
+import chalk from "chalk";
+import consola from "consola";
+import logSymbols from "log-symbols";
+import Fastify, { FastifyInstance } from "fastify";
+
+import {
+  createEventContext,
+  createScheduleContext,
+} from "@anubis/cloud-provider";
+<% for(const component of components){ %>
+import { 
+            entries as <%=component%>Entries, 
+            registeredEventHandlers as <%=component%>EventHandlers
+        } 
+        from "./<%=component%>/entrypoint.ts"  <% }
+%>
+
+function logEntryURL(method: string, routePath: string){
+  const bgcolors = {
+    PUT : chalk.bold.bgYellow.white,
+    POST : chalk.bold.bgGreen.white,
+    DELETE : chalk.bold.bgRed.white,
+    GET : chalk.bold.bgBlue.white,
+    PATCH :  chalk.bold.bgGreenBright.white
+  };
+  const colors = {
+    PUT : chalk.bold.yellow,
+    POST : chalk.bold.green,
+    DELETE : chalk.bold.red,
+    GET : chalk.bold.blue,
+    PATCH :  chalk.bold.greenBright
+  };
+
+  const prefix = new Array(Math.floor((6 - method.length) / 2)).fill(" ").join("");
+  const postfix = new Array(6 - method.length - prefix.length).fill(" ").join("");
+
+  consola.log(
+    logSymbols.info + bgcolors[method](`[${prefix}${method}${postfix}]`) + colors[method](` http://localhost:3000${routePath}`)
+  );
+}
+
+async function queue(app: FastifyInstance) {
+
+    consola.log(chalk.underline(`\n\rUrls you have for`, chalk.bold(`Queues`)));
+
+    const queues = {};
+
+    const config = {
+        batchSize: 10,              // Max number of messages to collect before processing
+        batchWindowMs: 500,         // Max wait time before processing collected messages
+        maxRetries: 3,              // Maximum retry attempts
+        parallel: true,             // Process messages in parallel or sequentially
+        maxConcurrent: 5,           // Max concurrent processing if parallel is true
+        retryBackoff: true,         // Use exponential backoff for retries
+        persistence: {
+            enabled: true,           // Enable persistence
+            directory: './.develop/queue-data', // Directory to store queue data
+            saveInterval: 60000,     // Save queues every minute (in ms)
+            //TODO: we have issue with esbuild watch if saveonShutdown is true
+            saveOnShutdown: false,    // Save queues on process shutdown
+            loadOnStartup: true      // Load queues on startup
+        }
+    };
+
+    <%_ for(const component of components) { _%>
+        Object.entries(<%=component%>EventHandlers).forEach(([queueName, handler]) => {
+            queues[queueName] = {
+                handler,
+                incoming: [],
+                processing: [],
+                dlq: [],
+                timeoutId: null,    // Batch window timeout ID
+                processingBatch: false,  // Flag to prevent concurrent batch processing
+                activeProcessing: 0      // Counter for active concurrent processing
+            }
+        });
+    <%_ } _%>
+    
+    // Initialize persistence
+    if (config.persistence.enabled) {
+        await initializePersistence();
+    }
+
+    // Main batch processing function
+    async function processBatch(queueName) {
+       const queueService = queues[queueName];
+       
+       // Clear timeout to prevent double processing
+       if (queueService.timeoutId) {
+            clearTimeout(queueService.timeoutId);
+            queueService.timeoutId = null;
+        }
+
+        // If already processing, reschedule
+        if (queueService.processingBatch) {
+            scheduleProcessing(queueName);
+            return;
+        }
+
+        try {
+            queueService.processingBatch = true;
+
+            // Move messages from incoming to processing (up to batchSize)
+            const messagesToProcess = queueService.incoming.splice(0, config.batchSize);
+            
+            if (messagesToProcess.length === 0) {
+                queueService.processingBatch = false;
+                return;
+            }
+
+            // Add to processing queue
+            queueService.processing.push(...messagesToProcess);
+
+            // Process sequentially
+            for (const message of messagesToProcess) {
+                await processMessage(queueName, message);
+            }
+
+            if (queueService.incoming.length > 0) {
+                scheduleProcessing(queueName, 0); // Process immediately
+            }
+
+            // Save queue state after batch processing
+            if (config.persistence.enabled) {
+                saveQueueState(queueName);
+            }
+        }
+        finally {
+            queueService.processingBatch = false;
+        }
+    }
+
+     // Process an individual message
+    async function processMessage(queueName, message) {
+        const queueService = queues[queueName];
+        
+        try {
+            const context = createEventContext(
+            message.payload, 
+            message.attributes,
+            message.id,
+            message.timestamp,
+            message.attempts);
+            
+            await queueService.handler(context);
+            
+            if(context.response.status === "error") {
+                throw new Error(context.response.body);
+            }
+
+            // Remove from processing queue on success
+            queueService.processing = queueService.processing.filter(
+                msg => msg.id !== message.id
+            );
+            
+            console.log(`Successfully processed message ${message.id} in queue ${queueName} with response `,context.response.body);
+        } catch (error) {
+            console.error(`Error processing message ${message.id} in queue ${queueName}:`, error);
+            
+            if (message.attempts >= config.maxRetries) {
+                // Move to DLQ after max retries
+                queueService.dlq.push({
+                    ...message,
+                    error: error.message,
+                    failedAt: new Date()
+                });
+                
+                // Remove from processing
+                queueService.processing = queueService.processing.filter(
+                    msg => msg.id !== message.id
+                );
+
+                // Save DLQ state after message moves to DLQ
+                if (config.persistence.enabled) {
+                    saveQueueState(queueName);
+                }
+            } else {
+                // Increment attempt counter
+                const index = queueService.processing.findIndex(m => m.id === message.id);
+                if (index >= 0) {
+                    queueService.processing[index].attempts += 1;
+                    
+                    // Add backoff delay based on attempt count
+                    if (config.retryBackoff) {
+                        const delayMs = Math.pow(2, queueService.processing[index].attempts) * 100;
+                        queueService.processing[index].nextAttempt = new Date(Date.now() + delayMs);
+                        
+                        // Schedule retry after backoff
+                        setTimeout(() => {
+                            processMessage(queueName, queueService.processing[index]);
+                        }, delayMs);
+                    } else {
+                        // Retry immediately if no backoff
+                        processMessage(queueName, queueService.processing[index]);
+                    }
+                }
+            }
+        }
+    }
+
+    // Schedule batch processing after a delay
+    function scheduleProcessing(queueName, overrideDelay = null) {
+        const queueService = queues[queueName];
+        
+        if (!queueService.timeoutId) {
+            const delay = overrideDelay !== null ? overrideDelay : config.batchWindowMs;
+            queueService.timeoutId = setTimeout(() => {
+                processBatch(queueName);
+            }, delay);
+        }
+    }
+
+    // Initialize persistence system
+    async function initializePersistence() {
+        try {
+            // Create persistence directory if it doesn't exist
+            await fs.mkdir(config.persistence.directory, { recursive: true });
+            
+            // Load queue data if enabled
+            if (config.persistence.loadOnStartup) {
+                await loadAllQueueStates();
+            }
+            
+            // Set up interval to regularly save queue states
+            if (config.persistence.saveInterval > 0) {
+                setInterval(saveAllQueueStates, config.persistence.saveInterval);
+            }
+            
+            // Set up process shutdown handler
+            if (config.persistence.saveOnShutdown) {
+                process.on('SIGINT', async () => {
+                    console.log('Saving queue state before shutdown...');
+                    await saveAllQueueStates();
+                    process.exit(0);
+                });
+                
+                process.on('SIGTERM', async () => {
+                    console.log('Saving queue state before shutdown...');
+                    await saveAllQueueStates();
+                    process.exit(0);
+                });
+            }
+            
+            console.log(`Queue persistence initialized: ${config.persistence.directory}`);
+        } catch (error) {
+            console.error('Failed to initialize queue persistence:', error);
+        }
+    }
+
+    // Save state for all queues
+    async function saveAllQueueStates() {
+        try {
+            for (const queueName of Object.keys(queues)) {
+                await saveQueueState(queueName);
+            }
+            console.log(`All queue states saved to ${config.persistence.directory}`);
+        } catch (error) {
+            console.error('Failed to save all queue states:', error);
+        }
+    }
+
+    // Save state for a specific queue
+    async function saveQueueState(queueName) {
+        try {
+            const queueService = queues[queueName];
+            if (!queueService) return;
+            
+            const queueData = {
+                incoming: queueService.incoming,
+                processing: queueService.processing,
+                dlq: queueService.dlq,
+                savedAt: new Date()
+            };
+            
+            // Use a temporary file to avoid corruption if the process crashes during write
+            const queueFilePath = path.join(config.persistence.directory, `${queueName}.json`);
+            const tempFilePath = path.join(config.persistence.directory, `${queueName}.temp.json`);
+            
+            // Write to temporary file first
+            await fs.writeFile(tempFilePath, JSON.stringify(queueData, null, 2), 'utf8');
+            
+            // Rename temporary file to the actual file (atomic operation)
+            await fs.rename(tempFilePath, queueFilePath);
+            
+            console.log(`Queue state saved: ${queueName}`);
+        } catch (error) {
+            console.error(`Failed to save queue state for ${queueName}:`, error);
+        }
+    }
+
+    async function loadAllQueueStates() {
+        try {
+            const files = await fs.readdir(config.persistence.directory);
+            const queueFiles = files.filter(file => file.endsWith('.json') && !file.includes('.temp.'));
+            
+            for (const file of queueFiles) {
+                const queueName = path.basename(file, '.json');
+                await loadQueueState(queueName);
+            }
+            
+            console.log('All queue states loaded');
+        } catch (error) {
+            console.error('Failed to load queue states:', error);
+        }
+    }
+
+    // Load state for a specific queue
+    async function loadQueueState(queueName) {
+        try {
+            // Skip if queue doesn't exist
+            if (!queues[queueName]) {
+                console.warn(`Skipping load for non-existent queue: ${queueName}`);
+                return;
+            }
+            
+            const queueFilePath = path.join(config.persistence.directory, `${queueName}.json`);
+            
+            try {
+                const data = await fs.readFile(queueFilePath, 'utf8');
+                const queueData = JSON.parse(data);
+                
+                // Restore date objects (JSON.parse doesn't restore dates)
+                queueData.incoming.forEach(msg => {
+                    msg.timestamp = new Date(msg.timestamp);
+                    if (msg.nextAttempt) msg.nextAttempt = new Date(msg.nextAttempt);
+                });
+                
+                queueData.processing.forEach(msg => {
+                    msg.timestamp = new Date(msg.timestamp);
+                    if (msg.nextAttempt) msg.nextAttempt = new Date(msg.nextAttempt);
+                });
+                
+                queueData.dlq.forEach(msg => {
+                    msg.timestamp = new Date(msg.timestamp);
+                    if (msg.failedAt) msg.failedAt = new Date(msg.failedAt);
+                    if (msg.nextAttempt) msg.nextAttempt = new Date(msg.nextAttempt);
+                });
+                
+                // Restore queue state
+                queues[queueName].incoming = queueData.incoming;
+                queues[queueName].processing = queueData.processing;
+                queues[queueName].dlq = queueData.dlq;
+                
+                console.log(`Queue state loaded: ${queueName} (saved at ${queueData.savedAt})`);
+                
+                // Schedule processing for any messages that were in flight
+                if (queues[queueName].incoming.length > 0) {
+                    scheduleProcessing(queueName);
+                }
+                
+                // Re-process any messages that were in the processing queue
+                if (queues[queueName].processing.length > 0) {
+                    for (const message of [...queues[queueName].processing]) {
+                        // Skip processing if message has exceeded max retries
+                        if (message.attempts >= config.maxRetries) continue;
+                        
+                        // Process with a slight delay to avoid overwhelming the system on startup
+                        setTimeout(() => {
+                            processMessage(queueName, message);
+                        }, 100 * (Math.random() * 10));
+                    }
+                }
+            } catch (error) {
+                if (error.code === 'ENOENT') {
+                    console.log(`No saved state found for queue: ${queueName}`);
+                } else {
+                    throw error;
+                }
+            }
+        } catch (error) {
+            console.error(`Failed to load queue state for ${queueName}:`, error);
+        }
+    }
+
+    logEntryURL("GET","/queues/dashboard");
+    app.get("/dashboard", function(request, reply) {
+       const summary = {};
+        
+        for (const [queueName, queue] of Object.entries(queues)) {
+            summary[queueName] = {
+                incoming: queue.incoming.length,
+                processing: queue.processing.length,
+                dlq: queue.dlq.length,
+                isProcessing: queue.processingBatch,
+                activeProcessing: queue.activeProcessing,
+                configuration: {
+                    batchSize: config.batchSize,
+                    batchWindowMs: config.batchWindowMs,
+                    parallel: config.parallel,
+                    maxConcurrent: config.maxConcurrent
+                }
+            };
+        }
+        
+        return reply
+            .status(200)
+            .send(summary);
+    });
+
+    for(const q of Object.keys(queues))
+        logEntryURL("GET",`/queues/${q}`);
+    app.get("/:queue", function(request, reply) {
+        
+        const queueName = request.params.queue;
+
+        if(!queues[queueName]) {
+            return reply
+                .status(404)
+                .send({ error: "Queue not found" });
+        }
+
+        const queue = queues[queueName];
+        console.log("[queue]", queue.dlq);
+        return reply
+            .status(200)
+            .send({
+                stats: {
+                    incoming: queue.incoming.length,
+                    processing: queue.processing.length,
+                    dlq: queue.dlq.length,
+                    isProcessing: queue.processingBatch,
+                    activeProcessing: queue.activeProcessing
+                },
+                messages: {
+                    incoming: queue.incoming,
+                    processing: queue.processing,
+                    dlq: queue.dlq
+                }
+            });
+    });
+
+    for(const q of Object.keys(queues))
+        logEntryURL("POST",`/queues/${q}`);
+    app.post("/:queue", function(request, reply) {
+
+       const queueName = request.params.queue;
+
+        if(!queues[queueName]) {
+            return reply
+                .status(404)
+                .send({ error: "Queue not found" });
+        }
+
+        const id = Date.now().toString() + Math.random().toString(36).substring(2, 7);
+        
+        const message = {
+            id,
+            timestamp: new Date(),
+            attempts: 0,
+            payload: request.body,
+            attributes: request.headers,
+        };
+        
+        queues[queueName].incoming.push(message);
+
+        // Schedule processing if not already scheduled
+        scheduleProcessing(queueName);
+        
+        // Trigger immediate processing if we've reached batch size
+        if (queues[queueName].incoming.length >= config.batchSize) {
+            clearTimeout(queues[queueName].timeoutId);
+            queues[queueName].timeoutId = null;
+            setImmediate(() => processBatch(queueName));
+        }
+
+        // Save queue state after adding new message
+        if (config.persistence.enabled) {
+            saveQueueState(queueName);
+        }
+
+        return reply
+            .status(200)
+            .send({ id, queueName });
+    });
+
+    for(const q of Object.keys(queues))
+        logEntryURL("GET",`/queues/${q}/process-dlq`);
+    app.get("/:queue/process-dlq", function(request, reply) {
+
+       const queueName = request.params.queue;
+
+        if(!queues[queueName]) {
+            return reply
+                .status(404)
+                .send({ error: "Queue not found" });
+        }
+
+        const queue = queues[queueName];
+         // Get count of messages before processing
+        const dlqCount = queue.dlq.length;
+        
+        if (dlqCount === 0) {
+            return reply
+                .status(200)
+                .send({ 
+                    status: "success", 
+                    message: "No messages in DLQ to process",
+                    processed: 0
+                });
+        }
+
+        // Reset attempt counters and move messages from DLQ to incoming queue
+        const movedMessages = queue.dlq.map(message => ({
+            ...message,
+            attempts: 0,  // Reset attempts counter
+            error: undefined,  // Clear error message
+            failedAt: undefined,  // Clear failure timestamp
+            reprocessed: true,  // Mark as reprocessed for tracking
+            originalId: message.id,  // Keep original ID for reference
+            id: Date.now().toString() + Math.random().toString(36).substring(2, 7)  // Create new ID
+        }));
+
+        queue.incoming.push(...movedMessages);
+        queue.dlq = [];  // Clear the DLQ
+
+        // Schedule processing if not already scheduled
+        scheduleProcessing(queueName);
+
+        // Save queue state after adding new message
+        if (config.persistence.enabled) {
+            saveQueueState(queueName);
+        }
+
+        return reply
+            .status(200)
+            .send({ 
+                status: "success", 
+                message: `Moved ${dlqCount} messages from DLQ to processing queue`,
+                processed: dlqCount
+            });
+    });
+}
+
+const fastify = Fastify({ 
+    maxParamLength : 1000,
+    logger: {  
+        transport: {
+            target: 'pino-pretty',
+            options: {
+                colorize: true,
+                translateTime: 'HH:MM:ss Z',
+                ignore: 'pid,hostname',
+            },
+        }
+    }  
+});
+
+// Register the fastify-raw-body plugin
+fastify.register(require('fastify-raw-body'), {
+  field: 'rawBody',
+  encoding: 'utf8',
+});
+
+
+<% for(const component of components){ %>
+fastify.register(<%=component%>Entries, { prefix: "api" });
+<%}%>
+
+fastify.register(queue, {prefix : "queues"});
+
+fastify.listen({ port: 3000, host : "::" }).then((address) => {
+});
