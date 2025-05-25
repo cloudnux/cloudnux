@@ -16,8 +16,8 @@ import { env } from "@cloudnux/utils";
  */
 function mapAwsResultToPlaceSearchResult(result: SearchForSuggestionsResult) {
     return {
-        placeId: result.PlaceId || '',
-        text: result.Text || '',
+        placeId: result.PlaceId ?? '',
+        text: result.Text ?? '',
     };
 }
 
@@ -29,14 +29,14 @@ function mapAwsResultToPlaceSearchResult(result: SearchForSuggestionsResult) {
 function mapAwsPlaceToPlaceDetails(place: Place, placeId: string) {
     const placeDetails = {
         placeId: placeId,
-        text: place.Label || '',
-        address: place.AddressNumber || undefined,
+        text: place.Label ?? '',
+        address: place.AddressNumber ?? undefined,
         coordinates: {
-            latitude: place.Geometry?.Point?.[1] || 0,
-            longitude: place.Geometry?.Point?.[0] || 0,
+            latitude: place.Geometry?.Point?.[1] ?? 0,
+            longitude: place.Geometry?.Point?.[0] ?? 0,
         },
-        formattedAddress: place.Label || '',
-        categories: place.Categories || [],
+        formattedAddress: place.Label ?? '',
+        categories: place.Categories ?? [],
         additionalData: place
     };
 
@@ -76,7 +76,7 @@ export function createLocationService() {
 
             const response = await locationClient.send(command);
 
-            return (response.Results || []).map(mapAwsResultToPlaceSearchResult);
+            return (response.Results ?? []).map(mapAwsResultToPlaceSearchResult);
         },
 
         /**

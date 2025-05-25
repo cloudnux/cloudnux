@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as util from 'util';
 
 import { LocationService, PlaceDetails, PlaceSearchOptions, PlaceSearchResult } from "@cloudnux/core-cloud-provider";
-import { env } from "@cloudnux/utils"
+import { env, logger } from "@cloudnux/utils";
 
 // Promisify file system functions
 const readFile = util.promisify(fs.readFile);
@@ -374,7 +374,7 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
  */
 export function createLocalLocationService(): LocationService {
     // Get base directory from environment variables or use default
-    const baseDir = env("DEV_CLOUD_LOCATION_PATH", path.join(process.cwd(), '.develop', '.local-location'));
+    const baseDir = env("DEV_CLOUD_LOCATION_PATH", path.join(process.cwd(), '.develop', '.local-location'))!;
     const placesFilePath = path.join(baseDir, 'places.json');
 
     /**
@@ -386,7 +386,7 @@ export function createLocalLocationService(): LocationService {
             // Create directory if it doesn't exist
             try {
                 await access(baseDir);
-            } catch (error) {
+            } catch {
                 await mkdir(baseDir, { recursive: true });
             }
 
@@ -395,13 +395,13 @@ export function createLocalLocationService(): LocationService {
                 await access(placesFilePath);
                 const data = await readFile(placesFilePath, 'utf8');
                 return JSON.parse(data);
-            } catch (error) {
+            } catch {
                 // File doesn't exist, create it with default data
                 await writeFile(placesFilePath, JSON.stringify(DEFAULT_MOCK_PLACES, null, 2), 'utf8');
                 return DEFAULT_MOCK_PLACES;
             }
         } catch (error) {
-            console.warn('Error loading places data:', error);
+            logger.warn(`Error loading places data: ${String(error)}`);
             return DEFAULT_MOCK_PLACES;
         }
     }
@@ -423,7 +423,7 @@ export function createLocalLocationService(): LocationService {
             let results = Object.values(places).filter(place => {
                 // Match by name or address
                 const matchesQuery = place.text.toLowerCase().includes(queryLower) ||
-                    (place.address && place.address.toLowerCase().includes(queryLower));
+                    (place.address?.toLowerCase().includes(queryLower));
 
                 // Match by categories if provided
                 const matchesCategories = !options?.categories ||
@@ -465,7 +465,7 @@ export function createLocalLocationService(): LocationService {
             });
 
             // Sort by distance
-            results.sort((a, b) => (a.distance || 0) - (b.distance || 0));
+            results.sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0));
 
             // Limit results
             if (options?.maxResults && options.maxResults > 0) {

@@ -77,7 +77,7 @@ function calculateNextRunFromLastRun(job: ScheduledJob, lastRun: Date | undefine
     if (job.cronExpression) {
         const result = parseCronExpression(job.cronExpression, lastRun, {
             preserveNaturalTiming: config.restartBehavior.preserveNaturalTiming,
-            timezone: job.timezone || config.cron.defaultTimezone
+            timezone: job.timezone ?? config.cron.defaultTimezone
         });
         return result.nextRun;
     }
@@ -126,7 +126,7 @@ export const schedulerPlugin: FastifyPluginCallback<SchedulerPluginOptions> = as
     let isShuttingDown = false;
     let runningExecutions = 0;
     let cleanupInterval: NodeJS.Timeout;
-    let lastRestartTime = new Date();
+    const lastRestartTime = new Date();
 
     if (options.jobs) {
         for (const jobDef of options.jobs) {
@@ -139,14 +139,14 @@ export const schedulerPlugin: FastifyPluginCallback<SchedulerPluginOptions> = as
 
             if (config.cron.logCronDetails) {
                 const result = parseCronExpression(jobDef.cronExpression!, undefined, {
-                    timezone: jobDef.timezone || config.cron.defaultTimezone
+                    timezone: jobDef.timezone ?? config.cron.defaultTimezone
                 });
                 //BREAKPOINT: LOGGING
                 logger.info(`${chalk.blue('📅 Job')} ${chalk.green(jobDef.name)}: ${result.description} - Next: ${chalk.cyan(result.nextRun.toLocaleString())}`);
 
                 // Show next few executions for debugging
                 const upcoming = getNextExecutions(jobDef.cronExpression!, 3, {
-                    timezone: jobDef.timezone || config.cron.defaultTimezone
+                    timezone: jobDef.timezone ?? config.cron.defaultTimezone
                 });
                 //BREAKPOINT: LOGGING
                 logger.info(`${chalk.blue('   Upcoming:')} ${upcoming.map(d => d.toLocaleTimeString()).join(', ')}`);

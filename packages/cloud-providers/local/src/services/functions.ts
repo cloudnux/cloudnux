@@ -2,10 +2,10 @@ import * as querystring from "querystring"
 import * as path from "path"
 
 import "fastify-raw-body";
-import { FastifyRequest, FastifyInstance, FastifyReply } from "fastify";
+import { FastifyRequest, FastifyReply } from "fastify";
 
 import { env, tokenUtils } from "@cloudnux/utils";
-import { EventFunctionContext, EventRequest, FunctionsService, HTTPAuth, HttpFunctionContext, HttpMethod, HTTPRequest, ScheduleFunctionContext, ScheduleRequest } from "@cloudnux/core-cloud-provider";
+import { EventFunctionContext, EventRequest, FunctionsService, HTTPAuth, HttpFunctionContext, HttpMethod, HTTPRequest, ScheduleRequest } from "@cloudnux/core-cloud-provider";
 import { QueueMessage } from "../queue-plugin/types";
 
 
@@ -37,7 +37,7 @@ const getFullUrlFromRequest = (request: FastifyRequest) => {
 
 export function createLocalFunctionsService(): FunctionsService {
     return {
-        createHttRequest(request: FastifyRequest, app: FastifyInstance) {
+        createHttRequest(request: FastifyRequest) {
             const rawBody = request.rawBody;
             const isAuth = env("DEV_IDENTITY")
 
@@ -46,7 +46,6 @@ export function createLocalFunctionsService(): FunctionsService {
 
             // Remove "bearer" prefix and trim whitespace
             const token = authorization ? authorization.replace(/^bearer\s+/i, '') : null;
-            const jwtClaims = tokenUtils.decodeAccessToken(token) as Record<string, string>;
             const httpRequest: HTTPRequest = {
                 body: String(rawBody),
                 headers: request.headers,
@@ -59,26 +58,27 @@ export function createLocalFunctionsService(): FunctionsService {
                 requestId: request.id,
             };
 
-            const httpAuth: HTTPAuth = isAuth ? {
+            const jwtClaims = token && tokenUtils.decodeAccessToken(token) as Record<string, string>;
+            const httpAuth: HTTPAuth | undefined = isAuth ? {
                 appId: env("DEV_APP_ID"),
                 memberId: env("DEV_MEMBER_ID"),
                 customerId: env("DEV_CUSTOMER_ID"),
                 identity: env("DEV_IDENTITY") as HTTPAuth["identity"],
-                token: token,
+                token: token ?? "",
                 claims: {
                     app_id: env("DEV_APP_ID"),
                     member_id: env("DEV_MEMBER_ID"),
                     customer_id: env("DEV_CUSTOMER_ID"),
-                    identity: env("DEV_IDENTITY")
+                    identity: env("DEV_IDENTITY", "facebook" as const)
                 }
-            } : {
+            } : jwtClaims ? {
                 token: token,
                 claims: jwtClaims,
-                appId: jwtClaims?.app_id,
-                memberId: jwtClaims?.member_id,
-                customerId: jwtClaims?.customer_id,
-                identity: jwtClaims?.identity as HTTPAuth["identity"]
-            };
+                appId: jwtClaims.app_id,
+                memberId: jwtClaims.member_id,
+                customerId: jwtClaims.customer_id,
+                identity: jwtClaims.identity as HTTPAuth["identity"]
+            } : undefined;
 
             return [httpRequest, httpAuth];
         },
@@ -106,11 +106,11 @@ export function createLocalFunctionsService(): FunctionsService {
 
         buildHttpResponse: (ctx: HttpFunctionContext, reply: FastifyReply) => {
             reply
-                .headers(ctx.response.headers || {})
+                .headers(ctx.response.headers ?? {})
                 .status(ctx.response.status)
                 .send(ctx.response.body);
         },
-        buildScheduleResponse: (ctx: ScheduleFunctionContext, reply: FastifyReply) => {
+        buildScheduleResponse: (_, reply: FastifyReply) => {
             reply
                 .status(200)
                 .send("success");

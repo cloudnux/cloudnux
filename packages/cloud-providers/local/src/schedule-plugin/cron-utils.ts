@@ -1,8 +1,7 @@
 import chalk from 'chalk';
-import logSymbols from 'log-symbols';
 import { parseExpression } from 'cron-parser';
 
-import { logger } from "@cloudnux/utils";
+import { logger } from "@cloudnux/utils"
 
 /**
  * Professional cron parser using cron-parser library
@@ -51,7 +50,7 @@ export function parseCronExpression(
         const parseOptions: any = {
             tz: timezone,
             utc: utc,
-            currentDate: currentDate || new Date()
+            currentDate: currentDate ?? new Date()
         };
 
         // Use lastRun for baseline if preserving natural timing
@@ -107,8 +106,8 @@ export function getNextExecutions(
         const normalizedCron = normalizeCronExpression(cronExpression);
         const parseOptions: any = {
             tz: options.timezone,
-            utc: options.utc || false,
-            currentDate: options.currentDate || new Date()
+            utc: options.utc ?? false,
+            currentDate: options.currentDate ?? new Date()
         };
 
         const interval = parseExpression(normalizedCron, parseOptions);

@@ -6,7 +6,7 @@ import logSymbols from "log-symbols";
 import { FastifyInstance, FastifyPluginCallback } from "fastify";
 
 import { QueueConfig, QueueMessage, QueuePluginOptions, QueueService, QueueSummary } from "./types";
-import { logger } from "@cloudnux/utils";
+import { logger } from "@cloudnux/utils"
 
 const DEFAULT_CONFIG: QueueConfig = {
     batchSize: 10,
@@ -123,7 +123,6 @@ export const queuesPlugin: FastifyPluginCallback<QueuePluginOptions> = async (
 
             //BREAKPOINT: LOGGING
             logger.debug(`${logSymbols.success} ${chalk.green('Successfully processed message')} ${chalk.yellow(message.id)} in queue ${chalk.magenta(queueName)}`)
-            //consola.success();
         } catch (error: any) {
             //BREAKPOINT: LOGGING
             logger.error(`${logSymbols.error} ${chalk.red('Error processing message')} ${chalk.yellow(message.id)} in queue ${chalk.magenta(queueName)}: ${error.message}`);
@@ -178,7 +177,7 @@ export const queuesPlugin: FastifyPluginCallback<QueuePluginOptions> = async (
         if (!queueService) return;
 
         if (!queueService.timeoutId) {
-            const delay = overrideDelay !== null ? overrideDelay : config.batchWindowMs;
+            const delay = overrideDelay ??= config.batchWindowMs;
             queueService.timeoutId = setTimeout(() => {
                 processBatch(queueName);
             }, delay);
@@ -204,7 +203,7 @@ export const queuesPlugin: FastifyPluginCallback<QueuePluginOptions> = async (
             // Set up process shutdown handler
             if (config.persistence.saveOnShutdown) {
                 const shutdownHandler = async () => {
-                    console.log('Saving queue state before shutdown...');
+                    logger.debug('Saving queue state before shutdown...');
                     await saveAllQueueStates();
                     process.exit(0);
                 };
@@ -277,9 +276,9 @@ export const queuesPlugin: FastifyPluginCallback<QueuePluginOptions> = async (
                 await loadQueueState(queueName);
             }
 
-            console.log('All queue states loaded');
+            logger.debug('All queue states loaded');
         } catch (error: any) {
-            console.error('Failed to load queue states:', error);
+            logger.error('Failed to load queue states:', error);
         }
     }
 
@@ -288,7 +287,7 @@ export const queuesPlugin: FastifyPluginCallback<QueuePluginOptions> = async (
         try {
             // Skip if queue doesn't exist
             if (!queues[queueName]) {
-                console.warn(`Skipping load for non-existent queue: ${queueName}`);
+                logger.warn(`Skipping load for non-existent queue: ${queueName}`);
                 return;
             }
 
@@ -320,7 +319,7 @@ export const queuesPlugin: FastifyPluginCallback<QueuePluginOptions> = async (
                 queues[queueName].processing = queueData.processing;
                 queues[queueName].dlq = queueData.dlq;
 
-                console.log(`Queue state loaded: ${queueName} (saved at ${queueData.savedAt})`);
+                logger.debug(`Queue state loaded: ${queueName} (saved at ${queueData.savedAt})`);
 
                 // Schedule processing for any messages that were in flight
                 if (queues[queueName].incoming.length > 0) {
@@ -341,13 +340,13 @@ export const queuesPlugin: FastifyPluginCallback<QueuePluginOptions> = async (
                 }
             } catch (error: any) {
                 if (error.code === 'ENOENT') {
-                    console.log(`No saved state found for queue: ${queueName}`);
+                    logger.debug(`No saved state found for queue: ${queueName}`);
                 } else {
                     throw error;
                 }
             }
         } catch (error: any) {
-            console.error(`Failed to load queue state for ${queueName}:`, error);
+            logger.error(`Failed to load queue state for ${queueName}:`, error);
         }
     }
 

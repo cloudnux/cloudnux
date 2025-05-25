@@ -42,12 +42,12 @@ jobs:
       - name: Build
         run: yarn build
 
-      - name: Upload coverage reports
-        if: matrix.node-version == 18
-        uses: codecov/codecov-action@v3
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          fail_ci_if_error: false
+      # - name: Upload coverage reports
+      #   if: matrix.node-version == 18
+      #   uses: codecov/codecov-action@v3
+      #   with:
+      #     token: ${{ secrets.CODECOV_TOKEN }}
+      #     fail_ci_if_error: false
 
   publish:
     name: Publish to NPM

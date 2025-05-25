@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as util from 'util';
 
-import { env } from "@cloudnux/utils";
+import { env, logger } from "@cloudnux/utils";
 
 import { StorageService, StorageWriteOptions, StorageWriteResult } from "@cloudnux/core-cloud-provider";
 
@@ -19,7 +19,7 @@ const access = util.promisify(fs.access);
  */
 export function createLocalStorageService(): StorageService {
     // Get base directory from environment variables or use default
-    const baseDir = env("DEV_CLOUD_STORAGE_BUCKET", path.join(process.cwd(), '.local-storage'));
+    const baseDir = env("DEV_CLOUD_STORAGE_BUCKET", path.join(process.cwd(), '.local-storage'))!;
 
     // Create base directory if it doesn't exist
     if (!fs.existsSync(baseDir)) {
@@ -34,7 +34,7 @@ export function createLocalStorageService(): StorageService {
         const directory = path.dirname(filePath);
         try {
             await access(directory);
-        } catch (error) {
+        } catch {
             // Directory doesn't exist, create it
             await mkdir(directory, { recursive: true });
         }
@@ -162,7 +162,7 @@ export function createLocalStorageService(): StorageService {
                 } catch (error) {
                     // Ignore error if metadata file doesn't exist
                     if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-                        console.warn('Error deleting metadata file:', error);
+                        logger.warn('Error deleting metadata file:', { error });
                     }
                 }
             } catch (error) {

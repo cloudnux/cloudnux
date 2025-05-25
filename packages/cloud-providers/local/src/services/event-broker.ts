@@ -36,13 +36,13 @@ export function createLocalEventBrokerService(): EventBrokerService {
         // Handle string body
         const body = typeof data.body === 'object'
             ? JSON.stringify(data.body)
-            : data.body || '';
+            : data.body ?? '';
 
         return {
-            id: data.id || data.messageId || '',
+            id: data.id ?? data.messageId ?? '',
             body,
-            attributes: data.attributes || {},
-            receiptHandle: data.receiptHandle || data.id || '',
+            attributes: data.attributes ?? {},
+            receiptHandle: data.receiptHandle ?? data.id ?? '',
             publishedAt: data.publishedAt ? new Date(data.publishedAt) : new Date()
         };
     }

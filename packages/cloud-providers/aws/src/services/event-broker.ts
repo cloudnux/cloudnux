@@ -11,6 +11,8 @@ import {
     MessageAttributeValue
 } from '@aws-sdk/client-sns';
 
+import { logger } from "@cloudnux/utils";
+
 /**
  * Check if a string is an SNS topic ARN
  * @param target Target string
@@ -27,8 +29,8 @@ function isSnsTopicArn(target: string): boolean {
  */
 function mapSqsMessageToEventMessage(message: SQSMessage) {
     return {
-        id: message.MessageId || '',
-        body: message.Body || '',
+        id: message.MessageId ?? '',
+        body: message.Body ?? '',
         attributes: message.MessageAttributes ?
             Object.entries(message.MessageAttributes).reduce((acc, [key, attr]) => {
                 if (attr.StringValue) {
@@ -114,8 +116,8 @@ export function createEventBrokerService() {
         async peek(source: string, options?: any): Promise<any[]> {
             const command = new ReceiveMessageCommand({
                 QueueUrl: source,
-                MaxNumberOfMessages: options?.maxMessages || 1,
-                WaitTimeSeconds: options?.waitTimeSeconds || 0,
+                MaxNumberOfMessages: options?.maxMessages ?? 1,
+                WaitTimeSeconds: options?.waitTimeSeconds ?? 0,
                 AttributeNames: ['All'],
                 MessageAttributeNames: ['All'],
                 VisibilityTimeout: 1, // Set to minimal value to keep messages visible to others
@@ -137,16 +139,16 @@ export function createEventBrokerService() {
                             // We intentionally don't await this call to avoid blocking
                             // This is a best-effort approach to make messages visible again
                             sqsClient.send(changeVisibilityCommand).catch(err => {
-                                console.warn('Failed to reset message visibility:', err);
+                                logger.warn('Failed to reset message visibility:', err);
                             });
                         } catch (err) {
-                            console.warn('Error changing message visibility:', err);
+                            logger.warn(`Error changing message visibility:${err}`);
                         }
                     }
                 }
             }
 
-            return (response.Messages || []).map(mapSqsMessageToEventMessage);
+            return (response.Messages ?? []).map(mapSqsMessageToEventMessage);
         },
 
         /**
@@ -158,11 +160,11 @@ export function createEventBrokerService() {
         async read(source: string, options?: any): Promise<any[]> {
             const command = new ReceiveMessageCommand({
                 QueueUrl: source,
-                MaxNumberOfMessages: options?.maxMessages || 1,
-                WaitTimeSeconds: options?.waitTimeSeconds || 0,
+                MaxNumberOfMessages: options?.maxMessages ?? 1,
+                WaitTimeSeconds: options?.waitTimeSeconds ?? 0,
                 AttributeNames: ['All'],
                 MessageAttributeNames: ['All'],
-                VisibilityTimeout: options?.visibilityTimeout || 30,
+                VisibilityTimeout: options?.visibilityTimeout ?? 30,
             });
 
             const response = await sqsClient.send(command);
@@ -180,13 +182,13 @@ export function createEventBrokerService() {
                             // Delete the message
                             await sqsClient.send(deleteCommand);
                         } catch (err) {
-                            console.warn('Error deleting message:', err);
+                            logger.warn(`Error deleting message:`, { err });
                         }
                     }
                 }
             }
 
-            return (response.Messages || []).map(mapSqsMessageToEventMessage);
+            return (response.Messages ?? []).map(mapSqsMessageToEventMessage);
         }
     };
 }

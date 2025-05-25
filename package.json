@@ -11,8 +11,7 @@
   "private": true,
   "workspaces": [
     "packages/*",
-    "packages/cloud-providers/*",
-    "packages/shared/*"
+    "packages/cloud-providers/*"
   ],
   "scripts": {
     "build": "turbo run build",
@@ -35,7 +34,10 @@
   "devDependencies": {
     "@changesets/changelog-github": "^0.5.1",
     "@changesets/cli": "^2.29.4",
+    "@typescript-eslint/eslint-plugin": "^8.32.1",
+    "@typescript-eslint/parser": "^8.32.1",
     "eslint": "^9.27.0",
+    "eslint-config-prettier": "^10.1.5",
     "prettier": "^3.5.3",
     "tsup": "^8.5.0",
     "turbo": "^2.5.3"

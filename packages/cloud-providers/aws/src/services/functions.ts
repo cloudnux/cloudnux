@@ -2,10 +2,11 @@ import { APIGatewayProxyEventV2WithJWTAuthorizer, APIGatewayProxyResultV2, Conte
 import {
     FunctionsService, HttpMethod,
     HTTPRequest, HTTPAuth, HttpFunctionContext,
-    ScheduleRequest, ScheduleFunctionContext,
+    ScheduleRequest,
     EventRequest, EventFunctionContext
 } from "@cloudnux/core-cloud-provider";
-import { tokenUtils } from "@cloudnux/utils";
+
+import { tokenUtils } from "@cloudnux/utils"
 
 // Union type for supported event types
 type EventRecord = SQSRecord | SNSEventRecord;
@@ -36,20 +37,20 @@ const convertMessageAttributes = (messageAttributes: any): Record<string, string
 export function createLocalFunctionsService(): FunctionsService {
     return {
         createHttRequest(event: APIGatewayProxyEventV2WithJWTAuthorizer, ctx: Context) {
-            let httpRequest: HTTPRequest = {
+            const httpRequest: HTTPRequest = {
                 body: event.body,
                 headers: event.headers,
                 method: event.requestContext.http.method as HttpMethod,
                 url: event.rawPath,
                 matchingKey: event.routeKey.split(" ")[1],
-                params: event.pathParameters || {},
+                params: event.pathParameters ?? {},
                 rawQueryString: event.rawQueryString,
                 requestId: ctx.awsRequestId,
                 host: event.requestContext.domainName,
             };
             let httpAuth: HTTPAuth | undefined = undefined;
             if (event.headers.Authorization || event.headers.authorization) {
-                const header = event.headers.Authorization || event.headers.authorization;
+                const header = event.headers.Authorization ?? event.headers.authorization;
                 const token = header!.replace("bearer ", "").replace("Bearer ", "");
                 const jwtClaims = tokenUtils.decodeAccessToken(token) as Record<string, string>;
                 httpAuth = {
@@ -66,7 +67,7 @@ export function createLocalFunctionsService(): FunctionsService {
         createScheduleRequest: (event: ScheduledEvent, ctx: Context) => {
             const ndx = event.resources[0].lastIndexOf("/");
             const name = event.resources[0].substring(ndx + 1, event.resources[0].length);
-            let scheduleRequest: ScheduleRequest = {
+            const scheduleRequest: ScheduleRequest = {
                 name,
                 requestId: ctx.awsRequestId,
             };
@@ -98,7 +99,7 @@ export function createLocalFunctionsService(): FunctionsService {
                     attributes: {
                         ...attributes,
                         messageId: sns.MessageId,
-                        subject: sns.Subject || '',
+                        subject: sns.Subject ?? '',
                     },
                     requestId: ctx.awsRequestId,
                     // SNS timestamps are in ISO 8601 format 
@@ -124,7 +125,7 @@ export function createLocalFunctionsService(): FunctionsService {
                 headers: response.headers,
             } as APIGatewayProxyResultV2;
         },
-        buildScheduleResponse: (_: ScheduleFunctionContext) => {
+        buildScheduleResponse: () => {
             //TODO: Implement schedule response handling
             // const response = ctx.response;
             // return {
