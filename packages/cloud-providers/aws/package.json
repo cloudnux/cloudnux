@@ -47,15 +47,15 @@
     "@aws-sdk/client-s3": "^3.552.0",
     "@aws-sdk/client-sns": "^3.817.0",
     "@aws-sdk/client-sqs": "^3.817.0",
-    "@cloudnux/core-cloud-provider": "1.0.0",
-    "@cloudnux/utils": "1.0.0"
+    "@cloudnux/core-cloud-provider": "0.0.1",
+    "@cloudnux/utils": "0.0.1"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.114"
   },
   "peerDependencies": {
-    "@cloudnux/core-cloud-provider": "1.0.0",
-    "@cloudnux/utils": "1.0.0"
+    "@cloudnux/core-cloud-provider": "0.0.1",
+    "@cloudnux/utils": "0.0.1"
   },
   "publishConfig": {
     "access": "public"

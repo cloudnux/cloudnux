@@ -42,15 +42,15 @@ export function createLocalFunctionsService(): FunctionsService {
                 method: event.requestContext.http.method as HttpMethod,
                 url: event.rawPath,
                 matchingKey: event.routeKey.split(" ")[1],
-                params: event.pathParameters,
+                params: event.pathParameters || {},
                 rawQueryString: event.rawQueryString,
                 requestId: ctx.awsRequestId,
                 host: event.requestContext.domainName,
             };
-            let httpAuth: HTTPAuth = null;
+            let httpAuth: HTTPAuth | undefined = undefined;
             if (event.headers.Authorization || event.headers.authorization) {
                 const header = event.headers.Authorization || event.headers.authorization;
-                const token = header.replace("bearer ", "").replace("Bearer ", "");
+                const token = header!.replace("bearer ", "").replace("Bearer ", "");
                 const jwtClaims = tokenUtils.decodeAccessToken(token) as Record<string, string>;
                 httpAuth = {
                     token: token,
@@ -124,7 +124,7 @@ export function createLocalFunctionsService(): FunctionsService {
                 headers: response.headers,
             } as APIGatewayProxyResultV2;
         },
-        buildScheduleResponse: (ctx: ScheduleFunctionContext) => {
+        buildScheduleResponse: (_: ScheduleFunctionContext) => {
             //TODO: Implement schedule response handling
             // const response = ctx.response;
             // return {
