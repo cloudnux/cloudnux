@@ -5,7 +5,6 @@ yarn-error.log
 
 # Yarn
 .pnp.*
-yarn.lock
 .yarn/*
 !.yarn/cache
 !.yarn/patches
