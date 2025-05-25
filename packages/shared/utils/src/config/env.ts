@@ -2,7 +2,6 @@ import has from "lodash/has";
 import trim from "lodash/trim";
 import dotenv from "dotenv";
 
-import { EnvKeys } from "./env-keys";
 
 if (__DEV__) {
     dotenv.config({
@@ -15,7 +14,7 @@ function _env(key: string, defaultValue?: string) {
     return has(process.env, key) ? process.env[key] : defaultValue;
 };
 
-function int(key: keyof EnvKeys, defaultValue?: number): number;
+//function int(key: keyof EnvKeys, defaultValue?: number): number;
 function int(key: string, defaultValue?: number) {
     if (!has(process.env, key)) {
         return defaultValue;
@@ -24,7 +23,7 @@ function int(key: string, defaultValue?: number) {
     return parseInt(value, 10);
 }
 
-function float(key: keyof EnvKeys, defaultValue?: number): number;
+//function float(key: keyof EnvKeys, defaultValue?: number): number;
 function float(key: string, defaultValue?: number) {
     if (!has(process.env, key)) {
         return defaultValue;
@@ -34,7 +33,7 @@ function float(key: string, defaultValue?: number) {
     return parseFloat(value);
 }
 
-function bool(key: keyof EnvKeys, defaultValue?: boolean): boolean;
+//function bool(key: keyof EnvKeys, defaultValue?: boolean): boolean;
 function bool(key: string, defaultValue?: boolean) {
     if (!has(process.env, key)) {
         return defaultValue;
@@ -44,7 +43,7 @@ function bool(key: string, defaultValue?: boolean) {
     return value === 'true';
 }
 
-function json<T = any>(key: keyof EnvKeys, defaultValue?: T): T
+//function json<T = any>(key: keyof EnvKeys, defaultValue?: T): T
 function json<T = any>(key: string, defaultValue?: T) {
     if (!has(process.env, key)) {
         return defaultValue;
@@ -58,7 +57,7 @@ function json<T = any>(key: string, defaultValue?: T) {
     }
 }
 
-function array(key: keyof EnvKeys, defaultValue?: []): string[];
+//function array(key: keyof EnvKeys, defaultValue?: []): string[];
 function array(key: string, defaultValue?: []) {
     if (!has(process.env, key)) {
         return defaultValue;
@@ -75,7 +74,7 @@ function array(key: string, defaultValue?: []) {
     });
 }
 
-function date(key: keyof EnvKeys, defaultValue?: Date): Date;
+//function date(key: keyof EnvKeys, defaultValue?: Date): Date;
 function date(key: string, defaultValue?: Date) {
     if (!has(process.env, key)) {
         return defaultValue;

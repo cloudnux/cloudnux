@@ -1,0 +1,50 @@
+{
+  "name": "@cloudnux/core-cloud-provider",
+  "version": "0.0.1",
+  "description": "CloudNux core interfaces and types for multi-cloud abstraction",
+  "license": "MIT",
+  "private": true,
+  "types": "./dist/index.d.ts",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cloudnux/cloudnux.git",
+    "directory": "packages/cloud-providers/core"
+  },
+  "keywords": [
+    "cloud",
+    "multi-cloud",
+    "aws",
+    "azure",
+    "gcp",
+    "interfaces",
+    "typescript"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "publishConfig": {
+    "access": "public"
+  }
+}

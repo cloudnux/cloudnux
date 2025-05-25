@@ -1,0 +1,61 @@
+{
+  "name": "@cloudnux/local-cloud-provider",
+  "version": "0.0.1",
+  "description": "CloudNux local development cloud provider implementation",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./queue-plugin": {
+      "types": "./dist/queue-plugin/index.d.ts",
+      "import": "./dist/queue-plugin/index.mjs",
+      "require": "./dist/queue-plugin/index.js"
+    },
+    "./schedule-plugin": {
+      "types": "./dist/schedule-plugin/index.d.ts",
+      "import": "./dist/schedule-plugin/index.mjs",
+      "require": "./dist/schedule-plugin/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cloudnux/cloudnux.git",
+    "directory": "packages/cloud-providers/local"
+  },
+  "private": true,
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@cloudnux/core-cloud-provider": "1.0.0",
+    "@cloudnux/utils": "1.0.0",
+    "axios": "1.9.0",
+    "chalk": "^5.4.1",
+    "cron-parser": "^4.9.0",
+    "fastify": "^5.2.1",
+    "fastify-raw-body": "^5.0.0",
+    "log-symbols": "^7.0.1"
+  },
+  "peerDependencies": {
+    "@cloudnux/core-cloud-provider": "1.0.0",
+    "@cloudnux/utils": "1.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.10.3"
+  }
+}

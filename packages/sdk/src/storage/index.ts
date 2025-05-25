@@ -1,4 +1,4 @@
-import { storage } from "@@cloud";
+import { storage } from "packages/cloud-providers/aws/src";
 
 import type { Content, Options, Storage } from "@@types";
 

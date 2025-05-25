@@ -1,8 +1,13 @@
 {
   "name": "cloudnux",
+  "description": "CloudNux - Multi-cloud provider abstraction framework",
   "version": "1.0.0",
   "author": "Mina W Alphonce",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cloudnux/cloudnux.git"
+  },
   "private": true,
   "workspaces": [
     "packages/*",
@@ -10,12 +15,40 @@
     "packages/shared/*"
   ],
   "scripts": {
-    "cli": "yarn workspace @cloudnux//cli",
-    "core": "yarn workspace @cloudnux//cloud-core",
-    "aws": "yarn workspace @cloudnux//aws-cloud-provider",
-    "datastore": "yarn workspace @cloudnux//datastore",
-    "utils": "yarn workspace @cloudnux//utils"
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "lint:fix": "turbo run lint:fix",
+    "type-check": "turbo run type-check",
+    "clean": "turbo run clean && rm -rf node_modules/.cache",
+    "clean:all": "yarn clean && rm -rf node_modules && yarn install",
+    "changeset": "changeset",
+    "changeset:version": "changeset version",
+    "changeset:publish": "changeset publish",
+    "publish-packages": "yarn build && yarn test && changeset publish",
+    "cli": "yarn workspace @cloudnux/cli",
+    "core": "yarn workspace @cloudnux/core-cloud-provider",
+    "local": "yarn workspace @cloudnux/local-cloud-provider",
+    "aws": "yarn workspace @cloudnux/aws-cloud-provider",
+    "utils": "yarn workspace @cloudnux/utils"
   },
-  "dependencies": {},
-  "packageManager": "yarn@1.22.22"
+  "devDependencies": {
+    "@changesets/changelog-github": "^0.5.1",
+    "@changesets/cli": "^2.29.4",
+    "eslint": "^9.27.0",
+    "prettier": "^3.5.3",
+    "tsup": "^8.5.0",
+    "turbo": "^2.5.3"
+  },
+  "lint-staged": {
+    "*.{js,ts,tsx,json,md}": [
+      "prettier --write",
+      "eslint --fix"
+    ]
+  },
+  "packageManager": "yarn@1.22.22",
+  "engines": {
+    "node": ">=22.0.0",
+    "yarn": ">=1.22.0"
+  }
 }

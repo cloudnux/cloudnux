@@ -1,4 +1,4 @@
-import { locations } from "@@cloud";
+import { locations } from "packages/cloud-providers/aws/src";
 
 async function searchPlaces(text: string, maxResults: number, nearby?: {
     latitude: number,
