@@ -26,8 +26,7 @@
   "scripts": {
     "link": "yarn link",
     "yalc:publish": "yalc publish --private",
-    "yalc:push": "yalc push",
-    "dev:yalc": "tsup --watch --onSuccess \"echo '📦 Pushing to yalc...' && yalc push && echo '✅ Done!'\"",
+    "yalc:push": "yalc push --private",
     "build": "tsup",
     "dev": "tsup --watch",
     "lint": "eslint . --max-warnings 0",

@@ -38,8 +38,7 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "yalc:publish": "yalc publish --private",
-    "yalc:push": "yalc push",
-    "dev:yalc": "tsup --watch --onSuccess \"echo '📦 Pushing to yalc...' && yalc push && echo '✅ Done!'\"",
+    "yalc:push": "yalc push --private",
     "lint": "eslint . --max-warnings 0",
     "lint:fix": "eslint . --fix",
     "type-check": "tsc --noEmit",
@@ -50,15 +49,10 @@
     "@aws-sdk/client-s3": "^3.552.0",
     "@aws-sdk/client-sns": "^3.817.0",
     "@aws-sdk/client-sqs": "^3.817.0",
-    "@cloudnux/core-cloud-provider": "0.0.1",
-    "@cloudnux/utils": "0.0.1"
+    "@cloudnux/core-cloud-provider": "0.0.1"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.114"
-  },
-  "peerDependencies": {
-    "@cloudnux/core-cloud-provider": "0.0.1",
-    "@cloudnux/utils": "0.0.1"
   },
   "publishConfig": {
     "access": "public"

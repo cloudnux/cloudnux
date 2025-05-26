@@ -12,9 +12,9 @@ export default defineConfig([
         minify: false,
         target: 'node18',
         outDir: 'dist',
+        noExternal: ['@cloudnux/utils'],
         external: [
-            '@cloudnux/core-cloud-provider',
-            '@cloudnux/utils'
+            '@cloudnux/core-cloud-provider'
         ],
         esbuildOptions(options) {
             options.conditions = ['module']
@@ -33,7 +33,6 @@ export default defineConfig([
         outDir: 'dist/queue-plugin',
         external: [
             '@cloudnux/core-cloud-provider',
-            '@cloudnux/utils'
         ],
         esbuildOptions(options) {
             options.conditions = ['module']
@@ -52,7 +51,6 @@ export default defineConfig([
         outDir: 'dist/schedule-plugin',
         external: [
             '@cloudnux/core-cloud-provider',
-            '@cloudnux/utils'
         ],
         esbuildOptions(options) {
             options.conditions = ['module']

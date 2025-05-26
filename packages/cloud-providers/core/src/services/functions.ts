@@ -119,12 +119,19 @@ export type HttpFunctionContext = FunctionContext & {
 //#endregion
 
 //#region [Schedule]
+
+export type ScheduleResponse = {
+    status: number;
+    body?: string | Record<string, any>;
+}
+
 export type ScheduleRequest = {
     name: string,
     requestId?: string
 };
 
 export type ScheduleFunctionContext = FunctionContext & {
+    response: ScheduleResponse;
     request: ScheduleRequest;
     type: "Schedule";
 }

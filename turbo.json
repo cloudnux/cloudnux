@@ -45,9 +45,11 @@
             ],
             "outputs": []
         },
-        "dev:yalc": {
-            "cache": false,
-            "persistent": true
+        "yalc:push": {
+            "dependsOn": [
+                "build"
+            ],
+            "cache": false
         },
         "yalc:publish": {
             "dependsOn": [

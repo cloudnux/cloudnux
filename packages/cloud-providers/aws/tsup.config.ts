@@ -13,8 +13,7 @@ export default defineConfig([
         target: 'node18',
         outDir: 'dist',
         external: [
-            '@cloudnux/core-cloud-provider',
-            '@cloudnux/utils'
+            '@cloudnux/core-cloud-provider'
         ],
         esbuildOptions(options) {
             options.conditions = ['module']

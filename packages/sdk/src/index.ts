@@ -1,6 +1,10 @@
 export * from "./services/event-broker";
 export * from "./services/storage";
 export * from "./services/locations";
+export * from "./services/functions";
+
+//export http api types and interfaces
+export * from "./services/functions/http/types";
 
 // Exporting types and interfaces from the core-cloud-provider package
 export {
@@ -13,4 +17,14 @@ export {
     PlaceSearchResult,
     PlaceDetails,
     LocationService,
-} from "@cloudnux/core-cloud-provider"
+
+    HttpFunctionContext,
+    HTTPRequest,
+    HTTPAuth,
+    HTTPResponse,
+    ScheduleFunctionContext,
+    ScheduleRequest,
+    EventFunctionContext,
+    EventRequest,
+    EventResponse
+} from "@cloudnux/core-cloud-provider";
