@@ -45,6 +45,16 @@
             ],
             "outputs": []
         },
+        "dev:yalc": {
+            "cache": false,
+            "persistent": true
+        },
+        "yalc:publish": {
+            "dependsOn": [
+                "build"
+            ],
+            "cache": false
+        },
         "test": {
             "dependsOn": [
                 "^build"

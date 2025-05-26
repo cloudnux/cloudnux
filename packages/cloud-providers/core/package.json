@@ -35,6 +35,9 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
+    "yalc:publish": "yalc publish --private",
+    "yalc:push": "yalc push",
+    "dev:yalc": "tsup --watch --onSuccess \"echo '📦 Pushing to yalc...' && yalc push && echo '✅ Done!'\"",
     "lint": "eslint . --max-warnings 0",
     "lint:fix": "eslint . --fix",
     "type-check": "tsc --noEmit",

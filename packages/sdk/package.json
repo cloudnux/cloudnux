@@ -1,10 +1,38 @@
 {
   "name": "@cloudnux/cloud-sdk",
   "version": "0.0.1",
-  "main": "src/index.ts",
+  "description": "CloudNux SDK for interacting with cloud providers and services",
   "license": "MIT",
   "private": true,
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cloudnux/cloudnux.git",
+    "directory": "packages/"
+  },
   "scripts": {
-    "link": "yarn link"
+    "link": "yarn link",
+    "yalc:publish": "yalc publish --private",
+    "yalc:push": "yalc push",
+    "dev:yalc": "tsup --watch --onSuccess \"echo '📦 Pushing to yalc...' && yalc push && echo '✅ Done!'\"",
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "eslint . --max-warnings 0",
+    "lint:fix": "eslint . --fix",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist"
   }
 }
