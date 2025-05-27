@@ -1,7 +1,5 @@
 import { FastifyPluginOptions } from "fastify";
 
-import { EventFunctionContext } from "@cloudnux/core-cloud-provider";
-
 export interface QueueMessage {
     id: string;
     timestamp: Date;
@@ -15,7 +13,7 @@ export interface QueueMessage {
     originalId?: string;
 }
 
-export type EventHandler = (context: EventFunctionContext) => Promise<void>;
+export type EventHandler = (message: QueueMessage) => Promise<void>;
 
 export interface QueueService {
     handler: EventHandler;
@@ -62,11 +60,36 @@ export interface QueueRegistryItem {
     handler: EventHandler;
 }
 
-
 export interface QueuePluginOptions extends FastifyPluginOptions {
-    queueRegistry?: QueueRegistryItem[];
+    prefix?: string;
     config?: Partial<QueueConfig>;
-    functionContextFactory: (message: QueueMessage) => EventFunctionContext;
+    //queueRegistry?: QueueRegistryItem[];
+    //functionContextFactory: (message: QueueMessage) => EventFunctionContext;
     //logEntryURL?: (method: string, path: string) => void;
 
+}
+
+export interface QueueManager {
+    addQueue: (queueName: string, handler: EventHandler) => Promise<void>;
+    removeQueue: (queueName: string) => Promise<void>;
+    hasQueue: (queueName: string) => boolean;
+    listQueues: () => string[];
+    getQueueStats: (queueName: string) => QueueService | null;
+    getQueuesMap: () => Record<string, QueueService>;
+}
+
+export interface QueueDecoratorOptions {
+    config: QueueConfig;
+    queues: Record<string, QueueService>;
+    //scheduleProcessing: (queueName: string, queueService: QueueService) => void;
+    saveQueueState?: (queueName: string, queueService: QueueService) => Promise<void>;
+    loadQueueState?: (queueName: string) => Promise<void>;
+}
+
+
+// Type declaration for Fastify instance
+declare module 'fastify' {
+    interface FastifyInstance {
+        queues: QueueManager;
+    }
 }

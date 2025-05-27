@@ -2,6 +2,7 @@ export * from "./services/event-broker";
 export * from "./services/storage";
 export * from "./services/locations";
 export * from "./services/functions";
+export * from "./provider";
 
 //export http api types and interfaces
 export * from "./services/functions/http/types";
