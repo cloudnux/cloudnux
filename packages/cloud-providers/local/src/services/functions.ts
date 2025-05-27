@@ -1,12 +1,13 @@
 import * as querystring from "querystring"
-import * as path from "path"
 
 import "fastify-raw-body";
 import { FastifyRequest, FastifyReply } from "fastify";
 
 import { env, tokenUtils } from "@cloudnux/utils";
 import { EventFunctionContext, EventRequest, FunctionsService, HTTPAuth, HttpFunctionContext, HttpMethod, HTTPRequest, ScheduleRequest } from "@cloudnux/core-cloud-provider";
+
 import { QueueMessage } from "../queue-plugin/types";
+import { ScheduledJob, JobExecution } from "../schedule-plugin/types";
 
 
 const getFullUrlFromRequest = (request: FastifyRequest) => {
@@ -82,13 +83,11 @@ export function createLocalFunctionsService(): FunctionsService {
 
             return [httpRequest, httpAuth];
         },
-        createScheduleRequest: (request: FastifyRequest) => {
-            const urlPath = request.url;
-            // Use path.basename to get the last segment
-            const scheduleName = path.basename(urlPath);
+        createScheduleRequest: (job: ScheduledJob, execution: JobExecution) => {
+            const scheduleName = job.name
             const scheduleRequest: ScheduleRequest = {
                 name: scheduleName,
-                requestId: request.id
+                requestId: execution.id
             }
             return [scheduleRequest]
         },

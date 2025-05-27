@@ -1,7 +1,5 @@
 import { FastifyPluginOptions } from "fastify";
 
-import { ScheduleFunctionContext } from "@cloudnux/core-cloud-provider";
-
 export interface ScheduledJob {
     id: string;
     name: string;
@@ -35,9 +33,9 @@ export interface SchedulerService {
     isRunning: boolean;
 }
 
-type JobHandler = (context: ScheduleFunctionContext) => Promise<void>;
+export type JobHandler = (job: ScheduledJob, execution: JobExecution) => Promise<void>;
 
-interface JobDefinition {
+export interface JobDefinition {
     name: string;
     cronExpression?: string;
     intervalMs?: number;
@@ -77,9 +75,46 @@ export interface SchedulerConfig {
     };
 }
 
-
 export interface SchedulerPluginOptions extends FastifyPluginOptions {
-    jobs?: JobDefinition[];
+    prefix?: string;
     config?: Partial<SchedulerConfig>;
-    functionContextFactory: (job: ScheduledJob, execution: JobExecution) => ScheduleFunctionContext;
+    //jobs?: JobDefinition[];
+    //functionContextFactory: (job: ScheduledJob, execution: JobExecution) => ScheduleFunctionContext;
+}
+
+export interface SchedulerState {
+    schedulers: Record<string, SchedulerService>;
+    executions: Record<string, JobExecution>;
+    executionHistory: JobExecution[];
+    isShuttingDown: boolean;
+    runningExecutions: number;
+    cleanupInterval?: NodeJS.Timeout;
+    lastRestartTime: Date;
+    config: SchedulerConfig;
+}
+
+export interface SchedulerManager {
+    addJob: (jobDefinition: JobDefinition) => Promise<string>;
+    removeJob: (jobName: string) => Promise<void>;
+    hasJob: (jobName: string) => boolean;
+    listJobs: () => string[];
+    getJobStats: (jobName: string) => SchedulerService | null;
+    enableJob: (jobName: string) => Promise<void>;
+    disableJob: (jobName: string) => Promise<void>;
+    triggerJob: (jobName: string) => Promise<void>;
+    getJobsMap: () => Record<string, SchedulerService>;
+}
+
+export interface SchedulerDecoratorOptions {
+    state: SchedulerState;
+    scheduleJobFn: (scheduler: SchedulerService) => SchedulerService;
+    executeJob: (scheduler: SchedulerService) => Promise<void>;
+    config: SchedulerConfig;
+}
+
+// Type declaration for Fastify instance
+declare module 'fastify' {
+    interface FastifyInstance {
+        scheduler: SchedulerManager;
+    }
 }
