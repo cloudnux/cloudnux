@@ -1,5 +1,5 @@
-import Fastify from "fastify";
-import pino from "pino";
+import { createRouter } from '@cloudnux/local-cloud-provider';
+import pino from 'pino';
 
 <%_ for(const module of moduleNames){ _%>
 import <%=module%>Entries from "./<%=module%>/index.ts"  
@@ -44,17 +44,17 @@ function getCircularReplacer() {
   };
 }
 
-const fastify = Fastify({ 
+const router = createRouter({ 
     maxParamLength : 1000,
     loggerInstance:customLogger,
 });
 
 // Add fastify hooks
-fastify.addHook('onRegister', async (instance, opts) => {
+router.addHook('onRegister', async (instance, opts) => {
     sendMessage("APP_REGISTERED", { prefix: instance.prefix, opts });
 });
 
-fastify.addHook('onRoute', (routeOptions) => {
+router.addHook('onRoute', (routeOptions) => {
     sendMessage('ROUTE_REGISTERED', {
         method: routeOptions.method,
         url: routeOptions.url,
@@ -62,7 +62,7 @@ fastify.addHook('onRoute', (routeOptions) => {
       });
 });
 
-fastify.addHook('onListen', function (done) {
+router.addHook('onListen', function (done) {
     try{
         sendMessage('LISTENING', {
             port: 3000,
@@ -76,31 +76,31 @@ fastify.addHook('onListen', function (done) {
     }
 });
 
-fastify.addHook('preHandler', (request, reply, done) => {
+router.addHook('preHandler', (request, reply, done) => {
     sendMessage('REQUEST', { id: request.id, params: request.params, query: request.query, body: request.body, headers: request.headers, url: request.url, method:request.method, time: new Date().toLocaleTimeString() });
     done();
 });
 
-fastify.addHook('onResponse', (request, reply, done) => {
+router.addHook('onResponse', (request, reply, done) => {
     sendMessage('RESPONSE', { id: request.id, status: reply.statusCode, body: reply.raw, time: new Date().toLocaleTimeString() });
     done();
 });
 
-fastify.addHook('onError', (request, reply, error, done) => {
+router.addHook('onError', (request, reply, error, done) => {
     sendMessage('ERROR', {error, request, reply});
     done();
 });
 
 // Register the fastify-raw-body plugin
-fastify.register(require('fastify-raw-body'), {
+router.register(require('fastify-raw-body'), {
   field: 'rawBody',
   encoding: 'utf8',
 });
 
 <%_ for(const module of moduleNames){ _%>
-fastify.register(<%=module%>Entries, { prefix: "<%=module%>/" });
+  router.register(<%=module%>Entries, { prefix: "<%=module%>/" });
 <%_ } _%>
 
-fastify.listen({ port: 3000, host : "::" }).then((address) => {
+router.listen({ port: 3000, host : "::" }).then((address) => {
     // init in entrypoint
 });

@@ -7,57 +7,20 @@ import { AddressInfo } from "node:net";
 import querystring from "node:querystring"; 
 import jwt from "jsonwebtoken";
 
-import { FastifyInstance } from "fastify";
+import { RouterInstance, localCloudProvider } from '@cloudnux/local-cloud-provider';
 
 import {
-  HTTPAuth,
-  HttpMethod,
-  createHttpContext,
-  createScheduleContext,
-} from "@@cloudcore";
+  httpHandler,
+  eventHandler,
+  scheduleHandler,
+  useCloudProvider,
+} from "@cloudnux/cloud-sdk";
 
 import * as src from "<%= source %>";
 
-const prefix = "DEV_IDENTITY_";
-function buildAuth(headers: { authorization?: any; }) {
-  try {
-    // Case 1: DEV_IDENTITY_TOKEN
-    const devToken = process.env[`${prefix}TOKEN`];
-    if (devToken) {
-      const claims = jwt.decode(devToken) as Record<string, unknown>;
-      return { token: devToken, ...claims };
-    }
+useCloudProvider(localCloudProvider);
 
-    // Case 2: DEV_IDENTITY_ variables
-    const devIdentityVars = Object.entries(process.env)
-      .filter(([key]) => key.startsWith(prefix) && key !== `${prefix}TOKEN`)
-      .reduce((acc, [key, value]) => {
-        const claimKey = key.replace(prefix, '').toLowerCase();
-        acc[claimKey] = value;
-        return acc;
-      }, {} as Record<string, unknown>);
-
-    if (Object.keys(devIdentityVars).length > 0) {
-      return { token: '', ...devIdentityVars };
-    }
-
-    // Case 3: Authorization header
-    const authHeader = headers.authorization;
-    if (authHeader?.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
-      const claims = jwt.decode(token) as Record<string, unknown>;
-      return { token, ...claims };
-    }
-
-    // Case 4: Nothing exists
-    return undefined;
-  } catch (error) {
-    console.error('Error processing identity token:', error);
-    return undefined;
-  }
-}
-
-async function entries(app: FastifyInstance) {
+async function entries(app: RouterInstance) {
   <%_ for (const [name, entry] of Object.entries(entries)) { _%>
     <%_ if (entry.trigger.type === "http") { _%>
       <%- include("triggers/http.ts.ejs", {
