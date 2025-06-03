@@ -1,2 +1,13 @@
+import { EventBrokerService } from "@cloudnux/core-cloud-provider";
+
 import { getCloudProvider } from "../provider";
-export const cloudEventBroker = getCloudProvider().createEventBrokerService();
+
+let _cloudEventBroker: EventBrokerService | null = null;
+
+export const cloudEventBroker = () => {
+    if (_cloudEventBroker) {
+        return _cloudEventBroker;
+    }
+    _cloudEventBroker = getCloudProvider().createEventBrokerService();
+    return _cloudEventBroker;
+}

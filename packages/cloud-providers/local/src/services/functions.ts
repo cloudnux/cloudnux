@@ -4,7 +4,7 @@ import "fastify-raw-body";
 import { FastifyRequest, FastifyReply } from "fastify";
 
 import { env, tokenUtils } from "@cloudnux/utils";
-import { EventFunctionContext, EventRequest, FunctionsService, HTTPAuth, HttpFunctionContext, HttpMethod, HTTPRequest, ScheduleRequest } from "@cloudnux/core-cloud-provider";
+import { EventFunctionContext, EventRequest, FunctionsService, HTTPAuth, HttpFunctionContext, HttpMethod, HTTPRequest, ScheduleFunctionContext, ScheduleRequest } from "@cloudnux/core-cloud-provider";
 
 import { QueueMessage } from "../queue-plugin/types";
 import { ScheduledJob, JobExecution } from "../schedule-plugin/types";
@@ -103,21 +103,23 @@ export function createLocalFunctionsService(): FunctionsService {
             return [eventRequest];
         },
 
-        buildHttpResponse: (ctx: HttpFunctionContext, reply: FastifyReply) => {
+        buildHttpResponse: (context: HttpFunctionContext, _: FastifyRequest, reply: FastifyReply) => {
             reply
-                .headers(ctx.response.headers ?? {})
-                .status(ctx.response.status)
-                .send(ctx.response.body);
+                .headers(context.response.headers ?? {})
+                .status(context.response.status)
+                .send(context.response.body);
         },
-        buildScheduleResponse: (_, reply: FastifyReply) => {
-            reply
-                .status(200)
-                .send("success");
+        buildScheduleResponse: (context: ScheduleFunctionContext) => {
+            if (context.response.status === "error") {
+                throw new Error(JSON.stringify(context.response.body));
+            }
+            return context.response.body;
         },
         buildEventResponse: (context: EventFunctionContext) => {
             if (context.response.status === "error") {
                 throw new Error(JSON.stringify(context.response.body));
             }
+            return context.response.body;
         }
     }
 

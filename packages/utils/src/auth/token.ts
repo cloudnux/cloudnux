@@ -46,7 +46,7 @@ function parseTimeToMs(time: string | number): number {
  * Base64Url encode a string or buffer
  */
 function base64UrlEncode(input: string | Buffer): string {
-    let str = typeof input === 'string' ? input : input.toString('base64');
+    const str = typeof input === 'string' ? input : input.toString('base64');
     return str
         .replace(/=/g, '')
         .replace(/\+/g, '-')
@@ -151,7 +151,7 @@ function decode(token: string): JWTPayload | null {
         );
 
         return payload;
-    } catch (error) {
+    } catch {
         return null;
     }
 }

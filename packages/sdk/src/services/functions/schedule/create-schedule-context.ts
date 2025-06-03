@@ -2,7 +2,7 @@ import { ScheduleFunctionContext, ScheduleRequest, ScheduleResponse } from "@clo
 
 export function createScheduleContext(request: ScheduleRequest): ScheduleFunctionContext {
     const response: ScheduleResponse = {
-        status: 200,
+        status: "error",
         body: null as any
     };
 
@@ -11,16 +11,16 @@ export function createScheduleContext(request: ScheduleRequest): ScheduleFunctio
         request,
         response,
         success: (body?: any) => {
-            response.status = 200;
+            response.status = "success";
             response.body = body;
         },
 
         error: (body?: any) => {
-            response.status = 500;
+            response.status = "error";
             response.body = body;
         },
         notFound: (body?: any) => {
-            response.status = 404;
+            response.status = "error";
             response.body = body;
         }
     }

@@ -159,22 +159,22 @@ export const registerQueueRoutes = (
     processBatch: (queueName: string, queueService: QueueService) => Promise<void>,
     saveQueueState?: (queueName: string, queueService: QueueService) => Promise<void>
 ): void => {
-    app.get(`${prefix}/dashboard`, createDashboardHandler(queues, config));
+    app.get(`/${prefix}/dashboard`, createDashboardHandler(queues, config));
 
-    app.get<{ Params: { queue: string } }>(`${prefix}/:queue`, createQueueDetailsHandler(queues, config));
+    app.get<{ Params: { queue: string } }>(`/${prefix}/:queue`, createQueueDetailsHandler(queues, config));
 
     app.post<{ Params: { queue: string }; Body: any }>(
-        `${prefix}/:queue`,
+        `/${prefix}/:queue`,
         createEnqueueMessageHandler(queues, config, scheduleProcessing, processBatch, saveQueueState)
     );
 
     app.get<{ Params: { queue: string } }>(
-        `${prefix}/:queue/process-dlq`,
+        `/${prefix}/:queue/process-dlq`,
         createProcessDLQHandler(queues, scheduleProcessing, saveQueueState)
     );
 
     app.get<{ Params: { queue: string } }>(
-        `${prefix}/:queue/purge-dlg`,
+        `/${prefix}/:queue/purge-dlg`,
         createPurgeDLQHandler(queues, saveQueueState)
     );
 };

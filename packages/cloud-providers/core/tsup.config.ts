@@ -12,7 +12,7 @@ export default defineConfig({
   minify: false,
   target: 'node18',
   outDir: 'dist',
-  // Core package has no external dependencies since it's just interfaces
+  noExternal: [/.*/],
   external: [],
   tsconfig: './tsconfig.json',
   esbuildOptions(options) {

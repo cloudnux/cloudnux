@@ -9,7 +9,7 @@ type HttpHandler = (context: HttpFunctionContext) => Promise<void>;
 export async function httpHandler(handler: HttpHandler, ...args: any[]) {
     try {
         logger.debug("Executing HTTP handler with args", { args });
-        const [httpRequest, httpAuth] = cloudFunctions.createHttRequest(...args);
+        const [httpRequest, httpAuth] = cloudFunctions().createHttRequest(...args);
         logger.debug("Created HTTP request and auth", {
             request: httpRequest,
             auth: httpAuth
@@ -17,7 +17,7 @@ export async function httpHandler(handler: HttpHandler, ...args: any[]) {
         const context = createHttpContext(httpRequest, httpAuth);
         await handler(context);
         logger.debug("Handler executed successfully, building HTTP response", { response: context.response });
-        return cloudFunctions.buildHttpResponse(context);
+        return cloudFunctions().buildHttpResponse(context, ...args);
     }
     catch (error) {
         // Log the error and re-throw it for further handling

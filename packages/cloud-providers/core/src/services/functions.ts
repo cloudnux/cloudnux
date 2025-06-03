@@ -121,7 +121,7 @@ export type HttpFunctionContext = FunctionContext & {
 //#region [Schedule]
 
 export type ScheduleResponse = {
-    status: number;
+    status: "success" | "error",
     body?: string | Record<string, any>;
 }
 

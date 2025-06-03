@@ -23,7 +23,7 @@ export const errorToString = (error: unknown): string => {
     if (typeof error === 'object') {
         try {
             return JSON.stringify(error, null, 2);
-        } catch (e) {
+        } catch {
             return `[Object that cannot be stringified: ${Object.prototype.toString.call(error)}]`;
         }
     }

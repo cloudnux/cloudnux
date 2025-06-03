@@ -13,10 +13,7 @@
                 "^build"
             ],
             "outputs": [
-                "dist/**",
-                "build/**",
-                ".next/**",
-                "!.next/cache/**"
+                "dist/**"
             ],
             "env": [
                 "NODE_ENV"

@@ -1,6 +1,4 @@
-import has from "lodash/has";
-import trim from "lodash/trim";
-
+import { has, trim } from "lodash-es";
 
 //import dotenv from "dotenv";
 

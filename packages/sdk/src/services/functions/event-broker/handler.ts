@@ -9,14 +9,14 @@ type Handler = (context: EventFunctionContext) => Promise<void>;
 export async function eventBrokerHandler(handler: Handler, ...args: any[]) {
     try {
         logger.debug("Executing Event Broker handler with args", { args });
-        const [eventRequest] = cloudFunctions.createEventRequest(...args);
+        const [eventRequest] = cloudFunctions().createEventRequest(...args);
         logger.debug("Created Event Broker request ", {
             request: eventRequest,
         });
         const context = createEventContext(eventRequest);
         await handler(context);
         logger.debug("Event Broker Handler executed successfully, building response", { response: context.response });
-        return cloudFunctions.buildEventResponse(context);
+        return cloudFunctions().buildEventResponse(context);
     }
     catch (error) {
         // Log the error and re-throw it for further handling
