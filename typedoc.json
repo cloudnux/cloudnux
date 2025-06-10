@@ -1,0 +1,26 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": [
+    "packages/cli/src/cli.tsx",
+    "packages/cloud-providers/aws/src/index.ts",
+    "packages/cloud-providers/azure/index.ts",
+    "packages/cloud-providers/core/src/index.ts",
+    "packages/cloud-providers/gcp/index.ts",
+    "packages/cloud-providers/local/src/index.ts",
+    "packages/sdk/src/index.ts",
+    "packages/utils/src/index.ts"
+  ],
+  "out": "docs",
+  "plugin": [
+    "typedoc-plugin-markdown",
+    "typedoc-plugin-missing-exports"
+  ],
+  "excludeExternals": true,
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "readme": "none",
+  "theme": "markdown",
+  "includeVersion": true,
+  "name": "CloudNux Documentation",
+  "tsconfig": "tsconfig.typedoc.json"
+}

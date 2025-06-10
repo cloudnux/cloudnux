@@ -1,4 +1,4 @@
-import { Config, Environment, Task, TaskParamBase, TaskTitle } from "../types.js";
+import { Config, Environment, Task, TaskParam, TaskTitle } from "../types";
 
 // Type guards for validation
 function isString(value: unknown): value is string {
@@ -13,10 +13,10 @@ function isTaskTitle(value: unknown): value is TaskTitle {
     return isString(value) || isFunction(value);
 }
 
-function isTask<TTaskParams extends TaskParamBase>(value: unknown): value is Task<TTaskParams> {
+function isTask<TTaskParams extends TaskParam>(value: unknown): value is Task {
     if (!value || typeof value !== 'object') return false;
 
-    const task = value as Task<TTaskParams>;
+    const task = value as Task;
 
     // Validate required fields
     if (!isTaskTitle(task.title)) return false;
@@ -34,21 +34,21 @@ function isTask<TTaskParams extends TaskParamBase>(value: unknown): value is Tas
     return true;
 }
 
-function isEnvironment<TTaskParams extends TaskParamBase>(value: unknown): value is Environment<TTaskParams> {
+function isEnvironment<TTaskParams extends TaskParam>(value: unknown): value is Environment {
     if (!value || typeof value !== 'object') return false;
 
-    const env = value as Environment<TTaskParams>;
+    const env = value as Environment;
     if (!Array.isArray(env.tasks)) return false;
 
     return env.tasks.every(task => isTask(task));
 }
 
-export function validateConfig<TTaskParams extends TaskParamBase>(config: unknown): config is Config<TTaskParams> {
+export function validateConfig<TTaskParams extends TaskParam>(config: unknown): config is Config {
     if (!config || typeof config !== 'object') {
         throw new Error('Config must be an object or a function that returns an object');
     }
 
-    const typedConfig = config as Config<TTaskParams>;
+    const typedConfig = config as Config;
 
     // Validate required fields
     if (!isString(typedConfig.modulesPath)) {

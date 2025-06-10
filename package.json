@@ -31,7 +31,8 @@
     "core": "yarn workspace @cloudnux/core-cloud-provider",
     "local": "yarn workspace @cloudnux/local-cloud-provider",
     "aws": "yarn workspace @cloudnux/aws-cloud-provider",
-    "utils": "yarn workspace @cloudnux/utils"
+    "utils": "yarn workspace @cloudnux/utils",
+    "docs": "typedoc"
   },
   "devDependencies": {
     "@changesets/changelog-github": "^0.5.1",
@@ -42,7 +43,11 @@
     "eslint-config-prettier": "^10.1.5",
     "prettier": "^3.5.3",
     "tsup": "^8.5.0",
-    "turbo": "^2.5.3"
+    "turbo": "^2.5.3",
+    "typedoc": "^0.28.5",
+    "typedoc-plugin-markdown": "^4.6.4",
+    "typedoc-plugin-missing-exports": "^4.0.0",
+    "typescript": "~5.8.0"
   },
   "lint-staged": {
     "*.{js,ts,tsx,json,md}": [
