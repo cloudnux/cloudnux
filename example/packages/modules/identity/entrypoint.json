@@ -19,6 +19,15 @@
                     "route": "/v1/me"
                 }
             }
+        },
+        "run-schedule": {
+            "handler": "runSchedule",
+            "trigger": {
+                "type": "schedule",
+                "options": {
+                    "cron": "0 0 * * *"
+                }
+            }
         }
     }
 }

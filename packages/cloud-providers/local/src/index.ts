@@ -7,9 +7,11 @@ import { createLocalFunctionsService } from "./services/functions";
 
 export const localCloudProvider: CloudProvider = {
     name: "local-cloud-provider",
-
+    
     createStorageService: createLocalStorageService,
     createLocationService: createLocalLocationService,
     createEventBrokerService: createLocalEventBrokerService,
     createFunctionsService: createLocalFunctionsService
 };
+
+export * from "./router";
