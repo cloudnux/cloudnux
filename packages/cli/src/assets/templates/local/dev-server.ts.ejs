@@ -1,25 +1,9 @@
 import { createRouter } from '@cloudnux/local-cloud-provider';
-import pino from 'pino';
 
 <%_ for(const module of moduleNames){ _%>
 import <%=module%>Entries from "./<%=module%>/index.ts"  
 <%_ } _%>
 
-// Create a custom logger
-const customLogger = pino({
-  level: 'info', // Set the log level (e.g., 'info', 'error', 'debug')
-  base: null, // Remove default metadata like pid and hostname
-  hooks: {
-    logMethod(args, method) {
-      // Intercept log messages and send them to the parent process
-      const [message, ...rest] = args;
-      const safePayload = JSON.stringify(message, getCircularReplacer());
-
-      sendMessage('LOG', { level: method.name, message:safePayload, additionalData: rest });
-      return method.apply(this, args);
-    },
-  },
-});
 
 // Function to send logs to the parent process
 function sendMessage(type: string, payload: any) {
@@ -45,8 +29,7 @@ function getCircularReplacer() {
 }
 
 const router = createRouter({ 
-    maxParamLength : 1000,
-    loggerInstance:customLogger,
+    maxParamLength : 1000
 });
 
 // Add fastify hooks
