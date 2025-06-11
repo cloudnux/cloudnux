@@ -76,11 +76,6 @@ router.addHook('onError', (request, reply, error, done) => {
     done();
 });
 
-// Register the fastify-raw-body plugin
-router.register(require('fastify-raw-body'), {
-  field: 'rawBody',
-  encoding: 'utf8',
-});
 
 router.register(queuesPlugin, { prefix: "queues" });
 router.register(schedulerPlugin, { prefix: "schedules" });

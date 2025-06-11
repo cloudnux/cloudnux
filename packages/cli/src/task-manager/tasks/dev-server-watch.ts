@@ -45,7 +45,12 @@ export const devServerWatch: Task = {
             watch: false,
             env: {
                 __ENV_PATH__: '"' + path.resolve(__dirname, "../.env").replace(/\\/g, "\\\\") + '"',
-                __DEV__: process.env.__DEV__ || '"development"'
+                __DEV__: process.env.__DEV__ || '"development"',
+            },
+            define: {
+                __ENV_PATH__: '"' + path.resolve(__dirname, "../.env").replace(/\\/g, "\\\\") + '"',
+                __DEV__: process.env.__DEV__ || '"development"',
+                "process.env.DATABASE_TYPE": '"local"',
             },
             esbuildPlugins: [
                 {

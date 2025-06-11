@@ -22,7 +22,6 @@ export const buildServer: Task = {
         return params.environment === "develop";
     },
     action: async ({ moduleDir, cloudProvider, externalPackages }) => {
-        debugger;
         const modulePath = path.resolve(moduleDir, "index.ts");
         return await tsup.build({
             entry: {
