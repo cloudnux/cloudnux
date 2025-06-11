@@ -1,4 +1,8 @@
+import { useCloudProvider } from "@cloudnux/cloud-sdk";
 import { createRouter } from '@cloudnux/local-cloud-provider';
+import { queuesPlugin } from "@cloudnux/local-cloud-provider/queue-plugin";
+import { schedulerPlugin } from "@cloudnux/local-cloud-provider/schedule-plugin";
+
 
 <%_ for(const module of moduleNames){ _%>
 import <%=module%>Entries from "./<%=module%>/index.ts"  
@@ -28,9 +32,7 @@ function getCircularReplacer() {
   };
 }
 
-const router = createRouter({ 
-    maxParamLength : 1000
-});
+const router = createRouter();
 
 // Add fastify hooks
 router.addHook('onRegister', async (instance, opts) => {
@@ -79,6 +81,9 @@ router.register(require('fastify-raw-body'), {
   field: 'rawBody',
   encoding: 'utf8',
 });
+
+router.register(queuesPlugin, { prefix: "queues" });
+router.register(schedulerPlugin, { prefix: "schedules" });
 
 <%_ for(const module of moduleNames){ _%>
   router.register(<%=module%>Entries, { prefix: "<%=module%>/" });
