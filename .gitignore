@@ -107,6 +107,7 @@ public
 
 # ignore all contents of any .epf directory
 **/.epf/*
+**/.develop/*
 
 
 .turbo/

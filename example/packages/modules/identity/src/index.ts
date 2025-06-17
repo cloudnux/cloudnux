@@ -8,8 +8,11 @@ export function getMe(ctx: HttpFunctionContext) {
 
 export function setMe(ctx: HttpFunctionContext) {
     console.info('getMe from identity -> setMe', ctx.params, ctx.request.body);
-
-    ctx.error('Error from identity -> SetMe');
+    const body = JSON.parse( ctx.request.body);
+    ctx.success({
+        message: 'Identity updated successfully from identity -> setMe',
+        data: body
+    });
 }
 
 export function runSchedule(ctx: ScheduleFunctionContext) {

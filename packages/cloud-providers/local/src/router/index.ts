@@ -1,4 +1,5 @@
 import Fastify, { FastifyInstance } from "fastify";
+import  fastifyRawBody from "fastify-raw-body";
 
 export type RouterInstance = FastifyInstance
 
@@ -8,5 +9,11 @@ export function createRouter(options: { logger?: boolean } = {}): RouterInstance
     maxParamLength: 1000,
     logger: options.logger ,
   });
+
+  fastify.register(fastifyRawBody, {
+    field: 'rawBody',
+    encoding: 'utf8',
+  });
+
   return fastify;
 }
