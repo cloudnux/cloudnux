@@ -1,3 +1,5 @@
+export type TaskParamBase = Record<string, any>;
+
 export type TaskParam = {
 
     modulesPath: string,
@@ -36,18 +38,18 @@ export type TaskParam = {
 
 export type TaskTitle = string | ((params: TaskParam) => string);
 
-export type Task = {
-    title: TaskTitle;
-    skip?: (params: TaskParam) => boolean;
-    action: (params: TaskParam, logger: (log: any) => void, eventEmitter: (type: string, data?: any) => void, executeSubTasks?: (params: TaskParam) => Promise<any>) => Promise<any>;
-    children?: Task[];
+export type Task<TTaskParams extends TaskParamBase = any> = {
+    title: string | ((params: TTaskParams) => string);
+    action: (params: TTaskParams) => void;
+    skip?: (params: TTaskParams) => boolean;
+    children?: Task<TTaskParams>[];
 }
 
-export type Environment = {
+export type Environment<TTaskParams extends TaskParamBase = any> = {
     /**
      * tasks to be executed for this environment
      */
-    tasks: Task[],
+    tasks: Task<TTaskParams>[],
 
     /**
      * watch task
@@ -63,7 +65,7 @@ export type Environment = {
     [key: string]: any
 }
 
-export type Config = {
+export type Config<TTaskParams extends TaskParamBase = any> = {
     /**
      * glob Path to find all modules (package.json) having entrypoints 
      * @default './packages/modules/**\/package.json'
@@ -89,7 +91,7 @@ export type Config = {
      * environment configuration with key as environment name and value as Environment
      * @default { develop: { tasks: [] }, prod: { tasks: [] } }
      */
-    environments: Record<string, Environment>
+    environments: Record<string, Environment<TTaskParams>>,
 
     /**
      * External packages to be used in the module build

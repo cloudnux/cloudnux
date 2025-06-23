@@ -1,7 +1,7 @@
 app.route({
   method: "GET",
   url: `/schedule/<%= name %>`,
-  handler: async function (request, reply) {
-      await scheduleHandler(src["<%= entry.handler %>"], request, reply);
+  handler: async function (...args) {
+      await scheduleHandler(src["<%= entry.handler %>"], ...args);
     }
 });

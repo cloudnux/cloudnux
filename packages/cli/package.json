@@ -11,7 +11,7 @@
 	},
 	"scripts": {
 		"develop": "tsup --watch && chmod +x dist/cli.js",
-		"build2": "tsup && chmod +x dist/cli.js",
+		"build": "tsup && chmod +x dist/cli.js",
 		"link": "yarn link"
 	},
 	"files": [

@@ -15,11 +15,11 @@ export const defaultConfig: Config = {
     modulesPath: './packages/modules/**/entrypoint.json',
     cloudProvider: 'aws',
     workingDir: "./.epf",
+    externalPackages: ["aws-sdk", "@aws-sdk/*"],
     environments: {
         develop: {
             moduleTemplatePath: "./templates/local/module.ts.ejs",
             devServerTemplatePath: "./templates/local/dev-server.ts.ejs",
-            externalPackages: ["sqlite3", "pino"],
             tasks: [
                 loadModuleTemplate,
                 loadDevServerTemplate,
@@ -31,7 +31,6 @@ export const defaultConfig: Config = {
         production: {
             moduleTemplatePath: "./templates/cloud/entrypoint-build.ts.ejs",
             triggerTemplatePath: "./templates/cloud/entrypoint-triggers.tf.ejs",
-            externalPackages: ["aws-sdk", "@aws-sdk/*"],
             tasks: [
                 loadModuleTemplate,
                 loadTriggerTemplate,

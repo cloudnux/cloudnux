@@ -118,7 +118,8 @@ export const useTaskManager = create<TaskManagerStore>()(immer(
             addRoute: (endpoint: any) => {
                 set((state) => {
                     let modules = state.modules;
-                    if (modules.length < 0) {
+                    if (modules.length === 0) {
+                        console.warn("No modules found to add the endpoint to.");
                         return state;
                     }
                     state.modules[modules.length - 1].endpoints = [...modules[modules.length - 1].endpoints, endpoint];

@@ -65,3 +65,21 @@ module "schedule_trigger_for_<%= module %>" {
  }
 }
 <% } %>
+
+<%_ const eventEntries = Object.entries(entries).filter(([k,e]) => e.trigger.type.toLowerCase() === "event" && e.trigger.options.sourceType?.toLowerCase() === "sqs") _%>
+<% if(eventEntries.length > 0) { %>
+module "sqs_trigger_for_<%= module %>" {
+  source      = "../.deploy/aws/sqs"
+  lambda_name = "<%= module %>"
+  event_sources = {
+  <% for(const [key,entry] of eventEntries) { %>
+    "<%= key %>" = {
+      queue_name  = "<%= entry.trigger.options.source %>"
+      enabled     = true
+      batch_size  = 10
+    }
+    <% } %>
+  }
+}
+
+<% } %>

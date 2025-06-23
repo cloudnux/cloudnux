@@ -45,6 +45,7 @@ export class TaskManager {
             modulesPath: this.config.modulesPath,
             cloudProvider: this.config.cloudProvider,
             workingDir: path.resolve(this.config.workingDir, this.environment),
+            externalPackages: this.config.externalPackages,
             ...this.taskResults,
         };
         delete taskParams.tasks;

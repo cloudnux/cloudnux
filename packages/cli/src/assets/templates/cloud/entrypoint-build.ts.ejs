@@ -1,53 +1,53 @@
-import { Context, S3Event,
-         APIGatewayProxyEventV2WithJWTAuthorizer,
-         ScheduledEvent
-} from "aws-lambda";
-
-import { createRouter, httpMatcher, scheduleMatcher } from "@@cloudcore";
-import { functions } from "@@cloud";
-//import { initialize } from "@@datastore";
-import { logger } from "@@utils";
+import { createRouter } from "@cloudnux/aws-cloud-provider/router";
+import { awsCloudProvider } from "@cloudnux/aws-cloud-provider";
+import {
+    httpHandler,
+    eventHandler,
+    scheduleHandler,
+    useCloudProvider,
+    useCloudProvider
+  } from "@cloudnux/cloud-sdk"; 
 
 import * as src from "../../../packages/modules/<%=module%>/src";
 
-type AWSEventType = S3Event | APIGatewayProxyEventV2WithJWTAuthorizer | ScheduledEvent;
+useCloudProvider(awsCloudProvider);
 
 const router = createRouter();
+
 <%_ for(var [key,entry] of Object.entries(entries)) { _%>
     <%_ if(entry.trigger.type.toLowerCase() === "http") { _%>
-        router.add({
-            matcher: httpMatcher("<%=entry.trigger.options.method%>", "<%=entry.trigger.options.route%>"),
-            createContext: functions.httpAdapter.input,
-            func: src["<%= entry.handler %>"]
-        });
-            <%_ } _%>
-            <%_ if(entry.trigger.type.toLowerCase() === "schedule") { _%>
-        router.add({
-            matcher: scheduleMatcher("<%= key %>"),
-            createContext: functions.scheduleAdapter.input,
-            func: src["<%= entry.handler %>"]
-        });
-            <%_ } _%>
+        router.http(
+             "<%= entry.trigger.options.method %>",
+             "<%= entry.trigger.options.route %>",
+             httpHandler(src["<%= entry.handler %>"]));
+    <%_ } _%>
+
+    <%_ if(entry.trigger.type.toLowerCase() === "schedule") { _%>
+        router.schedule(
+             "<%= entry.trigger.options.name %>",
+             "<%= entry.trigger.options.cron %>",
+             scheduleHandler(src["<%= entry.handler %>"]));
+    <%_ } _%>
+
+    <%_ if(entry.trigger.type.toLowerCase() === "event") { _%>
+        router.event(
+             "<%= entry.trigger.options.source %>",
+             "<%= entry.trigger.options.sourceType %>",
+             "<%= entry.trigger.options.filter %>",
+             eventHandler(src["<%= entry.handler %>"]));
+    <%_ } _%>
+
 <%_ } _%>
 
-export async function handler(event: AWSEventType, context: Context) {
-    logger.initialize("locations", context.awsRequestId);
-    logger.info("request started");
-    logger.debug({ event }, "Received event");
+
+export async function handler(event, context) {
+
 
     try {
         //await initialize();
-        const handlerType = "rawPath" in event ? "Http" : "source" in event ? "Schedule" : null;
-
-        if (!handlerType) {
-            throw new Error("Invalid handler type");
-        }
-        const output = await router.run(handlerType, functions[`${handlerType.toLowerCase()}Adapter`], event, context);
-        logger.debug({ output }, "Response Sent");
-        logger.info("request completed");
+        const output = await router.run(event, context);
         return output;
     } catch (error) {
-        logger.error({ error }, "Error occurred");
         throw error;
     }
 }

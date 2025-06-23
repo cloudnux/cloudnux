@@ -11,7 +11,7 @@ import { RouterInstance, localCloudProvider } from '@cloudnux/local-cloud-provid
 
 import {
   httpHandler,
-  eventHandler,
+  eventBrokerHandler,
   scheduleHandler,
   useCloudProvider,
 } from "@cloudnux/cloud-sdk";
@@ -33,6 +33,9 @@ async function entries(app: RouterInstance) {
         name,
         entry
       }) %>
+    <%_ } _%>
+    <%_ if(entry.trigger.type === "event") { _%>
+      app.queues.addQueue("<%=entry.trigger.options.source%>", src["<%= entry.handler %>"]);
     <%_ } _%>
   <%_ } _%>
 }
