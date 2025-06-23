@@ -29,12 +29,6 @@ export const devServerWatch: Task = {
             external: [...externalPackages],
             esbuildOptions: (options) => {
                 options.absWorkingDir = workingDir;
-                options.alias = {
-                    "@@cloudcore": "@cloudnux/cloud-core",
-                    "@@cloud": mapCloud(cloudProvider),
-                    "@@datastore": "@cloudnux/datastore",
-                    "@@utils": "@cloudnux/utils",
-                }
                 return options;
             },
             bundle: true,
@@ -44,13 +38,12 @@ export const devServerWatch: Task = {
             dts: false,
             watch: false,
             env: {
-                __ENV_PATH__: '"' + path.resolve(__dirname, "../.env").replace(/\\/g, "\\\\") + '"',
+                __ENV_PATH__: '"' + path.resolve(workingDir, "../../.env").replace(/\\/g, "\\\\") + '"',
                 __DEV__: process.env.__DEV__ || '"development"',
             },
             define: {
-                __ENV_PATH__: '"' + path.resolve(__dirname, "../.env").replace(/\\/g, "\\\\") + '"',
+                __ENV_PATH__: '"' + path.resolve(workingDir, "../../.env").replace(/\\/g, "\\\\") + '"',
                 __DEV__: process.env.__DEV__ || '"development"',
-                "process.env.DATABASE_TYPE": '"local"',
             },
             esbuildPlugins: [
                 {
