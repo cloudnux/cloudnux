@@ -1,5 +1,11 @@
 # @cloudnux/core-cloud-provider
 
+## 0.1.0
+
+### Minor Changes
+
+- [`d2d16b1`](https://github.com/cloudnux/cloudnux/commit/d2d16b114d413f6e76eeabfd6214a71052575b5e) Thanks [@minawalphonce](https://github.com/minawalphonce)! - beta version
+
 ## 0.0.2
 
 ### Patch Changes

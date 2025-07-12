@@ -1,5 +1,16 @@
 # @cloudnux/aws-cloud-provider
 
+## 0.2.0
+
+### Minor Changes
+
+- [`d2d16b1`](https://github.com/cloudnux/cloudnux/commit/d2d16b114d413f6e76eeabfd6214a71052575b5e) Thanks [@minawalphonce](https://github.com/minawalphonce)! - beta version
+
+### Patch Changes
+
+- Updated dependencies [[`d2d16b1`](https://github.com/cloudnux/cloudnux/commit/d2d16b114d413f6e76eeabfd6214a71052575b5e)]:
+  - @cloudnux/core-cloud-provider@0.1.0
+
 ## 0.1.0
 
 ### Minor Changes
