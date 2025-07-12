@@ -12,6 +12,7 @@ import {
 } from 'aws-lambda';
 
 import { HttpMethod, MessageFilter } from "@cloudnux/core-cloud-provider"
+import { logger } from '@cloudnux/utils';
 
 export type EventType = APIGatewayProxyEventV2 | SNSEvent | SQSEvent | ScheduledEvent | S3Event;
 
@@ -140,9 +141,9 @@ export function createRouter() {
     ): Promise<APIGatewayProxyResultV2> {
         const method = event.requestContext.http.method as HttpMethod;
         //remove the "HTTP" prefix from the routeKey
-        const routeKey = event.routeKey.split(" ")[0].toLowerCase();
-
+        const routeKey = event.routeKey.split(" ")[1].toLowerCase();
         for (const route of routes) {
+            logger.debug("[http] method", { method, routeKey, route });
             if (route.type === 'http' &&
                 route.method === method &&
                 route.routeKey === routeKey) {
@@ -246,7 +247,6 @@ export function createRouter() {
 
         async run(event: EventType, context: Context): Promise<any> {
             const eventType = detectEventType(event);
-
             switch (eventType) {
                 case 'http':
                     return await handleHttpEvent(event as APIGatewayProxyEventV2, context, routes);
