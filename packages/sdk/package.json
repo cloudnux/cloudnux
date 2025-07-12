@@ -3,7 +3,6 @@
   "version": "0.1.0",
   "description": "CloudNux SDK for interacting with cloud providers and services",
   "license": "MIT",
-  "private": true,
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
@@ -36,5 +35,9 @@
   },
   "dependencies": {
     "@cloudnux/core-cloud-provider": "0.0.2"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   }
 }

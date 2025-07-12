@@ -12,5 +12,10 @@
     "access": "public",
     "baseBranch": "main",
     "updateInternalDependencies": "patch",
-    "ignore": []
+    "ignore": [
+        "@cloudnux/cli",
+        "@cloudnux/utils",
+        "@cloudnux/gcp-cloud-provider",
+        "@cloudnux/azure-cloud-provider"
+    ]
 }

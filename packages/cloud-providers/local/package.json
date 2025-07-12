@@ -32,7 +32,6 @@
     "url": "https://github.com/cloudnux/cloudnux.git",
     "directory": "packages/cloud-providers/local"
   },
-  "private": true,
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -55,5 +54,9 @@
   },
   "devDependencies": {
     "@types/node": "22.10.3"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
   }
 }
