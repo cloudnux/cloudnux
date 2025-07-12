@@ -1,6 +1,6 @@
 {
   "name": "@cloudnux/cloud-sdk",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "CloudNux SDK for interacting with cloud providers and services",
   "license": "MIT",
   "private": true,

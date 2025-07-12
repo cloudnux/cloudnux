@@ -1,5 +1,11 @@
 # @cloudnux/local-cloud-provider
 
+## 0.1.0
+
+### Minor Changes
+
+- [`4ea1676`](https://github.com/cloudnux/cloudnux/commit/4ea167631da265505e5abf75d398dcc2dffea4e1) Thanks [@minawalphonce](https://github.com/minawalphonce)! - beta version
+
 ## 0.0.2
 
 ### Patch Changes

@@ -1,6 +1,6 @@
 {
   "name": "@cloudnux/local-cloud-provider",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "CloudNux local development cloud provider implementation",
   "license": "MIT",
   "main": "./dist/index.js",
