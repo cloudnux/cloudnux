@@ -1,6 +1,6 @@
 {
   "name": "@cloudnux/cloud-sdk",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "CloudNux SDK for interacting with cloud providers and services",
   "license": "MIT",
   "private": true,
@@ -35,6 +35,6 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@cloudnux/core-cloud-provider": "0.0.1"
+    "@cloudnux/core-cloud-provider": "0.0.2"
   }
 }

@@ -1,6 +1,6 @@
 {
   "name": "@cloudnux/local-cloud-provider",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "CloudNux local development cloud provider implementation",
   "license": "MIT",
   "main": "./dist/index.js",
@@ -44,7 +44,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@cloudnux/core-cloud-provider": "0.0.1",
+    "@cloudnux/core-cloud-provider": "0.0.2",
     "axios": "1.9.0",
     "chalk": "^5.4.1",
     "cron-parser": "^4.9.0",
