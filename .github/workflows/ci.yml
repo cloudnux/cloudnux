@@ -91,6 +91,8 @@ jobs:
           git add .
           git commit -m "chore: version packages [skip ci]" || exit 0
           git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish to NPM
         if: steps.changeset-check.outputs.has-changesets == 'true'
