@@ -2,25 +2,15 @@
 import React, { useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 import { useTaskManager } from '../store/index.js';
+import { RequestResponseLogLine } from './request-response-log-line.js';
 
 const ContentView: React.FC = () => {
-    const { selectedModule, selectedEndpoint, modules, selectEndpoint } = useTaskManager();
+    const { selectedModule, selectedEndpoint, modules, selectEndpoint, logs } = useTaskManager();
     const module = modules.find((a) => a.id === selectedModule);
     const selectedIndex = module?.endpoints.findIndex((e) => (e.url === selectedEndpoint?.url && e.method === selectedEndpoint?.method)) ?? -1;
 
-    // Sample logs (replace with real logs)
-    const [logs, setLogs] = useState([
-        'Log entry 1',
-        'Log entry 2',
-        'Log entry 3',
-        'Log entry 4',
-        'Log entry 5',
-        'Log entry 6',
-        'Log entry 7',
-    ]);
-
-    // Limit logs to the last 5 entries
-    const displayedLogs = logs.slice(-5);
+    // // Limit logs to the last 5 entries
+    // const displayedLogs = pinoLogs.slice(-5);
 
     useInput((input, key) => {
         if (key.upArrow && selectedModule && module && selectedIndex >= 0) {
@@ -32,9 +22,11 @@ const ContentView: React.FC = () => {
             selectEndpoint(module.endpoints[newIndex]);
         }
         if (key.rightArrow) {
-            setLogs((logs) => [...logs, `Log entry ${logs.length + 1}`]);
+            // setLogs((logs) => [...logs, `Log entry ${logs.length + 1}`]);
         }
     });
+
+    const selectedEndpointLogs =selectedEndpoint ?  logs.filter(log => log.url === selectedEndpoint?.url && log.method === selectedEndpoint?.method): [];
 
     return (
         <Box flexDirection="column" justifyContent='space-between' width="80%" borderStyle="round" borderColor="blue">
@@ -58,14 +50,19 @@ const ContentView: React.FC = () => {
             </Box>
 
             {/* Logs Section */}
+            
             {selectedEndpoint && (
-                <Box flexDirection="column" borderStyle="round" borderColor="gray">
+                <Box flexDirection="column" borderStyle="round" borderColor="gray" >
+                    <Box>
                     <Text bold color="yellow">
                         Logs for {selectedEndpoint.method} - {selectedEndpoint.url}:
                     </Text>
-                    {displayedLogs.map((log, index) => (
-                        <Text key={index}>{log}</Text>
+                    </Box>
+                    <Box flexDirection='column'>
+                    {selectedEndpointLogs.map((log, index) => (
+                       <RequestResponseLogLine key={index} log={log} index={index} />
                     ))}
+                    </Box>
                 </Box>
             )}
         </Box>

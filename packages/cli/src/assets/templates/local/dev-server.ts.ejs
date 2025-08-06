@@ -62,13 +62,14 @@ router.addHook('onListen', function (done) {
 });
 
 router.addHook('preHandler', (request, reply, done) => {
-    sendMessage('REQUEST', { id: request.id, params: request.params, query: request.query, body: request.body, headers: request.headers, url: request.url, method:request.method, time: new Date().toLocaleTimeString() });
+    sendMessage('REQUEST', { id: request.id, params: request.params, query: request.query, requestBody: request.body, headers: request.headers, url: request.url, method:request.method, time: new Date().toLocaleTimeString() });
     done();
 });
 
-router.addHook('onResponse', (request, reply, done) => {
-    sendMessage('RESPONSE', { id: request.id, status: reply.statusCode, body: reply.raw, time: new Date().toLocaleTimeString() });
-    done();
+router.addHook('onSend', (request, reply,payload, done) => {
+  sendMessage('RESPONSE', { id: request.id, responseStatus: reply.statusCode, method:request.method, url:request.url, responseBody:JSON.parse(payload), time: new Date().toLocaleTimeString() });
+
+  done(null, payload);
 });
 
 router.addHook('onError', (request, reply, error, done) => {

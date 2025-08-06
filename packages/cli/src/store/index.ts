@@ -152,12 +152,6 @@ export const useTaskManager = create<TaskManagerStore>()(immer(
         }
     }));
 
-
-// useTaskManager.subscribe(state => {
-//     console.log("[State updated]", state, "\n\n");
-// })
-
-
 export const selectTask = (taskId: string) => (state: TaskManagerStore) =>
     state.tasks[taskId];
 

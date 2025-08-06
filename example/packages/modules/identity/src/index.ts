@@ -1,8 +1,9 @@
-import { HttpFunctionContext, ErrorCode, ScheduleFunctionContext } from "@cloudnux/cloud-sdk";
+import { HttpFunctionContext, ScheduleFunctionContext } from "@cloudnux/cloud-sdk";
 
 export function getMe(ctx: HttpFunctionContext) {
-    ctx.success({
-        message: 'Hello from identity -> getMe'
+    ctx.error('user not found', 404, {
+        message: 'User not found',
+        data: ctx.params
     });
 }
 

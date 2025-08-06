@@ -1,7 +1,8 @@
 import React, { FC } from "react";
 import { Box, Text } from "ink";
+import { RequestResponseLogLine } from "./request-response-log-line.js";
 
-export const LogEntry: FC<{ log: any }> = ({ log }) => {
+export const LogEntry: FC<{ log: any, index: number }> = ({ log, index }) => {
     if (typeof log !== 'string' && 'text' in log && 'data' in log) {
         // Handle custom message
         return (
@@ -19,7 +20,7 @@ export const LogEntry: FC<{ log: any }> = ({ log }) => {
         // Handle esbuild message
         const location = log.location ? `${log.location.file}:${log.location.line}:${log.location.column}` : '';
         const details = log.detail ? `\n${log.detail}` : '';
-        const notes = log.notes?.map(note => note.text).join('\n');
+        const notes = log.notes?.map((note:any) => note.text).join('\n');
         const prefix = log.pluginName ? `[${log.pluginName}] ` : '';
 
         return (
@@ -40,6 +41,11 @@ export const LogEntry: FC<{ log: any }> = ({ log }) => {
         );
     }
 
+    if( typeof log === 'object' && 'url' in log && log !== null) {
+    return(
+        <RequestResponseLogLine log={log} index={index} />
+    )
+    }
     // Handle string log
     const logLevelMatch = log.match(/^\[(info|error|warning)\]/i);
     const level = logLevelMatch ? logLevelMatch[1].toLowerCase() : 'info';
