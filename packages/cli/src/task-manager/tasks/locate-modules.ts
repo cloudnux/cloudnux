@@ -15,7 +15,8 @@ import { buildServer } from "./build-server.js";
 export const locateModules: Task = {
     title: "load all entrypoints.json",
     skip: () => false,
-    action: async (params, _logger, _eventEmitter, executeSubTasks) => {
+    action: async (params) => {
+        const { logger, eventEmitter, executeSubTasks } = params;
         const entrypoints = await fg(params.modulesPath);
         const moduleNames = entrypoints.map((entrypoint) => path.basename(path.dirname(entrypoint)));
         let output = {

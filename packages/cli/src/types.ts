@@ -29,8 +29,19 @@ export type TaskParam = {
      */
     environment: string,
 
+    /**
+     * logger function to log messages
+     */
+    logger: (arg: any, data?: any) => void;
+
+    /**
+     * event emitter function to emit events
+     */
+    eventEmitter: (type: string, data?: any) => void;
+    
     //TODO: reference same param from parent task
     children?: Task[];
+
 
     [key: string]: any;
 
@@ -40,7 +51,7 @@ export type TaskTitle = string | ((params: TaskParam) => string);
 
 export type Task<TTaskParams extends TaskParamBase = any> = {
     title: string | ((params: TTaskParams) => string);
-    action: (params: TTaskParams) => void;
+    action: (params: TTaskParams) => any | Promise<any>;
     skip?: (params: TTaskParams) => boolean;
     children?: Task<TTaskParams>[];
 }

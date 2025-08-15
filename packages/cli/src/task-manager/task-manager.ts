@@ -70,6 +70,7 @@ export class TaskManager {
             id: taskId,
         });
 
+
         // Execute subtasks if present
         const executeSubTasks = async (subTaskParams: TaskParam): Promise<any[]> => {
             if (!task.children || task.children.length === 0) {
@@ -107,10 +108,12 @@ export class TaskManager {
                 data
             })
         }
-
+        taskParams.logger = logger;
+        taskParams.eventEmitter = eventEmitter;
+        taskParams.executeSubTasks = executeSubTasks;
         // Execute the task action
         try {
-            const result = await task.action(taskParams, logger, eventEmitter, executeSubTasks);
+            const result = await task.action(taskParams);
 
             // Store result for next tasks if it's a top-level task
             if (!parentTaskId) {

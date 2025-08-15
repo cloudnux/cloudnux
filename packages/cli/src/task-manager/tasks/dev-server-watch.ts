@@ -2,7 +2,7 @@ import path from "node:path";
 import { fork } from "node:child_process";
 import tsup from "tsup";
 
-import { Task } from "../../types.js";
+import { Task, TaskParam } from "../../types.js";
 
 function mapCloud(provider: string) {
     switch (provider) {
@@ -20,7 +20,8 @@ function mapCloud(provider: string) {
 export const devServerWatch: Task = {
     title: 'Dev Server Watch',
     skip: () => false,
-    action: async ({ workingDir, cloudProvider, externalPackages, ...rest }, logger, eventEmitter) => {
+    action: async (params: TaskParam) => {
+        const { workingDir, cloudProvider, externalPackages = [], logger, eventEmitter } = params;
         const entryPath = path.resolve(workingDir, "app.ts");
         await tsup.build({
             entry: {
@@ -61,7 +62,7 @@ export const devServerWatch: Task = {
                 },
                 startServerPlugin(logger, eventEmitter)
             ],
-            // silent: true // Prevent console output
+            silent: true // Prevent console output
         });
     }
 }
@@ -82,6 +83,7 @@ function startModule(main: any, execArgv: any, logger: any, eventEmitter: (type:
                 eventEmitter(message.type, message.payload);
                 break;
             case 'LISTENING':
+                debugger;
                 eventEmitter(message.type, message.payload);
                 break;
             case 'REQUEST':
@@ -92,16 +94,23 @@ function startModule(main: any, execArgv: any, logger: any, eventEmitter: (type:
                 break;
             case 'LOG':
                 eventEmitter(message.type, message.payload);
+                break;
             case 'log':
                 eventEmitter(message.type, message.payload);
+                break;  
             default:
-                logger('Unknown message:', message);
+                debugger;
+                // logger('Unknown message:', message);
+                // logger('Issue');
+                // console.log('issue',message);
                 break;
         }
     });
 
     child.on("error", function (error) {
         console.error(error);
+        child.kill("SIGINT");
+
     });
 
     child.on("close", function (code) {
