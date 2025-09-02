@@ -1,10 +1,10 @@
-// Sidebar.tsx
 import React from 'react';
 import { Box, Text, useInput } from 'ink';
-import { useTaskManager } from '../store/index.js';
+
+import { useDevServer } from '../store/index.js';
 
 const Sidebar: React.FC = () => {
-    const { selectedModule, modules, selectEndpoint, selectedEndpoint, resetSelection, selectModule } = useTaskManager();
+    const { selectedModule, modules, selectEndpoint, selectedEndpoint, resetSelection, selectModule } = useDevServer();
     const selectedIndex = modules.findIndex((module) => module.id === selectedModule);
 
     useInput((input, key) => {

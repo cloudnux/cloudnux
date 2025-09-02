@@ -1,17 +1,18 @@
 import { useCloudProvider } from "@cloudnux/cloud-sdk";
-import { createRouter } from '@cloudnux/local-cloud-provider';
+import { createRouter, localCloudProvider } from '@cloudnux/local-cloud-provider';
 import { queuesPlugin } from "@cloudnux/local-cloud-provider/queue-plugin";
 import { schedulerPlugin } from "@cloudnux/local-cloud-provider/schedule-plugin";
+import { devConsolePlugin } from "@cloudnux/local-cloud-provider/dev-console-plugin";
 
+useCloudProvider(localCloudProvider);
 
 <%_ for(const module of moduleNames){ _%>
-import <%=module%>Entries from "./<%=module%>/index.ts"  
+import <%=module%>Entries from "./<%=module%>"  
 <%_ } _%>
 
 
 // Function to send logs to the parent process
 function sendMessage(type: string, payload: any) {
-
   if (process && process.send) {
     process.send({ type, payload: payload });
   } else {
@@ -19,72 +20,56 @@ function sendMessage(type: string, payload: any) {
   }
 }
 
-function getCircularReplacer() {
-  const seen = new WeakSet();
-  return (key: string, value: any) => {
-    if (typeof value === 'object' && value !== null) {
-      if (seen.has(value)) {
-        return '[Circular]';
-      }
-      seen.add(value);
-    }
-    return value;
-  };
-}
-
 const router = createRouter();
 
 // Add fastify hooks
-router.addHook('onRegister', async (instance, opts) => {
-    sendMessage("APP_REGISTERED", { prefix: instance.prefix, opts });
-});
-
-router.addHook('onRoute', (routeOptions) => {
-    sendMessage('ROUTE_REGISTERED', {
-        method: routeOptions.method,
-        url: routeOptions.url,
-        handler: routeOptions.handler.name,
-      });
-});
-
-router.addHook('onListen', function (done) {
-    try{
-        sendMessage('LISTENING', {
-            port: 3000,
-            host:"::"
-          });
-    }catch(err){
-        sendMessage('ERROR', {err});
-    }finally{
-        const err = null; // to be updated later to handle crash errors
-        done(err)
-    }
-});
-
-router.addHook('preHandler', (request, reply, done) => {
-    sendMessage('REQUEST', { id: request.id, params: request.params, query: request.query, requestBody: request.body, headers: request.headers, url: request.url, method:request.method, time: new Date().toLocaleTimeString() });
-    done();
-});
-
-router.addHook('onSend', (request, reply,payload, done) => {
-  sendMessage('RESPONSE', { id: request.id, responseStatus: reply.statusCode, method:request.method, url:request.url, responseBody:JSON.parse(payload), time: new Date().toLocaleTimeString() });
-
-  done(null, payload);
-});
-
-router.addHook('onError', (request, reply, error, done) => {
-    sendMessage('ERROR', {error, request, reply});
-    done();
-});
+//router.addHook('onRegister', async (instance, opts) => {
+//    sendMessage("APP_REGISTERED", { prefix: instance.prefix, opts });
+//});
+//router.addHook('onRoute', (routeOptions) => {
+//    sendMessage('ROUTE_REGISTERED', {
+//        method: routeOptions.method,
+//        url: routeOptions.url,
+//        handler: routeOptions.handler.name,
+//      });
+//});
+//
+//router.addHook('onListen', function (done) {
+//    try{
+//        sendMessage('LISTENING', {
+//            port: 3000,
+//            host:"::"
+//          });
+//    }catch(err){
+//        sendMessage('ERROR', {err});
+//    }finally{
+//        const err = null; // to be updated later to handle crash errors
+//        done(err)
+//    }
+//});
+//
+//router.addHook('preHandler', (request, reply, done) => {
+//    sendMessage('REQUEST', { id: request.id, params: request.params, query: request.query, requestBody: request.body, headers: request.headers, url: request.url, method:request.method, time: new Date().toLocaleTimeString() });
+//    done();
+//});
+//
+//router.addHook('onSend', (request, reply,payload, done) => {
+//  sendMessage('RESPONSE', { id: request.id, responseStatus: reply.statusCode, method:request.method, url:request.url, responseBody:JSON.parse(payload), time: new Date().toLocaleTimeString() });
+//  done(null, payload);
+//});
+//
+//router.addHook('onError', (request, reply, error, done) => {
+//    sendMessage('ERROR', {error, request, reply});
+//    done();
+//});
 
 
 router.register(queuesPlugin, { prefix: "queues" });
 router.register(schedulerPlugin, { prefix: "schedules" });
+router.register(devConsolePlugin, {  prefix: 'console' });
 
 <%_ for(const module of moduleNames){ _%>
-  router.register(<%=module%>Entries, { prefix: "<%=module%>/" });
+  router.register(<%=module%>Entries, { prefix: "api" });
 <%_ } _%>
 
-router.listen({ port: 3000, host : "::" }).then((address) => {
-    // init in entrypoint
-});
+router.listen({ port: 3000, host : "::" });

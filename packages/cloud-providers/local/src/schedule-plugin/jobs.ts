@@ -58,6 +58,7 @@ export const createJobFromDefinition = (
         metadata: jobDef.metadata,
         createdAt: new Date(),
         timezone: jobDef.timezone,
+        module: jobDef.module
     };
 
     job.nextRun = calculateNextRun(job);

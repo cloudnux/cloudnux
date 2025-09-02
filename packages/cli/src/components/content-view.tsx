@@ -1,11 +1,10 @@
-// ContentView.tsx
-import React, { useState } from 'react';
+import React from 'react';
 import { Box, Text, useInput } from 'ink';
-import { useTaskManager } from '../store/index.js';
+import { useDevServer } from '../store/index.js';
 import { RequestResponseLogLine } from './request-response-log-line.js';
 
 const ContentView: React.FC = () => {
-    const { selectedModule, selectedEndpoint, modules, selectEndpoint, logs } = useTaskManager();
+    const { selectedModule, selectedEndpoint, modules, selectEndpoint, logs } = useDevServer();
     const module = modules.find((a) => a.id === selectedModule);
     const selectedIndex = module?.endpoints.findIndex((e) => (e.url === selectedEndpoint?.url && e.method === selectedEndpoint?.method)) ?? -1;
 
@@ -26,7 +25,7 @@ const ContentView: React.FC = () => {
         }
     });
 
-    const selectedEndpointLogs =selectedEndpoint ?  logs.filter(log => log.url === selectedEndpoint?.url && log.method === selectedEndpoint?.method): [];
+    const selectedEndpointLogs = selectedEndpoint ? logs.filter(log => log.url === selectedEndpoint?.url && log.method === selectedEndpoint?.method) : [];
 
     return (
         <Box flexDirection="column" justifyContent='space-between' width="80%" borderStyle="round" borderColor="blue">
@@ -50,18 +49,18 @@ const ContentView: React.FC = () => {
             </Box>
 
             {/* Logs Section */}
-            
+
             {selectedEndpoint && (
                 <Box flexDirection="column" borderStyle="round" borderColor="gray" >
                     <Box>
-                    <Text bold color="yellow">
-                        Logs for {selectedEndpoint.method} - {selectedEndpoint.url}:
-                    </Text>
+                        <Text bold color="yellow">
+                            Logs for {selectedEndpoint.method} - {selectedEndpoint.url}:
+                        </Text>
                     </Box>
                     <Box flexDirection='column'>
-                    {selectedEndpointLogs.map((log, index) => (
-                       <RequestResponseLogLine key={index} log={log} index={index} />
-                    ))}
+                        {selectedEndpointLogs.map((log, index) => (
+                            <RequestResponseLogLine key={index} log={log} index={index} />
+                        ))}
                     </Box>
                 </Box>
             )}

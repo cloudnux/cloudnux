@@ -15,7 +15,7 @@
   ],
   "scripts": {
     "build": "turbo run build",
-    "dev": "turbo run dev",
+    "dev": "turbo watch dev --filter @cloudnux/cli",
     "yalc:push": "turbo run yalc:push",
     "yalc:publish": "turbo run yalc:publish",
     "lint": "turbo run lint",
@@ -29,6 +29,7 @@
     "publish-packages": "yarn build && yarn test && changeset publish",
     "cli": "yarn workspace @cloudnux/cli",
     "core": "yarn workspace @cloudnux/core-cloud-provider",
+    "web": "yarn workspace @cloudnux/dev-console",
     "local": "yarn workspace @cloudnux/local-cloud-provider",
     "aws": "yarn workspace @cloudnux/aws-cloud-provider",
     "utils": "yarn workspace @cloudnux/utils"

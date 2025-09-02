@@ -18,7 +18,6 @@ export const transformModule: Task = {
     title: ({ moduleName }) => `Transform module ${moduleName}`,
     skip: () => false,
     action: async (params) => {
-        debugger;
         const { workingDir, moduleName, entrypointPath, source, moduleTemplateFunc } = params;
         const entrypointContent = await fs.readFile(entrypointPath, "utf-8");
         const rendered = moduleTemplateFunc({

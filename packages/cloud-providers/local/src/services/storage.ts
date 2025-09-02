@@ -1,17 +1,12 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import * as util from 'util';
 
 import { env, logger } from "@cloudnux/utils";
 
 import { StorageService, StorageWriteOptions, StorageWriteResult } from "@cloudnux/core-cloud-provider";
 
-// Promisify file system functions
-const mkdir = util.promisify(fs.mkdir);
-const writeFile = util.promisify(fs.writeFile);
-const readFile = util.promisify(fs.readFile);
-const unlink = util.promisify(fs.unlink);
-const access = util.promisify(fs.access);
+// Use fs.promises for async file operations
+const { mkdir, writeFile, readFile, unlink, access } = fs.promises;
 
 /**
  * Create a local storage service that uses the filesystem

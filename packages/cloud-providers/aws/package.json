@@ -40,7 +40,6 @@
   "scripts": {
     "link": "yarn link",
     "build": "tsup",
-    "dev": "tsup --watch",
     "yalc:publish": "yalc publish --private",
     "yalc:push": "yalc push --private",
     "lint": "eslint . --max-warnings 0",

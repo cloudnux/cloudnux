@@ -6,13 +6,13 @@ export function loadArgs() {
     const args = meow(
         `
 	Usage
-	  $ epf <enviroment>
+	  $ nux <enviroment>
 
 	Options
 		--config  Your config file path
 
 	Examples
-	  $ epf develop --config=./config.json
+	  $ nux develop --config=./config.json
 `,
         {
             importMeta: import.meta,

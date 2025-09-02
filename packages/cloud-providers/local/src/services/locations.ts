@@ -1,15 +1,11 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import * as util from 'util';
 
 import { LocationService, PlaceDetails, PlaceSearchOptions, PlaceSearchResult } from "@cloudnux/core-cloud-provider";
 import { env, logger } from "@cloudnux/utils";
 
-// Promisify file system functions
-const readFile = util.promisify(fs.readFile);
-const writeFile = util.promisify(fs.writeFile);
-const access = util.promisify(fs.access);
-const mkdir = util.promisify(fs.mkdir);
+// Use fs.promises for async file operations
+const { readFile, writeFile, access, mkdir } = fs.promises;
 
 /**
  * Mock location data for testing - Central Stockholm locations

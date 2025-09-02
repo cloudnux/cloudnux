@@ -4,49 +4,61 @@ export default defineConfig([
     // Main package build
     {
         entry: ['src/index.ts'],
-        format: ['cjs', 'esm'],
+        format: ['esm'],
+        platform: "node",
         dts: true,
         splitting: false,
         sourcemap: true,
         clean: true,
         minify: false,
-        target: 'node18',
+        target: 'es2024',
         outDir: 'dist',
-        noExternal: [/.*/],
-        external: [
-            '@cloudnux/core-cloud-provider'
-        ]
+        shims: true,
+        cjsInterop: true,
     },
     // Queue plugin build
     {
         entry: ['src/queue-plugin/index.ts'],
-        format: ['cjs', 'esm'],
+        format: ['esm'],
+        platform: "node",
         dts: true,
         splitting: false,
         sourcemap: true,
         clean: false, // Don't clean since we're building multiple entries
         minify: false,
-        target: 'node18',
+        target: 'es2024',
+        cjsInterop: true,
         outDir: 'dist/queue-plugin',
-        noExternal: [/.*/],
-        external: [
-            '@cloudnux/core-cloud-provider',
-        ]
+        shims: true
     },
     // Schedule plugin build
     {
         entry: ['src/schedule-plugin/index.ts'],
-        format: ['cjs', 'esm'],
+        format: ['esm'],
+        platform: "node",
         dts: true,
         splitting: false,
         sourcemap: true,
         clean: false, // Don't clean since we're building multiple entries
         minify: false,
-        target: 'node18',
+        target: 'es2024',
+        cjsInterop: true,
         outDir: 'dist/schedule-plugin',
-        noExternal: [/.*/],
-        external: [
-            '@cloudnux/core-cloud-provider',
-        ]
+        shims: true
+    },
+    //dev console plugin build
+    {
+        entry: ['src/dev-console-plugin/index.ts'],
+        format: ['esm'],
+        platform: "node",
+        dts: true,
+        splitting: false,
+        sourcemap: true,
+        clean: false, // Don't clean since we're building multiple entries
+        minify: false,
+        target: 'es2024',
+        cjsInterop: true,
+        outDir: 'dist/dev-console-plugin',
+        shims: true
     }
 ])

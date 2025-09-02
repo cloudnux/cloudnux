@@ -1,4 +1,4 @@
-# EntryPoint Framework CLI
+# CloudNux CLI
 
 A task-based CLI framework for managing cloud function deployments and local development.
 
@@ -6,7 +6,7 @@ A task-based CLI framework for managing cloud function deployments and local dev
 
 Create an 
 
-`epf.config.js` or `.epfrc.js` in your project root:
+`nux.config.js` or `.nuxrc.js` in your project root:
 
 ```typescript
 export default {
@@ -42,7 +42,7 @@ export default {
 
 ## Task System
 
-Tasks are the core building blocks of EPF workflows. Each task has:
+Tasks are the core building blocks of CloudNux workflows. Each task has:
 
 ```typescript
 {
@@ -64,10 +64,10 @@ Tasks are the core building blocks of EPF workflows. Each task has:
 
 ```bash
 # Run with environment
-epf <environment>
+nux <environment>
 
 # Specify config file
-epf <environment> --config=./custom-config.js
+nux <environment> --config=./custom-config.js
 ```
 
 ## Environments
@@ -125,12 +125,12 @@ Tasks receive parameters including:
 
 ```
 .
-├── epf.config.js           # CLI configuration
+├── nux.config.js           # CLI configuration
 ├── packages/
 │   └── modules/           # Function modules
 │       └── */
 │           └── entrypoint.json  # Module definition
-└── .epf/                  # Build artifacts
+└── .nux/                  # Build artifacts
     └── <environment>/     # Environment builds
 ```
 

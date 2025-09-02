@@ -14,7 +14,7 @@ import {
 export const defaultConfig: Config = {
     modulesPath: './packages/modules/**/entrypoint.json',
     cloudProvider: 'aws',
-    workingDir: "./.epf",
+    workingDir: "./.nux",
     externalPackages: ["aws-sdk", "@aws-sdk/*"],
     environments: {
         develop: {

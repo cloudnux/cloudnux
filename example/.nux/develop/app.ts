@@ -1,0 +1,73 @@
+import { useCloudProvider } from "@cloudnux/cloud-sdk";
+import { createRouter, localCloudProvider } from '@cloudnux/local-cloud-provider';
+import { queuesPlugin } from "@cloudnux/local-cloud-provider/queue-plugin";
+import { schedulerPlugin } from "@cloudnux/local-cloud-provider/schedule-plugin";
+import { devConsolePlugin } from "@cloudnux/local-cloud-provider/dev-console-plugin";
+
+useCloudProvider(localCloudProvider);
+
+import identityEntries from "./identity"  
+import module1Entries from "./module1"  
+
+
+// Function to send logs to the parent process
+function sendMessage(type: string, payload: any) {
+  if (process && process.send) {
+    process.send({ type, payload: payload });
+  } else {
+    console.log(`[${type}]`, payload); // Fallback for non-parent process
+  }
+}
+
+const router = createRouter();
+
+// Add fastify hooks
+//router.addHook('onRegister', async (instance, opts) => {
+//    sendMessage("APP_REGISTERED", { prefix: instance.prefix, opts });
+//});
+//router.addHook('onRoute', (routeOptions) => {
+//    sendMessage('ROUTE_REGISTERED', {
+//        method: routeOptions.method,
+//        url: routeOptions.url,
+//        handler: routeOptions.handler.name,
+//      });
+//});
+//
+//router.addHook('onListen', function (done) {
+//    try{
+//        sendMessage('LISTENING', {
+//            port: 3000,
+//            host:"::"
+//          });
+//    }catch(err){
+//        sendMessage('ERROR', {err});
+//    }finally{
+//        const err = null; // to be updated later to handle crash errors
+//        done(err)
+//    }
+//});
+//
+//router.addHook('preHandler', (request, reply, done) => {
+//    sendMessage('REQUEST', { id: request.id, params: request.params, query: request.query, requestBody: request.body, headers: request.headers, url: request.url, method:request.method, time: new Date().toLocaleTimeString() });
+//    done();
+//});
+//
+//router.addHook('onSend', (request, reply,payload, done) => {
+//  sendMessage('RESPONSE', { id: request.id, responseStatus: reply.statusCode, method:request.method, url:request.url, responseBody:JSON.parse(payload), time: new Date().toLocaleTimeString() });
+//  done(null, payload);
+//});
+//
+//router.addHook('onError', (request, reply, error, done) => {
+//    sendMessage('ERROR', {error, request, reply});
+//    done();
+//});
+
+
+router.register(queuesPlugin, { prefix: "queues" });
+router.register(schedulerPlugin, { prefix: "schedules" });
+router.register(devConsolePlugin, {  prefix: 'console' });
+
+  router.register(identityEntries, { prefix: "api" });
+  router.register(module1Entries, { prefix: "api" });
+
+router.listen({ port: 3000, host : "::" });

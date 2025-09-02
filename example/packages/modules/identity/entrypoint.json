@@ -1,4 +1,5 @@
 {
+    "$schema": "../../../node_modules/@cloudnux/cli/dist/schema/entrypoint.schema.json",
     "entries": {
         "get-me": {
             "handler": "getMe",
@@ -25,7 +26,18 @@
             "trigger": {
                 "type": "schedule",
                 "options": {
-                    "cron": "0 0 * * *"
+                    "name": "run-schedule",
+                    "pattern": "rate(1 minute)"
+                }
+            }
+        },
+        "event-trigger": {
+            "handler": "runEvent",
+            "trigger": {
+                "type": "event",
+                "options": {
+                    "sourceType": "sqs",
+                    "source": "event-trigger-queue"
                 }
             }
         }

@@ -4,7 +4,7 @@ export default defineConfig([
     // Main package build
     {
         entry: ['src/index.ts'],
-        format: ['cjs', 'esm'],
+        format: ['esm'],
         dts: true,
         splitting: false,
         sourcemap: true,
@@ -20,7 +20,7 @@ export default defineConfig([
     //router package build
     {
         entry: ['src/router/index.ts'],
-        format: ['cjs', 'esm'],
+        format: ['esm'],
         dts: true,
         splitting: false,
         sourcemap: true,

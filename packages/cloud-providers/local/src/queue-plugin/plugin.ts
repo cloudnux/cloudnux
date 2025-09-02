@@ -70,12 +70,16 @@ export const queuesPlugin: FastifyPluginAsync<QueuePluginOptions> =
         const initializePersistence = config.persistence.enabled
             ? createPersistenceInitializer(config, loadAllQueueStates, saveAllQueueStates)
             : async () => { };
+
         // Create and register queue manager decorator
         const queueManager = createQueueManager({
             config,
             queues,
             saveQueueState: saveQueueState ? (queueName: string) => saveQueueState(queueName, queues[queueName]) : undefined,
-            loadQueueState
+            loadQueueState,
+            scheduleProcessing,
+            processBatch,
+
         });
         const decorateQueues = createQueueDecorator(queueManager);
         decorateQueues(app);
@@ -83,12 +87,7 @@ export const queuesPlugin: FastifyPluginAsync<QueuePluginOptions> =
         // Register all routes
         registerQueueRoutes(
             app,
-            options.prefix,
-            queues,
-            config,
-            scheduleProcessing,
-            processBatch,
-            saveQueueState ? (queueName: string) => saveQueueState(queueName, queues[queueName]) : undefined
+            options.prefix
         );
 
         // Initialize persistence if enabled

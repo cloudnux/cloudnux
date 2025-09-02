@@ -39,6 +39,7 @@ export const buildServer: Task = {
                 }
                 return options;
             },
+            format: ["esm"],
             bundle: true,
             sourcemap: false,
             outDir: moduleDir,

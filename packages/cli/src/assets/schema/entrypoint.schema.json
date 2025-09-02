@@ -45,6 +45,89 @@
                 "options"
             ]
         },
+        "FilterCondition": {
+            "oneOf": [
+                {
+                    "type": [
+                        "string",
+                        "number",
+                        "boolean",
+                        "null"
+                    ]
+                },
+                {
+                    "type": "object",
+                    "properties": {
+                        "$eq": {},
+                        "$ne": {},
+                        "$gt": {
+                            "type": [
+                                "number",
+                                "string"
+                            ]
+                        },
+                        "$gte": {
+                            "type": [
+                                "number",
+                                "string"
+                            ]
+                        },
+                        "$lt": {
+                            "type": [
+                                "number",
+                                "string"
+                            ]
+                        },
+                        "$lte": {
+                            "type": [
+                                "number",
+                                "string"
+                            ]
+                        },
+                        "$in": {
+                            "type": "array"
+                        },
+                        "$nin": {
+                            "type": "array"
+                        },
+                        "$all": {
+                            "type": "array"
+                        },
+                        "$size": {
+                            "type": "number"
+                        },
+                        "$regex": {
+                            "type": "string"
+                        },
+                        "$startsWith": {
+                            "type": "string"
+                        },
+                        "$endsWith": {
+                            "type": "string"
+                        },
+                        "$contains": {
+                            "type": "string"
+                        },
+                        "$exists": {
+                            "type": "boolean"
+                        },
+                        "$type": {
+                            "type": "string",
+                            "enum": [
+                                "string",
+                                "number",
+                                "boolean",
+                                "object",
+                                "array",
+                                "null",
+                                "undefined"
+                            ]
+                        }
+                    },
+                    "additionalProperties": false
+                }
+            ]
+        },
         "ScheduleTrigger": {
             "type": "object",
             "properties": {
@@ -53,10 +136,177 @@
                     "properties": {
                         "pattern": {
                             "type": "string"
+                        },
+                        "name": {
+                            "type": "string"
                         }
                     },
                     "required": [
-                        "pattern"
+                        "pattern",
+                        "name"
+                    ],
+                    "additionalProperties": false
+                }
+            },
+            "required": [
+                "options"
+            ]
+        },
+        "EventTrigger": {
+            "type": "object",
+            "properties": {
+                "options": {
+                    "type": "object",
+                    "properties": {
+                        "source": {
+                            "type": "string"
+                        },
+                        "sourceType": {
+                            "type": "string"
+                        },
+                        "filter": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "oneOf": [
+                                    {
+                                        "type": [
+                                            "string",
+                                            "number",
+                                            "boolean",
+                                            "null"
+                                        ]
+                                    },
+                                    {
+                                        "type": "object",
+                                        "properties": {
+                                            "$eq": {},
+                                            "$ne": {},
+                                            "$gt": {
+                                                "type": [
+                                                    "number",
+                                                    "string"
+                                                ]
+                                            },
+                                            "$gte": {
+                                                "type": [
+                                                    "number",
+                                                    "string"
+                                                ]
+                                            },
+                                            "$lt": {
+                                                "type": [
+                                                    "number",
+                                                    "string"
+                                                ]
+                                            },
+                                            "$lte": {
+                                                "type": [
+                                                    "number",
+                                                    "string"
+                                                ]
+                                            },
+                                            "$in": {
+                                                "type": "array"
+                                            },
+                                            "$nin": {
+                                                "type": "array"
+                                            },
+                                            "$all": {
+                                                "type": "array"
+                                            },
+                                            "$size": {
+                                                "type": "number"
+                                            },
+                                            "$regex": {
+                                                "type": "string"
+                                            },
+                                            "$startsWith": {
+                                                "type": "string"
+                                            },
+                                            "$endsWith": {
+                                                "type": "string"
+                                            },
+                                            "$contains": {
+                                                "type": "string"
+                                            },
+                                            "$exists": {
+                                                "type": "boolean"
+                                            },
+                                            "$type": {
+                                                "type": "string",
+                                                "enum": [
+                                                    "string",
+                                                    "number",
+                                                    "boolean",
+                                                    "object",
+                                                    "array",
+                                                    "null",
+                                                    "undefined"
+                                                ]
+                                            }
+                                        },
+                                        "additionalProperties": false
+                                    },
+                                    {
+                                        "type": "object",
+                                        "properties": {
+                                            "$and": {
+                                                "type": "array",
+                                                "items": {
+                                                    "$ref": "#/definitions/FilterCondition"
+                                                }
+                                            }
+                                        },
+                                        "required": [
+                                            "$and"
+                                        ],
+                                        "additionalProperties": false
+                                    },
+                                    {
+                                        "type": "object",
+                                        "properties": {
+                                            "$or": {
+                                                "type": "array",
+                                                "items": {
+                                                    "$ref": "#/definitions/FilterCondition"
+                                                }
+                                            }
+                                        },
+                                        "required": [
+                                            "$or"
+                                        ],
+                                        "additionalProperties": false
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    "required": [
+                        "source",
+                        "sourceType"
+                    ],
+                    "additionalProperties": false
+                }
+            },
+            "required": [
+                "options"
+            ]
+        },
+        "FileTrigger": {
+            "type": "object",
+            "properties": {
+                "options": {
+                    "type": "object",
+                    "properties": {
+                        "path": {
+                            "type": "string"
+                        },
+                        "action": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "path"
                     ],
                     "additionalProperties": false
                 }
@@ -71,7 +321,9 @@
                 "type": {
                     "enum": [
                         "http",
-                        "schedule"
+                        "schedule",
+                        "event",
+                        "file"
                     ]
                 }
             },
@@ -98,6 +350,30 @@
                     },
                     "then": {
                         "$ref": "#/definitions/ScheduleTrigger"
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "event"
+                            }
+                        }
+                    },
+                    "then": {
+                        "$ref": "#/definitions/EventTrigger"
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "file"
+                            }
+                        }
+                    },
+                    "then": {
+                        "$ref": "#/definitions/FileTrigger"
                     }
                 }
             ],

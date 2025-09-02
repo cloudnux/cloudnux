@@ -3,15 +3,15 @@
 	"version": "0.1.0",
 	"license": "MIT",
 	"bin": {
-		"epf": "dist/cli.js"
+		"nux": "dist/cli.mjs"
 	},
 	"type": "module",
 	"engines": {
 		"node": ">=22"
 	},
 	"scripts": {
-		"develop": "tsup --watch && chmod +x dist/cli.js",
-		"build": "tsup && chmod +x dist/cli.js",
+		"dev": "tsup",
+		"build": "tsup",
 		"link": "yarn link"
 	},
 	"files": [
@@ -38,7 +38,11 @@
 		"react": "^18.2.0",
 		"rechoir": "^0.8.0",
 		"tsup": "^8.3.5",
-		"zustand": "^5.0.2"
+		"zustand": "^5.0.2",
+		"@cloudnux/aws-cloud-provider": "0.2.0",
+		"@cloudnux/local-cloud-provider": "0.2.1",
+		"@cloudnux/cloud-sdk": "0.2.0",
+		"@cloudnux/dev-console": "0.0.1"
 	},
 	"devDependencies": {
 		"@types/ejs": "^3.1.5",

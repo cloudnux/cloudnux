@@ -27,7 +27,6 @@
     "yalc:publish": "yalc publish --private",
     "yalc:push": "yalc push --private",
     "build": "tsup",
-    "dev": "tsup --watch",
     "lint": "eslint . --max-warnings 0",
     "lint:fix": "eslint . --fix",
     "type-check": "tsc --noEmit",

@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(test:*)",
+      "Bash(mv:*)",
+      "Bash(mkdir:*)",
+      "Bash(rmdir:*)",
+      "Bash(yarn start)",
+      "Bash(curl:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -1,26 +1,27 @@
 {
   "name": "@cloudnux/local-cloud-provider",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "CloudNux local development cloud provider implementation",
   "license": "MIT",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
+  "types": "./dist/index.d.mts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js"
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs"
     },
     "./queue-plugin": {
-      "types": "./dist/queue-plugin/index.d.ts",
-      "import": "./dist/queue-plugin/index.mjs",
-      "require": "./dist/queue-plugin/index.js"
+      "types": "./dist/queue-plugin/index.d.mts",
+      "import": "./dist/queue-plugin/index.mjs"
     },
     "./schedule-plugin": {
-      "types": "./dist/schedule-plugin/index.d.ts",
-      "import": "./dist/schedule-plugin/index.mjs",
-      "require": "./dist/schedule-plugin/index.js"
+      "types": "./dist/schedule-plugin/index.d.mts",
+      "import": "./dist/schedule-plugin/index.mjs"
+    },
+    "./dev-console-plugin": {
+      "types": "./dist/dev-console-plugin/index.d.mts",
+      "import": "./dist/dev-console-plugin/index.mjs"
     }
   },
   "files": [
@@ -34,7 +35,6 @@
   },
   "scripts": {
     "build": "tsup",
-    "dev": "tsup --watch",
     "yalc:publish": "yalc publish --private",
     "yalc:push": "yalc push --private",
     "lint": "eslint . --max-warnings 0",
@@ -44,6 +44,8 @@
   },
   "dependencies": {
     "@cloudnux/core-cloud-provider": "0.1.0",
+    "@fastify/cors": "^11.1.0",
+    "@fastify/static": "^8.0.0",
     "axios": "1.9.0",
     "chalk": "^5.4.1",
     "cron-parser": "^4.9.0",

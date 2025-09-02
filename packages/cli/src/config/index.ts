@@ -8,7 +8,7 @@ import { Config } from '../types.js';
 import { defaultConfig } from './defaults.js';
 import { validateConfig } from "./validator.js";
 
-const CONFIG_FILE_NAMES = ['epf.config', 'epfrc'];
+const CONFIG_FILE_NAMES = ['nux.config', 'nuxrc'];
 
 async function resolveConfig(
     config: unknown,

@@ -1,41 +1,46 @@
 import path from "node:path";
 import { fork } from "node:child_process";
 import tsup from "tsup";
+import { PluginBuild } from "esbuild";
 
 import { Task, TaskParam } from "../../types.js";
 
-function mapCloud(provider: string) {
-    switch (provider) {
-        case "aws":
-            return "@cloudnux/aws-cloud-provider";
-        case "azure":
-            return "@cloudnux/azure-cloud-provider";
-        case "gcp":
-            return "@cloudnux/gcp-cloud-provider";
-        default:
-            return provider;
-    }
-}
+// function mapCloud(provider: string) {
+//     switch (provider) {
+//         case "aws":
+//             return "@cloudnux/aws-cloud-provider";
+//         case "azure":
+//             return "@cloudnux/azure-cloud-provider";
+//         case "gcp":
+//             return "@cloudnux/gcp-cloud-provider";
+//         default:
+//             return provider;
+//     }
+// }
 
 export const devServerWatch: Task = {
     title: 'Dev Server Watch',
     skip: () => false,
     action: async (params: TaskParam) => {
-        const { workingDir, cloudProvider, externalPackages = [], logger, eventEmitter } = params;
+        const { workingDir, logger, eventEmitter } = params;
         const entryPath = path.resolve(workingDir, "app.ts");
         await tsup.build({
             entry: {
                 index: entryPath
             },
-            external: [...externalPackages],
             esbuildOptions: (options) => {
                 options.absWorkingDir = workingDir;
                 return options;
             },
+            format: ["cjs"],
             bundle: true,
+            noExternal: [],
             sourcemap: true,
+            minify: false,
             outDir: workingDir,
             platform: "node",
+            cjsInterop: true,
+            shims: true,
             dts: false,
             watch: false,
             env: {
@@ -77,32 +82,14 @@ function startModule(main: any, execArgv: any, logger: any, eventEmitter: (type:
                 eventEmitter(message.type, message.payload);
                 break;
             case 'APP_REGISTERED':
-                eventEmitter(message.type, message.payload);
-                break;
             case 'ROUTE_REGISTERED':
-                eventEmitter(message.type, message.payload);
-                break;
             case 'LISTENING':
-                debugger;
-                eventEmitter(message.type, message.payload);
-                break;
             case 'REQUEST':
-                eventEmitter(message.type, message.payload);
-                break;
             case 'RESPONSE':
-                eventEmitter(message.type, message.payload);
-                break;
             case 'LOG':
                 eventEmitter(message.type, message.payload);
                 break;
-            case 'log':
-                eventEmitter(message.type, message.payload);
-                break;  
             default:
-                debugger;
-                // logger('Unknown message:', message);
-                // logger('Issue');
-                // console.log('issue',message);
                 break;
         }
     });
@@ -110,10 +97,9 @@ function startModule(main: any, execArgv: any, logger: any, eventEmitter: (type:
     child.on("error", function (error) {
         console.error(error);
         child.kill("SIGINT");
-
     });
 
-    child.on("close", function (code) {
+    child.on("close", function () {
         child.kill("SIGINT");
     });
     return child;
@@ -123,13 +109,10 @@ function startServerPlugin(logger: any, eventEmitter: (type: string, data?: any)
     logger("Starting server plugin");
     return {
         name: "start servers",
-        setup(build: any) {
+        setup(build: PluginBuild) {
             /** @type ChildProcess  */
             let child: any;
-            const { outdir, logLevel } = build.initialOptions;
-            console.log(outdir, logLevel);
-            const main = path.resolve(outdir, "index.cjs");
-            build.onEnd(async function ({ errors }: any) {
+            build.onEnd(async function ({ errors, outputFiles }) {
                 if (child) {
                     child.kill("SIGINT");
                     if (!child.killed) {
@@ -137,7 +120,11 @@ function startServerPlugin(logger: any, eventEmitter: (type: string, data?: any)
                     }
                 }
 
-                if (errors && errors.length > 0) return;
+                if (errors && errors.length > 0) {
+                    errors.forEach(logger);
+                    return;
+                }
+                const main = outputFiles?.find(file => file.path.endsWith(".js") || file.path.endsWith(".cjs"))?.path;
                 child = startModule(main, ["--enable-source-maps"], logger, eventEmitter);
             });
         },

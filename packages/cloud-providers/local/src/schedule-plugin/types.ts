@@ -14,6 +14,7 @@ export interface ScheduledJob {
     metadata?: Record<string, any>;
     createdAt: Date;
     timezone?: string;
+    module?: string;
 }
 
 export interface JobExecution {
@@ -45,6 +46,7 @@ export interface JobDefinition {
     maxRuns?: number;
     metadata?: Record<string, any>;
     timezone?: string;
+    module?: string;
 }
 
 export interface SchedulerConfig {
@@ -97,7 +99,7 @@ export interface SchedulerManager {
     addJob: (jobDefinition: JobDefinition) => Promise<string>;
     removeJob: (jobName: string) => Promise<void>;
     hasJob: (jobName: string) => boolean;
-    listJobs: () => string[];
+    listJobs: (module?: string) => string[];
     getJobStats: (jobName: string) => SchedulerService | null;
     enableJob: (jobName: string) => Promise<void>;
     disableJob: (jobName: string) => Promise<void>;

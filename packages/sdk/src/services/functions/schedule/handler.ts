@@ -4,7 +4,7 @@ import { logger } from "@cloudnux/utils";
 import { cloudFunctions } from "../cloud-functions";
 import { createScheduleContext } from "./create-schedule-context";
 
-type Handler = (context: ScheduleFunctionContext) => Promise<void>;
+type Handler = (context: ScheduleFunctionContext) => Promise<void> | void;
 
 export async function scheduleHandler(handler: Handler, ...args: any[]) {
     try {

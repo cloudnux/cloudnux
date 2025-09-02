@@ -111,8 +111,9 @@ export const createSchedulerManager = ({
         }
     };
 
-    const listJobs = (): string[] => {
+    const listJobs = (module?: string): string[] => {
         return Object.values(state.schedulers)
+            .filter(s => !module || s.job.module === module)
             .map(s => s.job.name)
             .sort();
     };

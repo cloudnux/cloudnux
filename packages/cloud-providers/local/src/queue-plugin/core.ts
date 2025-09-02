@@ -33,14 +33,15 @@ export const mergeConfig = (defaultConfig: QueueConfig, userConfig?: Partial<Que
 });
 
 // Pure function to create a new queue service
-export const createQueueService = (handler: EventHandler): QueueService => ({
+export const createQueueService = (handler: EventHandler, module?: string): QueueService => ({
     handler,
     incoming: [],
     processing: [],
     dlq: [],
     timeoutId: null,
     processingBatch: false,
-    activeProcessing: 0
+    activeProcessing: 0,
+    module
 });
 
 // Pure function to create a queue message

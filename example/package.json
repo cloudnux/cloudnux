@@ -17,8 +17,8 @@
         "pino": "^9.7.0"
     },
     "scripts": {
-        "start": "epf develop",
-        "build": "epf production",
+        "start": "nux develop",
+        "build": "nux production",
         "plan": "terraform plan",
         "deploy": "terraform apply",
         "destroy": "terraform destroy"

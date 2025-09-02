@@ -1,7 +1,0 @@
-app.route({
-  method: "GET",
-  url: `/schedule/<%= name %>`,
-  handler: async function (...args) {
-      await scheduleHandler(src["<%= entry.handler %>"], ...args);
-    }
-});

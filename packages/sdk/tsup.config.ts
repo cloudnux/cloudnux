@@ -4,16 +4,16 @@ import {
 
 export default defineConfig({
   entry: ['src/index.ts'],
-  format: ['cjs', 'esm'],
+  format: ['esm'],
+  platform: "node",
   dts: true,
   splitting: false,
   sourcemap: true,
   clean: true,
   minify: false,
-  target: 'node18',
+  target: 'es2024',
+  cjsInterop: true,
   outDir: 'dist',
-  // Core package has no external dependencies since it's just interfaces
-  external: [],
   tsconfig: './tsconfig.json',
   esbuildOptions(options) {
     options.conditions = ['module']

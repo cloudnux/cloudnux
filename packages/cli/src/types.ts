@@ -14,7 +14,7 @@ export type TaskParam = {
 
     /**
      * Path to store the current environment build artifacts
-     * @default '.epf/<environment>'
+     * @default '.nux/<environment>'
      */
     workingDir: string,
 
@@ -38,7 +38,7 @@ export type TaskParam = {
      * event emitter function to emit events
      */
     eventEmitter: (type: string, data?: any) => void;
-    
+
     //TODO: reference same param from parent task
     children?: Task[];
 
@@ -46,7 +46,6 @@ export type TaskParam = {
     [key: string]: any;
 
 }
-
 export type TaskTitle = string | ((params: TaskParam) => string);
 
 export type Task<TTaskParams extends TaskParamBase = any> = {
@@ -94,7 +93,7 @@ export type Config<TTaskParams extends TaskParamBase = any> = {
 
     /**
      * Path to store the build artifacts for all environments
-     * @default './.epf'
+     * @default './.nux'
      */
     workingDir: string,
 
@@ -121,15 +120,17 @@ export type Args = {
     }
 }
 
+export type AppProps = {
+    config: Config,
+    args: Args
+}
+//==================================================================
 type Module = {
     id: string;
     name: string;
     endpoints: any[];
     data?: any;
 }
-
-
-//=================================
 
 export type TaskStatus = 'pending' | 'running' | 'completed' | 'error' | 'skipped';
 
@@ -142,7 +143,21 @@ export interface TaskState {
     logs: any[];
     parentId?: string;
 }
+export interface TaskManagerStore {
+    tasks: Record<string, TaskState>;
+    currentTaskId: string | null;
+    environment: string;
+    isRunning: boolean;
+    tasksCount: number;
 
+    // Actions
+    start: (config: Config, env: string) => Promise<void>;
+    addTask: (task: { id: string, title: string, parentTaskId?: string }) => void;
+    updateTaskStatus: (taskId: string, status: TaskStatus, error?: string) => void;
+    addTaskLog: (taskId: string, log: any, data: any) => void;
+}
+
+//==================================================================
 export interface Log {
     url: string;
     method: string;
@@ -151,13 +166,12 @@ export interface Log {
     time: Date;
 }
 
-export interface TaskManagerStore {
-    tasks: Record<string, TaskState>;
-    currentTaskId: string | null;
-    environment: string;
+export interface DevServerStore {
     isRunning: boolean;
-    isListening: boolean;
+
     modules: Module[];
+    //isWatching: boolean;
+    //isListening: boolean;
     selectedModule: string | null;
     selectedEndpoint: any | null;
     port: string;
@@ -165,11 +179,9 @@ export interface TaskManagerStore {
     logs: Array<any>; // Changed to Array<any> to allow any type of log
     pinoLogs: Array<any>; // Changed to Array<any> to allow any type of log
 
-    // Actions
-    start: (config: Config, env: string) => Promise<void>;
-    addTask: (task: { id: string, title: string, parentTaskId?: string }) => void;
-    updateTaskStatus: (taskId: string, status: TaskStatus, error?: string) => void;
-    addTaskLog: (taskId: string, log: any, data: any) => void;
+    //actions
+    watch: (config: Config, env: string) => Promise<void>;
+
     addModule: (id: string, opts: any) => void;
     addRoute: (route: any) => void;
     addActionLog(id: string, data: any): void;

@@ -1,41 +1,42 @@
 <%# Template generated from a single entrypoint
     input: 
       - source : the main export of the package
+      - module : the module (package) name
       - config: the full entrypoint object 
 %>
-import { AddressInfo } from "node:net";
-import querystring from "node:querystring"; 
-import jwt from "jsonwebtoken";
-
-import { RouterInstance, localCloudProvider } from '@cloudnux/local-cloud-provider';
-
-import {
-  httpHandler,
-  eventBrokerHandler,
-  scheduleHandler,
-  useCloudProvider,
-} from "@cloudnux/cloud-sdk";
+import { RouterInstance } from '@cloudnux/local-cloud-provider';
+import { httpHandler, scheduleHandler, eventBrokerHandler } from "@cloudnux/cloud-sdk";
+import "@cloudnux/local-cloud-provider/schedule-plugin";
+import "@cloudnux/local-cloud-provider/queue-plugin";
 
 import * as src from "<%= source %>";
-
-useCloudProvider(localCloudProvider);
 
 async function entries(app: RouterInstance) {
   <%_ for (const [name, entry] of Object.entries(entries)) { _%>
     <%_ if (entry.trigger.type === "http") { _%>
-      <%- include("triggers/http.ts.ejs", {
-        name,
-        entry
-      }) %>
+        app.route({
+          method: "<%= entry.trigger.options.method %>" as any,
+          url: `/http<%= $$convertRouteParamstoFastifyRouteTemplate(entry.trigger.options.route) %>`,
+          module : "<%=module%>",
+          handler: async (request, reply) => {
+              await httpHandler(src["<%= entry.handler %>"], request, reply); 
+          }
+    });
     <%_ } _%>
     <%_ if (entry.trigger.type === "schedule") { _%>
-      <%- include("triggers/schedule.ts.ejs", {
-        name,
-        entry
-      }) %>
+      app.scheduler.addJob({
+       name: '<%= name %>',
+       cronExpression: '<%= entry.trigger.options.pattern %>',
+       module : "<%=module%>",
+       handler: async (job, execution) => {
+          return scheduleHandler(src["<%= entry.handler %>"], job,execution)
+       }});
     <%_ } _%>
     <%_ if(entry.trigger.type === "event") { _%>
-      app.queues.addQueue("<%=entry.trigger.options.source%>", src["<%= entry.handler %>"]);
+         app.queues.addQueue("<%=entry.trigger.options.source%>",
+          (msg) => eventBrokerHandler(src["<%= entry.handler %>"], msg),
+          "<%=module%>"
+          );
     <%_ } _%>
   <%_ } _%>
 }

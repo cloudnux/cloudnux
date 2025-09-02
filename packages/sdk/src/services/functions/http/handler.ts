@@ -4,7 +4,7 @@ import { logger } from "@cloudnux/utils";
 import { cloudFunctions } from "../cloud-functions";
 import { createHttpContext } from "./create-http-context";
 
-type HttpHandler = (context: HttpFunctionContext) => Promise<void>;
+type HttpHandler = (context: HttpFunctionContext) => Promise<void> | void;
 
 export async function httpHandler(handler: HttpHandler, ...args: any[]) {
     try {

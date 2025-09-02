@@ -23,6 +23,7 @@ export interface QueueService {
     timeoutId: NodeJS.Timeout | null;
     processingBatch: boolean;
     activeProcessing: number;
+    module?: string;
 }
 
 export interface QueueConfig {
@@ -70,20 +71,45 @@ export interface QueuePluginOptions extends FastifyPluginOptions {
 }
 
 export interface QueueManager {
-    addQueue: (queueName: string, handler: EventHandler) => Promise<void>;
+    addQueue: (queueName: string, handler: EventHandler, module?: string) => Promise<void>;
     removeQueue: (queueName: string) => Promise<void>;
     hasQueue: (queueName: string) => boolean;
-    listQueues: () => string[];
+    listQueues: (module?: string) => string[];
     getQueueStats: (queueName: string) => QueueService | null;
     getQueuesMap: () => Record<string, QueueService>;
+    getConfig: () => QueueConfig;
+    getDashboardSummary: () => Record<string, QueueSummary>;
+    getQueueSummary: (queueName: string) => {
+        stats: QueueSummary;
+        messages: {
+            incoming: QueueMessage[];
+            processing: QueueMessage[];
+            dlq: QueueMessage[];
+        }
+    } | null;
+    enqueueMessage: (queueName: string, body: any, attributes: any) => Promise<{
+        id: string;
+        queueName: string;
+    } | null>;
+    processDlq: (queueName: string) => Promise<{
+        status: string;
+        message: string;
+        processed: number;
+    } | null>;
+    purgeDlq: (queueName: string) => Promise<{
+        status: string;
+        message: string;
+        purged: number;
+    } | null>;
 }
 
 export interface QueueDecoratorOptions {
     config: QueueConfig;
     queues: Record<string, QueueService>;
-    //scheduleProcessing: (queueName: string, queueService: QueueService) => void;
     saveQueueState?: (queueName: string, queueService: QueueService) => Promise<void>;
     loadQueueState?: (queueName: string) => Promise<void>;
+    scheduleProcessing: (queueName: string, queueService: QueueService) => void,
+    processBatch: (queueName: string, queueService: QueueService) => Promise<void>,
 }
 
 

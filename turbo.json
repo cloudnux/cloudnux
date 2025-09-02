@@ -20,6 +20,10 @@
             ]
         },
         "dev": {
+            "dependsOn": [
+                "^build"
+            ],
+            "interruptible": true,
             "cache": false,
             "persistent": true
         },

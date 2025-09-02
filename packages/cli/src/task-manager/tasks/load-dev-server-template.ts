@@ -3,7 +3,6 @@ import path from "node:path";
 import ejs from "ejs";
 
 import { Task } from "../../types.js";
-
 /**
  * convert the dev server template into a compilable function 
  * @param {string} moduleTemplatePath

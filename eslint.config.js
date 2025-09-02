@@ -36,7 +36,7 @@ export default [
             // General rules
             'prefer-const': 'error',
             'no-var': 'error',
-            'no-console': 'warn',
+            'no-console': ['warn', { allow: ['error'] }],
             'no-debugger': 'error',
             'eqeqeq': 'error',
             'curly': 'error',
