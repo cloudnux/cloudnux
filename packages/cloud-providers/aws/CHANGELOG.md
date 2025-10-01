@@ -1,5 +1,11 @@
 # @cloudnux/aws-cloud-provider
 
+## 0.4.0
+
+### Minor Changes
+
+- fix schedule and sqs handlers
+
 ## 0.3.0
 
 ### Minor Changes
