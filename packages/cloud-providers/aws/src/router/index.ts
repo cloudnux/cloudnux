@@ -42,7 +42,7 @@ export function createRouter() {
         if ('requestContext' in event && 'http' in event.requestContext) {
             return 'http';
         }
-        if ('source' in event && event.source === 'aws.events') {
+        if ('source' in event && event.source === 'aws.scheduler') {
             return 'schedule';
         }
         if ('Records' in event) {

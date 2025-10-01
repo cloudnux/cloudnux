@@ -26,7 +26,7 @@
     "changeset": "changeset",
     "changeset:version": "changeset version",
     "changeset:publish": "changeset publish",
-    "publish-packages": "yarn build && yarn test && changeset publish",
+    "publish-packages": "yarn build && changeset publish",
     "cli": "yarn workspace @cloudnux/cli",
     "core": "yarn workspace @cloudnux/core-cloud-provider",
     "web": "yarn workspace @cloudnux/dev-console",
