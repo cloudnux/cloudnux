@@ -1,5 +1,11 @@
 # @cloudnux/aws-cloud-provider
 
+## 0.3.0
+
+### Minor Changes
+
+- change the log to text. change the routing comparision to ignore case
+
 ## 0.2.0
 
 ### Minor Changes

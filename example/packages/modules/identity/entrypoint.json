@@ -40,6 +40,16 @@
                     "source": "event-trigger-queue"
                 }
             }
+        },
+        "scheduled-task": {
+            "handler": "runScheduledTask",
+            "trigger": {
+                "type": "schedule",
+                "options": {
+                    "name": "scheduled-task",
+                    "pattern": "rate(1 hour)"
+                }
+            }
         }
     }
 }

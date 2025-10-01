@@ -6,8 +6,8 @@ import { devConsolePlugin } from "@cloudnux/local-cloud-provider/dev-console-plu
 
 useCloudProvider(localCloudProvider);
 
-import identityEntries from "./identity"  
 import module1Entries from "./module1"  
+import identityEntries from "./identity"  
 
 
 // Function to send logs to the parent process
@@ -67,7 +67,7 @@ router.register(queuesPlugin, { prefix: "queues" });
 router.register(schedulerPlugin, { prefix: "schedules" });
 router.register(devConsolePlugin, {  prefix: 'console' });
 
-  router.register(identityEntries, { prefix: "api" });
   router.register(module1Entries, { prefix: "api" });
+  router.register(identityEntries, { prefix: "api" });
 
 router.listen({ port: 3000, host : "::" });

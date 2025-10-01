@@ -219,7 +219,7 @@ export function createRouter() {
             routes.push({
                 type: 'http',
                 method,
-                routeKey: route,
+                routeKey: route.toLowerCase(),
                 handler
             });
         },

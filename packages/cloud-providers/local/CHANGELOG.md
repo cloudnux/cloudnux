@@ -1,5 +1,11 @@
 # @cloudnux/local-cloud-provider
 
+## 0.2.2
+
+### Patch Changes
+
+- [#3](https://github.com/cloudnux/cloudnux/pull/3) [`955cc5c`](https://github.com/cloudnux/cloudnux/commit/955cc5c23aa8f22c4db58ef51d565253b8a7921c) Thanks [@IIslam](https://github.com/IIslam)! - exclude pino
+
 ## 0.2.0
 
 ### Minor Changes

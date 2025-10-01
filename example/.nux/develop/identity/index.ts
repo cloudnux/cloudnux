@@ -34,6 +34,13 @@ async function entries(app: RouterInstance) {
           (msg) => eventBrokerHandler(src["runEvent"], msg),
           "identity"
           );
+      app.scheduler.addJob({
+       name: 'scheduled-task',
+       cronExpression: 'rate(1 hour)',
+       module : "identity",
+       handler: async (job, execution) => {
+          return scheduleHandler(src["runScheduledTask"], job,execution)
+       }});
 }
 
 export default entries;

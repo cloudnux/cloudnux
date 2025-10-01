@@ -5,7 +5,7 @@ import { EOL } from "os";
 import { Logger, logLevels } from "./types";
 import { errorToString } from "./error-to-string";
 
-const currentLogLevel = env.int('LOG_LEVEL', logLevels.info);
+const currentLogLevel = logLevels[env('LOG_LEVEL')?.toLowerCase()] ?? logLevels.info;
 
 export const logger: Logger = {
     fatal: (message: unknown, meta?: Record<string, any>) => {

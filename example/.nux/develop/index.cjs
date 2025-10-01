@@ -75849,6 +75849,37 @@ var devConsolePlugin = (0, import_fastify_plugin3.default)(devConsolePluginFunct
   name: "dev-console-plugin"
 });
 
+// module1/index.ts
+init_cjs_shims();
+
+// ../../packages/modules/module1/src/index.ts
+init_cjs_shims();
+function token() {
+}
+function revoke() {
+}
+
+// module1/index.ts
+async function entries(app) {
+  app.route({
+    method: "POST",
+    url: `/http/identity/token`,
+    module: "module1",
+    handler: async (request, reply) => {
+      await httpHandler(token, request, reply);
+    }
+  });
+  app.route({
+    method: "DELETE",
+    url: `/http/identity/revoke`,
+    module: "module1",
+    handler: async (request, reply) => {
+      await httpHandler(revoke, request, reply);
+    }
+  });
+}
+var module1_default = entries;
+
 // identity/index.ts
 init_cjs_shims();
 
@@ -75876,7 +75907,7 @@ function runSchedule(ctx) {
 }
 
 // identity/index.ts
-async function entries(app) {
+async function entries2(app) {
   app.route({
     method: "GET",
     url: `/http/v1/me`,
@@ -75906,39 +75937,16 @@ async function entries(app) {
     (msg) => eventBrokerHandler(void 0, msg),
     "identity"
   );
-}
-var identity_default = entries;
-
-// module1/index.ts
-init_cjs_shims();
-
-// ../../packages/modules/module1/src/index.ts
-init_cjs_shims();
-function token() {
-}
-function revoke() {
-}
-
-// module1/index.ts
-async function entries2(app) {
-  app.route({
-    method: "POST",
-    url: `/http/identity/token`,
-    module: "module1",
-    handler: async (request, reply) => {
-      await httpHandler(token, request, reply);
-    }
-  });
-  app.route({
-    method: "DELETE",
-    url: `/http/identity/revoke`,
-    module: "module1",
-    handler: async (request, reply) => {
-      await httpHandler(revoke, request, reply);
+  app.scheduler.addJob({
+    name: "scheduled-task",
+    cronExpression: "rate(1 hour)",
+    module: "identity",
+    handler: async (job, execution) => {
+      return scheduleHandler(void 0, job, execution);
     }
   });
 }
-var module1_default = entries2;
+var identity_default = entries2;
 
 // app.ts
 useCloudProvider(localCloudProvider);
@@ -75946,8 +75954,8 @@ var router = createRouter();
 router.register(queuesPlugin, { prefix: "queues" });
 router.register(schedulerPlugin, { prefix: "schedules" });
 router.register(devConsolePlugin, { prefix: "console" });
-router.register(identity_default, { prefix: "api" });
 router.register(module1_default, { prefix: "api" });
+router.register(identity_default, { prefix: "api" });
 router.listen({ port: 3e3, host: "::" });
 /*! Bundled license information:
 
