@@ -1,5 +1,18 @@
 # @cloudnux/aws-cloud-provider
 
+## 0.6.0
+
+### Minor Changes
+
+- [#3](https://github.com/cloudnux/cloudnux/pull/3) [`15e046b`](https://github.com/cloudnux/cloudnux/commit/15e046b2e3daae0e1b9d83ea38518acbc09bbfa0) Thanks [@IIslam](https://github.com/IIslam)! - update location service contract
+
+- [#3](https://github.com/cloudnux/cloudnux/pull/3) [`b1b28f1`](https://github.com/cloudnux/cloudnux/commit/b1b28f17af60969fc3504cdafdd646e219bfb244) Thanks [@IIslam](https://github.com/IIslam)! - fix schedule and sqs handlers
+
+### Patch Changes
+
+- Updated dependencies [[`15e046b`](https://github.com/cloudnux/cloudnux/commit/15e046b2e3daae0e1b9d83ea38518acbc09bbfa0)]:
+  - @cloudnux/core-cloud-provider@0.3.0
+
 ## 0.5.0
 
 ### Minor Changes
