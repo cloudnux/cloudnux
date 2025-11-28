@@ -8,10 +8,12 @@ export default defineConfig([
         dts: true,
         splitting: false,
         sourcemap: true,
-        clean: false,
+        clean: true,
         minify: false,
-        target: 'node18',
+        target: 'es2024',
         outDir: 'dist',
+        shims: true,
+        cjsInterop: true,
         noExternal: [/.*/],
         external: [
             '@cloudnux/core-cloud-provider'
@@ -26,8 +28,10 @@ export default defineConfig([
         sourcemap: true,
         clean: false, // Don't clean since we're building multiple entries
         minify: false,
-        target: 'node18',
+        target: 'es2024',
         outDir: 'dist/router',
+        cjsInterop: true,
+        shims: true,
         noExternal: [/.*/],
         external: [
             '@cloudnux/core-cloud-provider',

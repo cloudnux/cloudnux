@@ -1,27 +1,27 @@
 {
   "name": "@cloudnux/local-cloud-provider",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "CloudNux local development cloud provider implementation",
   "license": "MIT",
+  "type": "module",
   "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.mts",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.mts",
-      "import": "./dist/index.mjs"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     },
     "./queue-plugin": {
-      "types": "./dist/queue-plugin/index.d.mts",
-      "import": "./dist/queue-plugin/index.mjs"
+      "types": "./dist/queue-plugin/index.d.ts",
+      "import": "./dist/queue-plugin/index.js"
     },
     "./schedule-plugin": {
-      "types": "./dist/schedule-plugin/index.d.mts",
-      "import": "./dist/schedule-plugin/index.mjs"
+      "types": "./dist/schedule-plugin/index.d.ts",
+      "import": "./dist/schedule-plugin/index.js"
     },
     "./dev-console-plugin": {
-      "types": "./dist/dev-console-plugin/index.d.mts",
-      "import": "./dist/dev-console-plugin/index.mjs"
+      "types": "./dist/dev-console-plugin/index.d.ts",
+      "import": "./dist/dev-console-plugin/index.js"
     }
   },
   "files": [
@@ -40,10 +40,14 @@
     "lint": "eslint . --max-warnings 0",
     "lint:fix": "eslint . --fix",
     "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@cloudnux/core-cloud-provider": "0.1.0",
+    "@cloudnux/core-cloud-provider": "0.2.0",
     "@fastify/cors": "^11.1.0",
     "@fastify/static": "^8.0.0",
     "axios": "1.9.0",
@@ -55,7 +59,9 @@
     "log-symbols": "^7.0.1"
   },
   "devDependencies": {
-    "@types/node": "22.10.3"
+    "@types/node": "^24.10.1",
+    "@vitest/coverage-v8": "^4.0.14",
+    "vitest": "^4.0.14"
   },
   "publishConfig": {
     "access": "public",

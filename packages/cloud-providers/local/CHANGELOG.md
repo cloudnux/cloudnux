@@ -1,5 +1,16 @@
 # @cloudnux/local-cloud-provider
 
+## 0.3.0
+
+### Minor Changes
+
+- targetting only ESM build
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @cloudnux/core-cloud-provider@0.2.0
+
 ## 0.2.2
 
 ### Patch Changes

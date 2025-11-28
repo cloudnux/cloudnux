@@ -10,12 +10,11 @@ export default defineConfig({
   sourcemap: true,
   clean: true,
   minify: false,
-  target: 'node18',
+  target: 'es2024',
   outDir: 'dist',
   noExternal: [/.*/],
   external: [],
   tsconfig: './tsconfig.json',
-  esbuildOptions(options) {
-    options.conditions = ['module']
-  },
+  cjsInterop: true,
+  shims: true,
 })

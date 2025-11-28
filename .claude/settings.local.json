@@ -8,7 +8,15 @@
       "Bash(mkdir:*)",
       "Bash(rmdir:*)",
       "Bash(yarn start)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(yarn type-check)",
+      "Bash(yarn build)",
+      "Bash(npm view:*)",
+      "Bash(yarn add:*)",
+      "Bash(yarn workspace @cloudnux/local-cloud-provider test:*)",
+      "Bash(yarn workspace @cloudnux/local-cloud-provider test:coverage:*)",
+      "Bash(yarn workspace @cloudnux/local-cloud-provider lint:*)",
+      "Bash(tree:*)"
     ],
     "deny": [],
     "ask": []

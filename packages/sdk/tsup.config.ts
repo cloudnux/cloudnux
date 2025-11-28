@@ -15,7 +15,5 @@ export default defineConfig({
   cjsInterop: true,
   outDir: 'dist',
   tsconfig: './tsconfig.json',
-  esbuildOptions(options) {
-    options.conditions = ['module']
-  },
+  shims: true,
 })

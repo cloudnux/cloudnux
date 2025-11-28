@@ -1,5 +1,11 @@
 # @cloudnux/core-cloud-provider
 
+## 0.2.0
+
+### Minor Changes
+
+- targetting only ESM build
+
 ## 0.1.0
 
 ### Minor Changes

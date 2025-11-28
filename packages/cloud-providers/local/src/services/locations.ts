@@ -1,358 +1,251 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-import { LocationService, PlaceDetails, PlaceSearchOptions, PlaceSearchResult } from "@cloudnux/core-cloud-provider";
+import {
+    LocationService,
+    LocationAddress,
+    LocationSuggestion,
+    SuggestionParams,
+    ReverseGeocodeParams,
+    Coordinates
+} from "@cloudnux/core-cloud-provider";
 import { env, logger } from "@cloudnux/utils";
 
 // Use fs.promises for async file operations
 const { readFile, writeFile, access, mkdir } = fs.promises;
 
 /**
+ * Internal structure for storing location data
+ */
+interface StoredLocation {
+    placeId: string;
+    title: string;
+    subtitle?: string;
+    coordinates: Coordinates;
+
+    // Address components
+    street?: string;
+    streetNumber?: string;
+    city?: string;
+    district?: string;
+    region?: string;
+    postalCode?: string;
+    country?: string;
+    countryCode?: string;
+
+    // Full address
+    fullAddress: string;
+
+    // Metadata
+    placeType?: string;
+    categories?: string[];
+}
+
+/**
  * Mock location data for testing - Central Stockholm locations
  */
-const DEFAULT_MOCK_PLACES: Record<string, PlaceDetails> = {
+const DEFAULT_MOCK_LOCATIONS: Record<string, StoredLocation> = {
     'place-001': {
         placeId: 'place-001',
-        text: 'Gamla Stan',
-        address: 'Gamla Stan, Stockholm, Sweden',
-        formattedAddress: 'Gamla Stan, Stockholm, 111 27, Sweden',
+        title: 'Gamla Stan',
+        subtitle: 'Old Town, Stockholm',
         coordinates: {
-            latitude: 59.3254,
-            longitude: 18.0716
+            lat: 59.3254,
+            lng: 18.0716
         },
-        categories: ['historical', 'tourist_attraction', 'landmark'],
-        phoneNumber: '+46 8 508 29 000',
-        website: 'https://www.visitstockholm.com/gamla-stan/',
-        openingHours: {
-            periods: [
-                { day: 0, open: '00:00', close: '00:00' }, // 24/7
-                { day: 1, open: '00:00', close: '00:00' },
-                { day: 2, open: '00:00', close: '00:00' },
-                { day: 3, open: '00:00', close: '00:00' },
-                { day: 4, open: '00:00', close: '00:00' },
-                { day: 5, open: '00:00', close: '00:00' },
-                { day: 6, open: '00:00', close: '00:00' }
-            ],
-            weekdayText: [
-                'Monday: Open 24 hours',
-                'Tuesday: Open 24 hours',
-                'Wednesday: Open 24 hours',
-                'Thursday: Open 24 hours',
-                'Friday: Open 24 hours',
-                'Saturday: Open 24 hours',
-                'Sunday: Open 24 hours'
-            ]
-        }
+        street: 'Gamla Stan',
+        city: 'Stockholm',
+        region: 'Stockholm County',
+        postalCode: '111 27',
+        country: 'Sweden',
+        countryCode: 'SWE',
+        fullAddress: 'Gamla Stan, 111 27 Stockholm, Sweden',
+        placeType: 'locality',
+        categories: ['historical', 'tourist_attraction', 'landmark']
     },
     'place-002': {
         placeId: 'place-002',
-        text: 'Kungliga Slottet (Royal Palace)',
-        address: 'Slottsbacken 1, Stockholm, Sweden',
-        formattedAddress: 'Kungliga Slottet, Slottsbacken 1, 111 30 Stockholm, Sweden',
+        title: 'Kungliga Slottet',
+        subtitle: 'Royal Palace of Stockholm',
         coordinates: {
-            latitude: 59.3268,
-            longitude: 18.0718
+            lat: 59.3268,
+            lng: 18.0718
         },
-        categories: ['tourist_attraction', 'landmark', 'palace'],
-        phoneNumber: '+46 8 402 61 30',
-        website: 'https://www.kungligaslotten.se/',
-        openingHours: {
-            periods: [
-                { day: 0, open: '10:00', close: '17:00' },
-                { day: 1, open: '10:00', close: '17:00' },
-                { day: 2, open: '10:00', close: '17:00' },
-                { day: 3, open: '10:00', close: '17:00' },
-                { day: 4, open: '10:00', close: '17:00' },
-                { day: 5, open: '10:00', close: '17:00' },
-                { day: 6, open: '10:00', close: '17:00' }
-            ],
-            weekdayText: [
-                'Monday: 10:00 AM – 5:00 PM',
-                'Tuesday: 10:00 AM – 5:00 PM',
-                'Wednesday: 10:00 AM – 5:00 PM',
-                'Thursday: 10:00 AM – 5:00 PM',
-                'Friday: 10:00 AM – 5:00 PM',
-                'Saturday: 10:00 AM – 5:00 PM',
-                'Sunday: 10:00 AM – 5:00 PM'
-            ]
-        }
+        street: 'Slottsbacken',
+        streetNumber: '1',
+        city: 'Stockholm',
+        region: 'Stockholm County',
+        postalCode: '111 30',
+        country: 'Sweden',
+        countryCode: 'SWE',
+        fullAddress: 'Slottsbacken 1, 111 30 Stockholm, Sweden',
+        placeType: 'poi',
+        categories: ['tourist_attraction', 'landmark', 'palace']
     },
     'place-003': {
         placeId: 'place-003',
-        text: 'Espresso House Kungsträdgården',
-        address: 'Kungsträdgården 18, Stockholm, Sweden',
-        formattedAddress: 'Espresso House, Kungsträdgården 18, 111 47 Stockholm, Sweden',
+        title: 'Espresso House Kungsträdgården',
+        subtitle: 'Coffee shop in central Stockholm',
         coordinates: {
-            latitude: 59.3311,
-            longitude: 18.0720
+            lat: 59.3311,
+            lng: 18.0720
         },
-        categories: ['cafe', 'coffee_shop', 'food'],
-        phoneNumber: '+46 8 611 07 26',
-        website: 'https://espressohouse.com/',
-        openingHours: {
-            periods: [
-                { day: 0, open: '07:00', close: '20:00' },
-                { day: 1, open: '07:00', close: '21:00' },
-                { day: 2, open: '07:00', close: '21:00' },
-                { day: 3, open: '07:00', close: '21:00' },
-                { day: 4, open: '07:00', close: '21:00' },
-                { day: 5, open: '07:00', close: '22:00' },
-                { day: 6, open: '08:00', close: '21:00' }
-            ],
-            weekdayText: [
-                'Monday: 7:00 AM – 9:00 PM',
-                'Tuesday: 7:00 AM – 9:00 PM',
-                'Wednesday: 7:00 AM – 9:00 PM',
-                'Thursday: 7:00 AM – 9:00 PM',
-                'Friday: 7:00 AM – 10:00 PM',
-                'Saturday: 8:00 AM – 9:00 PM',
-                'Sunday: 7:00 AM – 8:00 PM'
-            ]
-        }
+        street: 'Kungsträdgården',
+        streetNumber: '18',
+        city: 'Stockholm',
+        region: 'Stockholm County',
+        postalCode: '111 47',
+        country: 'Sweden',
+        countryCode: 'SWE',
+        fullAddress: 'Kungsträdgården 18, 111 47 Stockholm, Sweden',
+        placeType: 'poi',
+        categories: ['cafe', 'coffee_shop', 'food']
     },
     'place-004': {
         placeId: 'place-004',
-        text: 'ICA Nära Stureplan',
-        address: 'Humlegårdsgatan 17, Stockholm, Sweden',
-        formattedAddress: 'ICA Nära Stureplan, Humlegårdsgatan 17, 114 46 Stockholm, Sweden',
+        title: 'ICA Nära Stureplan',
+        subtitle: 'Grocery store',
         coordinates: {
-            latitude: 59.3372,
-            longitude: 18.0737
+            lat: 59.3372,
+            lng: 18.0737
         },
-        categories: ['grocery', 'supermarket', 'food'],
-        phoneNumber: '+46 8 611 78 30',
-        website: 'https://www.ica.se/butiker/nara/stockholm/ica-nara-stureplan-1339/start/',
-        openingHours: {
-            periods: [
-                { day: 0, open: '07:00', close: '23:00' },
-                { day: 1, open: '07:00', close: '23:00' },
-                { day: 2, open: '07:00', close: '23:00' },
-                { day: 3, open: '07:00', close: '23:00' },
-                { day: 4, open: '07:00', close: '23:00' },
-                { day: 5, open: '07:00', close: '23:00' },
-                { day: 6, open: '07:00', close: '23:00' }
-            ],
-            weekdayText: [
-                'Monday: 7:00 AM – 11:00 PM',
-                'Tuesday: 7:00 AM – 11:00 PM',
-                'Wednesday: 7:00 AM – 11:00 PM',
-                'Thursday: 7:00 AM – 11:00 PM',
-                'Friday: 7:00 AM – 11:00 PM',
-                'Saturday: 7:00 AM – 11:00 PM',
-                'Sunday: 7:00 AM – 11:00 PM'
-            ]
-        }
+        street: 'Humlegårdsgatan',
+        streetNumber: '17',
+        city: 'Stockholm',
+        region: 'Stockholm County',
+        postalCode: '114 46',
+        country: 'Sweden',
+        countryCode: 'SWE',
+        fullAddress: 'Humlegårdsgatan 17, 114 46 Stockholm, Sweden',
+        placeType: 'poi',
+        categories: ['grocery', 'supermarket', 'food']
     },
     'place-005': {
         placeId: 'place-005',
-        text: 'Stockholm Central Station',
-        address: 'Centralplan 15, Stockholm, Sweden',
-        formattedAddress: 'Stockholm Central Station, Centralplan 15, 111 20 Stockholm, Sweden',
+        title: 'Stockholm Central Station',
+        subtitle: 'Main railway station',
         coordinates: {
-            latitude: 59.3303,
-            longitude: 18.0604
+            lat: 59.3303,
+            lng: 18.0604
         },
-        categories: ['train_station', 'transport', 'travel'],
-        phoneNumber: '+46 77 175 75 75',
-        website: 'https://www.jernhusen.se/stockholm-centralstation/',
-        openingHours: {
-            periods: [
-                { day: 0, open: '04:00', close: '01:00' },
-                { day: 1, open: '04:00', close: '01:00' },
-                { day: 2, open: '04:00', close: '01:00' },
-                { day: 3, open: '04:00', close: '01:00' },
-                { day: 4, open: '04:00', close: '01:00' },
-                { day: 5, open: '04:00', close: '01:00' },
-                { day: 6, open: '04:00', close: '01:00' }
-            ],
-            weekdayText: [
-                'Monday: 4:00 AM – 1:00 AM',
-                'Tuesday: 4:00 AM – 1:00 AM',
-                'Wednesday: 4:00 AM – 1:00 AM',
-                'Thursday: 4:00 AM – 1:00 AM',
-                'Friday: 4:00 AM – 1:00 AM',
-                'Saturday: 4:00 AM – 1:00 AM',
-                'Sunday: 4:00 AM – 1:00 AM'
-            ]
-        }
+        street: 'Centralplan',
+        streetNumber: '15',
+        city: 'Stockholm',
+        region: 'Stockholm County',
+        postalCode: '111 20',
+        country: 'Sweden',
+        countryCode: 'SWE',
+        fullAddress: 'Centralplan 15, 111 20 Stockholm, Sweden',
+        placeType: 'poi',
+        categories: ['train_station', 'transport', 'travel']
     },
     'place-006': {
         placeId: 'place-006',
-        text: 'Fotografiska',
-        address: 'Stadsgårdshamnen 22, Stockholm, Sweden',
-        formattedAddress: 'Fotografiska, Stadsgårdshamnen 22, 116 45 Stockholm, Sweden',
+        title: 'Fotografiska',
+        subtitle: 'Photography museum',
         coordinates: {
-            latitude: 59.3188,
-            longitude: 18.0860
+            lat: 59.3188,
+            lng: 18.0860
         },
-        categories: ['museum', 'art', 'photography', 'cultural'],
-        phoneNumber: '+46 8 509 005 00',
-        website: 'https://www.fotografiska.com/sto/',
-        openingHours: {
-            periods: [
-                { day: 0, open: '10:00', close: '23:00' },
-                { day: 1, open: '10:00', close: '23:00' },
-                { day: 2, open: '10:00', close: '23:00' },
-                { day: 3, open: '10:00', close: '23:00' },
-                { day: 4, open: '10:00', close: '01:00' },
-                { day: 5, open: '10:00', close: '01:00' },
-                { day: 6, open: '10:00', close: '23:00' }
-            ],
-            weekdayText: [
-                'Monday: 10:00 AM – 11:00 PM',
-                'Tuesday: 10:00 AM – 11:00 PM',
-                'Wednesday: 10:00 AM – 11:00 PM',
-                'Thursday: 10:00 AM – 11:00 PM',
-                'Friday: 10:00 AM – 1:00 AM',
-                'Saturday: 10:00 AM – 1:00 AM',
-                'Sunday: 10:00 AM – 11:00 PM'
-            ]
-        }
+        street: 'Stadsgårdshamnen',
+        streetNumber: '22',
+        city: 'Stockholm',
+        region: 'Stockholm County',
+        postalCode: '116 45',
+        country: 'Sweden',
+        countryCode: 'SWE',
+        fullAddress: 'Stadsgårdshamnen 22, 116 45 Stockholm, Sweden',
+        placeType: 'poi',
+        categories: ['museum', 'art', 'photography', 'cultural']
     },
     'place-007': {
         placeId: 'place-007',
-        text: 'IKEA City',
-        address: 'Sveavägen 44, Stockholm, Sweden',
-        formattedAddress: 'IKEA City, Sveavägen 44, 111 34 Stockholm, Sweden',
+        title: 'IKEA City',
+        subtitle: 'Furniture store in central Stockholm',
         coordinates: {
-            latitude: 59.3378,
-            longitude: 18.0597
+            lat: 59.3378,
+            lng: 18.0597
         },
-        categories: ['furniture', 'shopping', 'home_goods'],
-        phoneNumber: '+46 775 700 500',
-        website: 'https://www.ikea.com/se/sv/stores/stockholm-city/',
-        openingHours: {
-            periods: [
-                { day: 0, open: '10:00', close: '18:00' },
-                { day: 1, open: '10:00', close: '19:00' },
-                { day: 2, open: '10:00', close: '19:00' },
-                { day: 3, open: '10:00', close: '19:00' },
-                { day: 4, open: '10:00', close: '19:00' },
-                { day: 5, open: '10:00', close: '19:00' },
-                { day: 6, open: '10:00', close: '18:00' }
-            ],
-            weekdayText: [
-                'Monday: 10:00 AM – 7:00 PM',
-                'Tuesday: 10:00 AM – 7:00 PM',
-                'Wednesday: 10:00 AM – 7:00 PM',
-                'Thursday: 10:00 AM – 7:00 PM',
-                'Friday: 10:00 AM – 7:00 PM',
-                'Saturday: 10:00 AM – 6:00 PM',
-                'Sunday: 10:00 AM – 6:00 PM'
-            ]
-        }
+        street: 'Sveavägen',
+        streetNumber: '44',
+        city: 'Stockholm',
+        region: 'Stockholm County',
+        postalCode: '111 34',
+        country: 'Sweden',
+        countryCode: 'SWE',
+        fullAddress: 'Sveavägen 44, 111 34 Stockholm, Sweden',
+        placeType: 'poi',
+        categories: ['furniture', 'shopping', 'home_goods']
     },
     'place-008': {
         placeId: 'place-008',
-        text: 'Skansen',
-        address: 'Djurgårdsslätten 49-51, Stockholm, Sweden',
-        formattedAddress: 'Skansen, Djurgårdsslätten 49-51, 115 21 Stockholm, Sweden',
+        title: 'Skansen',
+        subtitle: 'Open-air museum and zoo',
         coordinates: {
-            latitude: 59.3263,
-            longitude: 18.1066
+            lat: 59.3263,
+            lng: 18.1066
         },
-        categories: ['museum', 'park', 'tourist_attraction', 'zoo'],
-        phoneNumber: '+46 8 442 80 00',
-        website: 'https://www.skansen.se/',
-        openingHours: {
-            periods: [
-                { day: 0, open: '10:00', close: '18:00' },
-                { day: 1, open: '10:00', close: '18:00' },
-                { day: 2, open: '10:00', close: '18:00' },
-                { day: 3, open: '10:00', close: '18:00' },
-                { day: 4, open: '10:00', close: '18:00' },
-                { day: 5, open: '10:00', close: '20:00' },
-                { day: 6, open: '10:00', close: '20:00' }
-            ],
-            weekdayText: [
-                'Monday: 10:00 AM – 6:00 PM',
-                'Tuesday: 10:00 AM – 6:00 PM',
-                'Wednesday: 10:00 AM – 6:00 PM',
-                'Thursday: 10:00 AM – 6:00 PM',
-                'Friday: 10:00 AM – 8:00 PM',
-                'Saturday: 10:00 AM – 8:00 PM',
-                'Sunday: 10:00 AM – 6:00 PM'
-            ]
-        }
+        street: 'Djurgårdsslätten',
+        streetNumber: '49-51',
+        city: 'Stockholm',
+        region: 'Stockholm County',
+        postalCode: '115 21',
+        country: 'Sweden',
+        countryCode: 'SWE',
+        fullAddress: 'Djurgårdsslätten 49-51, 115 21 Stockholm, Sweden',
+        placeType: 'poi',
+        categories: ['museum', 'park', 'tourist_attraction', 'zoo']
     },
     'place-009': {
         placeId: 'place-009',
-        text: 'Drop Coffee',
-        address: 'Wollmar Yxkullsgatan 10, Stockholm, Sweden',
-        formattedAddress: 'Drop Coffee, Wollmar Yxkullsgatan 10, 118 50 Stockholm, Sweden',
+        title: 'Drop Coffee',
+        subtitle: 'Specialty coffee roastery',
         coordinates: {
-            latitude: 59.3149,
-            longitude: 18.0608
+            lat: 59.3149,
+            lng: 18.0608
         },
-        categories: ['cafe', 'coffee_shop', 'food'],
-        phoneNumber: '+46 8 642 06 09',
-        website: 'https://dropcoffee.com/',
-        openingHours: {
-            periods: [
-                { day: 0, open: '08:00', close: '18:00' },
-                { day: 1, open: '07:30', close: '18:00' },
-                { day: 2, open: '07:30', close: '18:00' },
-                { day: 3, open: '07:30', close: '18:00' },
-                { day: 4, open: '07:30', close: '18:00' },
-                { day: 5, open: '07:30', close: '18:00' },
-                { day: 6, open: '08:00', close: '18:00' }
-            ],
-            weekdayText: [
-                'Monday: 7:30 AM – 6:00 PM',
-                'Tuesday: 7:30 AM – 6:00 PM',
-                'Wednesday: 7:30 AM – 6:00 PM',
-                'Thursday: 7:30 AM – 6:00 PM',
-                'Friday: 7:30 AM – 6:00 PM',
-                'Saturday: 8:00 AM – 6:00 PM',
-                'Sunday: 8:00 AM – 6:00 PM'
-            ]
-        }
+        street: 'Wollmar Yxkullsgatan',
+        streetNumber: '10',
+        city: 'Stockholm',
+        region: 'Stockholm County',
+        postalCode: '118 50',
+        country: 'Sweden',
+        countryCode: 'SWE',
+        fullAddress: 'Wollmar Yxkullsgatan 10, 118 50 Stockholm, Sweden',
+        placeType: 'poi',
+        categories: ['cafe', 'coffee_shop', 'food']
     },
     'place-010': {
         placeId: 'place-010',
-        text: 'Vasa Museum',
-        address: 'Galärvarvsvägen 14, Stockholm, Sweden',
-        formattedAddress: 'Vasa Museum, Galärvarvsvägen 14, 115 21 Stockholm, Sweden',
+        title: 'Vasa Museum',
+        subtitle: 'Maritime museum',
         coordinates: {
-            latitude: 59.3280,
-            longitude: 18.0914
+            lat: 59.3280,
+            lng: 18.0914
         },
-        categories: ['museum', 'tourist_attraction', 'historical'],
-        phoneNumber: '+46 8 519 548 00',
-        website: 'https://www.vasamuseet.se/',
-        openingHours: {
-            periods: [
-                { day: 0, open: '10:00', close: '17:00' },
-                { day: 1, open: '10:00', close: '17:00' },
-                { day: 2, open: '10:00', close: '17:00' },
-                { day: 3, open: '10:00', close: '17:00' },
-                { day: 4, open: '10:00', close: '20:00' },
-                { day: 5, open: '10:00', close: '17:00' },
-                { day: 6, open: '10:00', close: '17:00' }
-            ],
-            weekdayText: [
-                'Monday: 10:00 AM – 5:00 PM',
-                'Tuesday: 10:00 AM – 5:00 PM',
-                'Wednesday: 10:00 AM – 5:00 PM',
-                'Thursday: 10:00 AM – 8:00 PM',
-                'Friday: 10:00 AM – 5:00 PM',
-                'Saturday: 10:00 AM – 5:00 PM',
-                'Sunday: 10:00 AM – 5:00 PM'
-            ]
-        }
+        street: 'Galärvarvsvägen',
+        streetNumber: '14',
+        city: 'Stockholm',
+        region: 'Stockholm County',
+        postalCode: '115 21',
+        country: 'Sweden',
+        countryCode: 'SWE',
+        fullAddress: 'Galärvarvsvägen 14, 115 21 Stockholm, Sweden',
+        placeType: 'poi',
+        categories: ['museum', 'tourist_attraction', 'historical']
     }
 };
 
 /**
- * Calculate distance between two coordinates in kilometers using Haversine formula
+ * Calculate distance between two coordinates in meters using Haversine formula
  * @param lat1 Latitude of first point
  * @param lon1 Longitude of first point
  * @param lat2 Latitude of second point
  * @param lon2 Longitude of second point
- * @returns Distance in kilometers
+ * @returns Distance in meters
  */
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-    const R = 6371; // Radius of the Earth in km
+    const R = 6371000; // Radius of the Earth in meters
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
     const a =
@@ -360,8 +253,45 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
         Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
         Math.sin(dLon / 2) * Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    const distance = R * c; // Distance in km
+    const distance = R * c; // Distance in meters
     return distance;
+}
+
+/**
+ * Convert stored location to LocationSuggestion
+ */
+function toLocationSuggestion(location: StoredLocation, distance?: number): LocationSuggestion {
+    return {
+        title: location.title,
+        subtitle: location.subtitle,
+        coordinates: location.coordinates,
+        placeId: location.placeId,
+        placeType: location.placeType,
+        distance,
+        provider: 'local',
+        rawData: location
+    };
+}
+
+/**
+ * Convert stored location to LocationAddress
+ */
+function toLocationAddress(location: StoredLocation): LocationAddress {
+    return {
+        fullAddress: location.fullAddress,
+        street: location.street,
+        streetNumber: location.streetNumber,
+        city: location.city,
+        district: location.district,
+        region: location.region,
+        postalCode: location.postalCode,
+        country: location.country,
+        countryCode: location.countryCode,
+        coordinates: location.coordinates,
+        placeType: location.placeType,
+        provider: 'local',
+        rawData: location
+    };
 }
 
 /**
@@ -377,7 +307,7 @@ export function createLocalLocationService(): LocationService {
      * Load places data from file or use default mock data
      * @returns Places data
      */
-    async function loadPlaces(): Promise<Record<string, PlaceDetails>> {
+    async function loadPlaces(): Promise<Record<string, StoredLocation>> {
         try {
             // Create directory if it doesn't exist
             try {
@@ -393,98 +323,116 @@ export function createLocalLocationService(): LocationService {
                 return JSON.parse(data);
             } catch {
                 // File doesn't exist, create it with default data
-                await writeFile(placesFilePath, JSON.stringify(DEFAULT_MOCK_PLACES, null, 2), 'utf8');
-                return DEFAULT_MOCK_PLACES;
+                await writeFile(placesFilePath, JSON.stringify(DEFAULT_MOCK_LOCATIONS, null, 2), 'utf8');
+                logger.info(`Created default places file at: ${placesFilePath}`);
+                return DEFAULT_MOCK_LOCATIONS;
             }
         } catch (error) {
             logger.warn(`Error loading places data: ${String(error)}`);
-            return DEFAULT_MOCK_PLACES;
+            return DEFAULT_MOCK_LOCATIONS;
         }
     }
 
     return {
         /**
-         * Search for places based on a query
-         * @param query Search query
-         * @param options Search options
-         * @returns Promise containing search results
+         * Get autocomplete suggestions for search box
+         * Use case: User types "Stock..." → Show ["Stockholm", "Stockton", ...]
          */
-        async searchPlaces(query: string, options?: PlaceSearchOptions): Promise<PlaceSearchResult[]> {
+        async getSuggestions(params: SuggestionParams): Promise<LocationSuggestion[]> {
             const places = await loadPlaces();
+            const queryLower = params.query.toLowerCase();
 
-            // Simple search implementation
-            const queryLower = query.toLowerCase();
+            // Filter places by query
+            const results = Object.values(places).filter(place => {
+                // Match by title, subtitle, or address
+                const matchesQuery =
+                    place.title.toLowerCase().includes(queryLower) ||
+                    (place.subtitle?.toLowerCase().includes(queryLower)) ||
+                    place.fullAddress.toLowerCase().includes(queryLower) ||
+                    (place.city?.toLowerCase().includes(queryLower));
 
-            // Filter places by query and categories
-            let results = Object.values(places).filter(place => {
-                // Match by name or address
-                const matchesQuery = place.text.toLowerCase().includes(queryLower) ||
-                    (place.address?.toLowerCase().includes(queryLower));
+                // Match by place types if provided
+                const matchesPlaceTypes = !params.placeTypes ||
+                    params.placeTypes.includes(place.placeType || '');
 
-                // Match by categories if provided
-                const matchesCategories = !options?.categories ||
-                    options.categories.some(category =>
-                        place.categories?.some(cat => cat.toLowerCase().includes(category.toLowerCase()))
-                    );
-
-                return matchesQuery && matchesCategories;
+                return matchesQuery && matchesPlaceTypes;
             });
 
-            // Filter by bounding box if provided
-            if (options?.boundingBox) {
-                results = results.filter(place => {
-                    const lat = place.coordinates.latitude;
-                    const lng = place.coordinates.longitude;
+            // Calculate distances if bias position is provided
+            let resultsWithDistance: Array<{ place: StoredLocation; distance?: number }>;
 
-                    return lat >= options.boundingBox!.minLatitude &&
-                        lat <= options.boundingBox!.maxLatitude &&
-                        lng >= options.boundingBox!.minLongitude &&
-                        lng <= options.boundingBox!.maxLongitude;
-                });
+            if (params.biasPosition) {
+                resultsWithDistance = results.map(place => ({
+                    place,
+                    distance: calculateDistance(
+                        params.biasPosition!.lat,
+                        params.biasPosition!.lng,
+                        place.coordinates.lat,
+                        place.coordinates.lng
+                    )
+                }));
+
+                // Sort by distance
+                resultsWithDistance.sort((a, b) => (a.distance || 0) - (b.distance || 0));
+            } else {
+                // Sort by relevance (simple alphabetical for now)
+                results.sort((a, b) => a.title.localeCompare(b.title));
+                resultsWithDistance = results.map(place => ({ place }));
             }
-
-            // Calculate distances (from center of bounding box or default to NYC center)
-            const centerLat = options?.boundingBox ?
-                (options.boundingBox.minLatitude + options.boundingBox.maxLatitude) / 2 :
-                40.7128;
-            const centerLng = options?.boundingBox ?
-                (options.boundingBox.minLongitude + options.boundingBox.maxLongitude) / 2 :
-                -74.0060;
-
-            results.forEach(place => {
-                place.distance = calculateDistance(
-                    centerLat,
-                    centerLng,
-                    place.coordinates.latitude,
-                    place.coordinates.longitude
-                );
-            });
-
-            // Sort by distance
-            results.sort((a, b) => (a.distance ?? 0) - (b.distance ?? 0));
 
             // Limit results
-            if (options?.maxResults && options.maxResults > 0) {
-                results = results.slice(0, options.maxResults);
-            }
+            const maxResults = params.maxResults || 5;
+            const limitedResults = resultsWithDistance.slice(0, maxResults);
 
-            return results;
+            // Convert to LocationSuggestion
+            return limitedResults.map(({ place, distance }) =>
+                toLocationSuggestion(place, distance)
+            );
         },
 
         /**
-         * Get detailed information about a specific place
-         * @param placeId ID of the place to get details for
-         * @returns Promise containing place details
+         * Get address from coordinates (reverse geocoding)
+         * Use case: User clicks "Get my location" → Show "Drottninggatan 10, Stockholm"
          */
-        async getPlaceDetails(placeId: string): Promise<PlaceDetails> {
+        async reverseGeocode(params: ReverseGeocodeParams): Promise<LocationAddress> {
             const places = await loadPlaces();
 
+            // Find the closest place to the given coordinates
+            const placesWithDistance = Object.values(places).map(place => ({
+                place,
+                distance: calculateDistance(
+                    params.coordinates.lat,
+                    params.coordinates.lng,
+                    place.coordinates.lat,
+                    place.coordinates.lng
+                )
+            }));
+
+            // Sort by distance and get the closest
+            placesWithDistance.sort((a, b) => a.distance - b.distance);
+
+            const closest = placesWithDistance[0];
+
+            if (!closest) {
+                throw new Error('No places found near the given coordinates');
+            }
+
+            return toLocationAddress(closest.place);
+        },
+
+        /**
+         * Get detailed location info if suggestion doesn't have coordinates
+         * Use case: User selects suggestion → Need full coordinates
+         */
+        async getLocationDetails(placeId: string): Promise<LocationAddress> {
+            const places = await loadPlaces();
             const place = places[placeId];
+
             if (!place) {
                 throw new Error(`Place not found: ${placeId}`);
             }
 
-            return place;
+            return toLocationAddress(place);
         }
     };
 }

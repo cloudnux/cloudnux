@@ -83,7 +83,7 @@ export default [
             'node_modules/**',
             'dist/**',
             'build/**',
-            'coverage/**',
+            '**/coverage/**',
             '**/*.d.ts',
             '.turbo/**',
             '.changeset/**',
@@ -92,10 +92,22 @@ export default [
 
     // Test files configuration
     {
-        files: ['**/*.test.ts', '**/*.spec.ts', '**/test/**/*.ts'],
+        files: ['**/*.test.ts', '**/*.spec.ts', '**/test/**/*.ts', '**/__tests__/**/*.ts'],
+        languageOptions: {
+            parser: tsparser,
+            parserOptions: {
+                ecmaVersion: 'latest',
+                sourceType: 'module',
+                project: ['**/tsconfig.eslint.json', '**/tsconfig.json'],
+            },
+        },
+        plugins: {
+            '@typescript-eslint': tseslint,
+        },
         rules: {
             // Relaxed rules for tests
             '@typescript-eslint/no-explicit-any': 'off',
+            '@typescript-eslint/no-unused-vars': 'warn',
             'no-console': 'off',
         },
     },
@@ -112,7 +124,9 @@ export default [
         files: [
             'packages/cli/**/*.tsx',
             'packages/utils/**/*.ts',
-            '**/scripts/**/*.ts'],
+            '**/scripts/**/*.ts',
+            '**/dev-console-plugin/**/*.ts',
+        ],
         rules: {
             // Allow console in CLI tools
             'no-console': 'off',

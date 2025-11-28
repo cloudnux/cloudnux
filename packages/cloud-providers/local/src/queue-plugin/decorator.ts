@@ -4,7 +4,7 @@ import logSymbols from "log-symbols";
 
 import { logger } from "@cloudnux/utils";
 
-import { QueueService, QueueManager, QueueDecoratorOptions, EventHandler, QueueConfig } from "./types";
+import { QueueService, QueueManager, QueueDecoratorOptions, EventHandler } from "./types";
 import {
     createQueueService,
     createQueueMessage,

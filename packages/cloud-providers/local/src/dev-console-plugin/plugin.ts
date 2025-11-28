@@ -401,7 +401,6 @@ async function devConsolePluginFunction(
     try {
       // Simple handler that logs messages
       const handler = async (message: any) => {
-        // eslint-disable-next-line no-console
         console.log(`Processing message in ${queueName}:`, message);
       };
 

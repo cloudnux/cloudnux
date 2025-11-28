@@ -1,76 +1,116 @@
+export interface LocationProviderConfig {
+    // Authentication
+    apiKey?: string;
+    region?: string;
+
+    // Defaults
+    language?: string;                // "en", "sv", "de"
+    countries?: string[];             // ["SWE", "DEU"] - limit search scope
+
+    // Performance
+    timeout?: number;                 // Request timeout (ms)
+    retryAttempts?: number;
+
+    // Provider-specific options
+    metadata?: Record<string, any>;
+}
+
+export interface Coordinates {
+    lat: number;
+    lng: number;
+}
+
+
+export interface SuggestionParams {
+    // Required
+    query: string;                    // User's search query
+
+    // Optional filters
+    maxResults?: number;              // Default: 5
+    language?: string;
+    countries?: string[];             // Override config
+
+    // Geographic bias (prefer nearby results)
+    biasPosition?: Coordinates;       // User's current location
+
+    // Type filters (optional)
+    placeTypes?: string[];            // ["locality", "street", "address"]
+}
+
+export interface LocationSuggestion {
+    // Display information
+    title: string;                    // Main display text: "Stockholm, Sweden"
+    subtitle?: string;                // Secondary text: "Capital of Sweden"
+
+    // Geographic data
+    coordinates?: Coordinates;        // May not always be available in suggestions
+
+    // Provider-specific data (for follow-up calls)
+    placeId?: string;                 // Google: place_id, AWS: PlaceId
+    queryId?: string;                 // AWS: QueryId for SearchText follow-up
+
+    // Metadata
+    placeType?: string;               // "locality", "street", "address", "poi"
+    distance?: number;                // Distance from search origin (meters)
+
+    // Internal use
+    provider: string;                 // "aws", "google", "azure"
+    rawData?: any;                    // Original provider response (for debugging)
+}
+
+
+export interface ReverseGeocodeParams {
+    // Required
+    coordinates: Coordinates;
+
+    // Optional
+    language?: string;
+    maxResults?: number;              // Default: 1 (closest address)
+}
+
+export interface LocationAddress {
+    // Formatted address
+    fullAddress: string;              // Complete formatted address
+
+    // Address components
+    street?: string;
+    streetNumber?: string;
+    city?: string;
+    district?: string;
+    region?: string;
+    postalCode?: string;
+    country?: string;
+    countryCode?: string;             // ISO 3166-1 alpha-3: "SWE", "DEU"
+
+    // Geographic data
+    coordinates: Coordinates;
+
+    // Metadata
+    placeType?: string;
+    accuracy?: number;                // Confidence level 0-1
+
+    // Internal use
+    provider: string;
+    rawData?: any;
+}
+
+
 export interface LocationService {
     /**
-     * Search for places based on a query
-     * @param query Search query
-     * @param options Search options like bounding box, filters, etc.
-     * @returns Promise containing search results
-     */
-    searchPlaces(query: string, options?: PlaceSearchOptions): Promise<PlaceSearchResult[]>;
+   * Get autocomplete suggestions for search box
+   * Use case: User types "Stock..." → Show ["Stockholm", "Stockton", ...]
+   */
+    getSuggestions(params: SuggestionParams): Promise<LocationSuggestion[]>;
 
     /**
-     * Get detailed information about a specific place
-     * @param placeId ID of the place to get details for
-     * @returns Promise containing place details
+     * Get address from coordinates (reverse geocoding)
+     * Use case: User clicks "Get my location" → Show "Drottninggatan 10, Stockholm"
      */
-    getPlaceDetails(placeId: string): Promise<PlaceDetails>;
-}
+    reverseGeocode(params: ReverseGeocodeParams): Promise<LocationAddress>;
 
-export interface PlaceSearchOptions {
-    /** Bounding box to search within */
-    boundingBox?: {
-        minLongitude: number;
-        minLatitude: number;
-        maxLongitude: number;
-        maxLatitude: number;
-    };
-    /** Maximum number of results to return */
-    maxResults?: number;
-    /** Filter results by category */
-    categories?: string[];
-    /** Language code for results */
-    language?: string;
-}
-
-export interface PlaceSearchResult {
-    /** Unique identifier for the place */
-    placeId: string;
-    /** Place name */
-    text: string;
-}
-
-export interface PlaceDetails extends PlaceSearchResult {
-    /** Place address */
-    address?: string;
-    /** Geographic coordinates */
-    coordinates: {
-        latitude: number;
-        longitude: number;
-    };
-    /** Distance from search center if applicable */
-    distance?: number;
-    /** Place categories/types */
-    categories?: string[];
-    /** Full formatted address */
-    formattedAddress: string;
-    /** Phone number */
-    phoneNumber?: string;
-    /** Website URL */
-    website?: string;
-    /** Opening hours */
-    openingHours?: {
-        periods: {
-            day: number;
-            open?: string;
-            close?: string;
-        }[];
-        weekdayText?: string[];
-    };
-    /** Reviews if available */
-    reviews?: {
-        rating: number;
-        text?: string;
-        time?: number;
-    }[];
-    /** Additional place data */
-    additionalData?: Record<string, any>;
+    /**
+     * Optional: Get detailed location info if suggestion doesn't have coordinates
+     * Use case: User selects suggestion → Need full coordinates
+     */
+    getLocationDetails?(placeId: string): Promise<LocationAddress>;
 }
