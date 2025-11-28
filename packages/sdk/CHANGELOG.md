@@ -1,5 +1,16 @@
 # @cloudnux/cloud-sdk
 
+## 0.4.0
+
+### Minor Changes
+
+- [#3](https://github.com/cloudnux/cloudnux/pull/3) [`15e046b`](https://github.com/cloudnux/cloudnux/commit/15e046b2e3daae0e1b9d83ea38518acbc09bbfa0) Thanks [@IIslam](https://github.com/IIslam)! - update location service contract
+
+### Patch Changes
+
+- Updated dependencies [[`15e046b`](https://github.com/cloudnux/cloudnux/commit/15e046b2e3daae0e1b9d83ea38518acbc09bbfa0)]:
+  - @cloudnux/core-cloud-provider@0.3.0
+
 ## 0.3.0
 
 ### Minor Changes
