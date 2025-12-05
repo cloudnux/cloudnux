@@ -1,5 +1,11 @@
 # @cloudnux/core-cloud-provider
 
+## 0.4.0
+
+### Minor Changes
+
+- adding route planning to location service
+
 ## 0.3.0
 
 ### Minor Changes

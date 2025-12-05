@@ -20,6 +20,13 @@ export interface Coordinates {
     lng: number;
 }
 
+export interface RoutePoint {
+    lat: number;
+    lng: number;
+    distanceFromStartKm: number;
+}
+
+//=============================================
 
 export interface SuggestionParams {
     // Required
@@ -35,6 +42,15 @@ export interface SuggestionParams {
 
     // Type filters (optional)
     placeTypes?: string[];            // ["locality", "street", "address"]
+}
+
+export interface ReverseGeocodeParams {
+    // Required
+    coordinates: Coordinates;
+
+    // Optional
+    language?: string;
+    maxResults?: number;              // Default: 1 (closest address)
 }
 
 export interface LocationSuggestion {
@@ -56,16 +72,6 @@ export interface LocationSuggestion {
     // Internal use
     provider: string;                 // "aws", "google", "azure"
     rawData?: any;                    // Original provider response (for debugging)
-}
-
-
-export interface ReverseGeocodeParams {
-    // Required
-    coordinates: Coordinates;
-
-    // Optional
-    language?: string;
-    maxResults?: number;              // Default: 1 (closest address)
 }
 
 export interface LocationAddress {
@@ -94,6 +100,27 @@ export interface LocationAddress {
     rawData?: any;
 }
 
+export interface RouteResult {
+    totalDistanceKm: number;
+    totalDurationMinutes: number;
+    /** Route coordinates as [lng, lat] pairs for GeoJSON */
+    /** TODO: convert array to coordinates */
+    coordinates: Coordinates[];
+    /** Sampled points along route for corridor search */
+    sampledPoints: RoutePoint[];
+    /** Bounding box [minLng, minLat, maxLng, maxLat] */
+    bbox: [number, number, number, number];
+    /** Individual leg data */
+    legs: Array<{
+        distanceKm: number;
+        durationMinutes: number;
+        /** TODO: convert array to coordinates */
+        coordinates: Coordinates[];
+        startPosition: Coordinates;
+        endPosition: Coordinates;
+    }>;
+}
+
 
 export interface LocationService {
     /**
@@ -107,6 +134,15 @@ export interface LocationService {
      * Use case: User clicks "Get my location" → Show "Drottninggatan 10, Stockholm"
      */
     reverseGeocode(params: ReverseGeocodeParams): Promise<LocationAddress>;
+
+    /**
+     * Calculate route between origin and destination with optional waypoints
+     * Use case: User plans trip → Show route on map + details
+     */
+    calculateRoute(origin: Coordinates,
+        destination: Coordinates,
+        waypoints?: Coordinates[],
+        avoidTolls?: boolean): Promise<RouteResult>;
 
     /**
      * Optional: Get detailed location info if suggestion doesn't have coordinates

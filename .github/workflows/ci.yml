@@ -2,9 +2,7 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main, develop]
-  pull_request:
-    branches: [main, develop]
+    branches: [main]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -17,7 +15,7 @@ jobs:
     strategy:
       matrix:
         node-version: [22]
-    
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,7 +26,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'yarn'
+          cache: "yarn"
 
       - name: Install dependencies
         run: yarn install
@@ -58,7 +56,7 @@ jobs:
       pull-requests: write
       actions: read
       id-token: write
-    
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -70,8 +68,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: 'yarn'
-          registry-url: 'https://registry.npmjs.org'
+          cache: "yarn"
+          registry-url: "https://registry.npmjs.org"
 
       - name: Install dependencies
         run: yarn install
@@ -117,7 +115,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: publish
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -128,7 +126,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: 'yarn'
+          cache: "yarn"
 
       - name: Install dependencies
         run: yarn install
@@ -154,9 +152,9 @@ jobs:
           release_name: Release ${{ steps.get-tag.outputs.tag }}
           body: |
             ## What's Changed
-            
+
             See the [CHANGELOG.md](https://github.com/cloudnux/cloudnux/blob/main/CHANGELOG.md) for details.
-            
+
             **Full Changelog**: https://github.com/cloudnux/cloudnux/compare/...${{ steps.get-tag.outputs.tag }}
           draft: false
           prerelease: false
