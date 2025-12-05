@@ -1,5 +1,11 @@
 # @cloudnux/core-cloud-provider
 
+## 0.5.0
+
+### Minor Changes
+
+- [#5](https://github.com/cloudnux/cloudnux/pull/5) [`a3066d9`](https://github.com/cloudnux/cloudnux/commit/a3066d92d0bc23495c561d9bdb9bd8be53abef93) Thanks [@minawalphonce](https://github.com/minawalphonce)! - fix typing
+
 ## 0.4.0
 
 ### Minor Changes
