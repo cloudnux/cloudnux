@@ -1,5 +1,16 @@
 # @cloudnux/local-cloud-provider
 
+## 0.5.0
+
+### Minor Changes
+
+- adding route planning to location service
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @cloudnux/core-cloud-provider@0.4.0
+
 ## 0.4.0
 
 ### Minor Changes

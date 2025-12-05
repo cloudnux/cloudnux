@@ -1,6 +1,6 @@
 {
   "name": "@cloudnux/core-cloud-provider",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "CloudNux core interfaces and types for multi-cloud abstraction",
   "license": "MIT",
   "type": "module",

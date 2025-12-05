@@ -39,9 +39,9 @@
 		"rechoir": "^0.8.0",
 		"tsup": "^8.3.5",
 		"zustand": "^5.0.2",
-		"@cloudnux/aws-cloud-provider": "0.6.0",
-		"@cloudnux/local-cloud-provider": "0.4.0",
-		"@cloudnux/cloud-sdk": "0.4.0",
+		"@cloudnux/aws-cloud-provider": "0.7.0",
+		"@cloudnux/local-cloud-provider": "0.5.0",
+		"@cloudnux/cloud-sdk": "0.5.0",
 		"@cloudnux/dev-console": "0.0.1"
 	},
 	"devDependencies": {

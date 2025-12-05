@@ -7,7 +7,9 @@ import {
     LocationSuggestion,
     SuggestionParams,
     ReverseGeocodeParams,
-    Coordinates
+    Coordinates,
+    RouteResult,
+    RoutePoint
 } from "@cloudnux/core-cloud-provider";
 import { env, logger } from "@cloudnux/utils";
 
@@ -433,6 +435,108 @@ export function createLocalLocationService(): LocationService {
             }
 
             return toLocationAddress(place);
+        },
+
+        /**
+         * Calculate route between origin and destination with optional waypoints
+         * Use case: User plans trip → Show route on map + details
+         */
+        async calculateRoute(
+            origin: Coordinates,
+            destination: Coordinates,
+            waypoints?: Coordinates[]
+            // avoidTolls parameter not used in mock implementation
+        ): Promise<RouteResult> {
+            // Build array of all points: origin -> waypoints -> destination
+            const allPoints: Coordinates[] = [origin, ...(waypoints || []), destination];
+
+            // Calculate total distance and generate route coordinates
+            let totalDistanceKm = 0;
+            const allCoordinates: Coordinates[] = [];
+            const legs: RouteResult['legs'] = [];
+
+            for (let i = 0; i < allPoints.length - 1; i++) {
+                const start = allPoints[i];
+                const end = allPoints[i + 1];
+
+                // Calculate distance for this leg
+                const legDistanceMeters = calculateDistance(start.lat, start.lng, end.lat, end.lng);
+                const legDistanceKm = legDistanceMeters / 1000;
+                totalDistanceKm += legDistanceKm;
+
+                // Generate intermediate points for smoother route visualization
+                const legCoordinates: Coordinates[] = [];
+                const numIntermediatePoints = 10;
+
+                for (let j = 0; j <= numIntermediatePoints; j++) {
+                    const fraction = j / numIntermediatePoints;
+                    legCoordinates.push({
+                        lat: start.lat + (end.lat - start.lat) * fraction,
+                        lng: start.lng + (end.lng - start.lng) * fraction
+                    });
+                }
+
+                // Estimate duration: average speed of 50 km/h
+                const legDurationMinutes = (legDistanceKm / 50) * 60;
+
+                legs.push({
+                    distanceKm: legDistanceKm,
+                    durationMinutes: legDurationMinutes,
+                    coordinates: legCoordinates,
+                    startPosition: start,
+                    endPosition: end
+                });
+
+                // Add leg coordinates to all coordinates (skip first point of subsequent legs to avoid duplicates)
+                if (i === 0) {
+                    allCoordinates.push(...legCoordinates);
+                } else {
+                    allCoordinates.push(...legCoordinates.slice(1));
+                }
+            }
+
+            // Calculate total duration based on total distance
+            const totalDurationMinutes = (totalDistanceKm / 50) * 60;
+
+            // Sample points along the route for corridor search
+            const sampledPoints: RoutePoint[] = [];
+            const sampleInterval = Math.max(1, Math.floor(allCoordinates.length / 20)); // ~20 samples
+            let accumulatedDistance = 0;
+
+            for (let i = 0; i < allCoordinates.length; i += sampleInterval) {
+                if (i > 0) {
+                    const prev = allCoordinates[i - sampleInterval] || allCoordinates[i - 1];
+                    const curr = allCoordinates[i];
+                    accumulatedDistance += calculateDistance(prev.lat, prev.lng, curr.lat, curr.lng) / 1000;
+                }
+
+                sampledPoints.push({
+                    lat: allCoordinates[i].lat,
+                    lng: allCoordinates[i].lng,
+                    distanceFromStartKm: accumulatedDistance
+                });
+            }
+
+            // Calculate bounding box
+            const lats = allCoordinates.map(c => c.lat);
+            const lngs = allCoordinates.map(c => c.lng);
+            const bbox: [number, number, number, number] = [
+                Math.min(...lngs), // minLng
+                Math.min(...lats), // minLat
+                Math.max(...lngs), // maxLng
+                Math.max(...lats)  // maxLat
+            ];
+
+            logger.info(`Calculated route: ${totalDistanceKm.toFixed(2)}km, ${totalDurationMinutes.toFixed(0)}min, ${legs.length} legs`);
+
+            return {
+                totalDistanceKm,
+                totalDurationMinutes,
+                coordinates: allCoordinates,
+                sampledPoints,
+                bbox,
+                legs
+            };
         }
     };
 }
