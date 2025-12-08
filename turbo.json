@@ -72,6 +72,8 @@
                 "test"
             ],
             "cache": false
-        }
+        },
+        "yalc:publish": {},
+        "yalc:push": {}
     }
 }

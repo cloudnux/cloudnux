@@ -204,7 +204,7 @@ export function createLocationService(config?: LocationProviderConfig): Location
     const defaultLanguage = config?.language ?? 'en';
     const defaultCountries = config?.countries ?? ['SWE'];
     const defaultMaxResults = 5;
-
+    const DEFAULT_CENTER = [15.0, 58.0];
     return {
         /**
          * Get autocomplete suggestions for search box
@@ -217,15 +217,16 @@ export function createLocationService(config?: LocationProviderConfig): Location
                 QueryText: params.query,
                 MaxResults: params.maxResults ?? defaultMaxResults,
                 Language: params.language ?? defaultLanguage,
-                // BiasPosition for geographic bias
+                //BiasPosition for geographic bias
                 BiasPosition: params.biasPosition ? [
                     params.biasPosition.lng,
                     params.biasPosition.lat
-                ] : undefined,
-                // Filter by countries
+                ] : DEFAULT_CENTER,
+                //Filter by countries
                 Filter: {
                     IncludeCountries: params.countries ?? defaultCountries,
-                }
+                },
+                AdditionalFeatures: ["Core"]
             });
 
             const response = await geoPlacesClient.send(command);
