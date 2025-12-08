@@ -1,6 +1,6 @@
 {
   "name": "@cloudnux/local-cloud-provider",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "CloudNux local development cloud provider implementation",
   "license": "MIT",
   "type": "module",
