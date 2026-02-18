@@ -1,8 +1,9 @@
 
 import { RouterInstance } from '@cloudnux/local-cloud-provider';
-import { httpHandler, scheduleHandler, eventBrokerHandler } from "@cloudnux/cloud-sdk";
+import { httpHandler, scheduleHandler, eventBrokerHandler, websocketHandler } from "@cloudnux/cloud-sdk";
 import "@cloudnux/local-cloud-provider/schedule-plugin";
 import "@cloudnux/local-cloud-provider/queue-plugin";
+import "@cloudnux/local-cloud-provider/websocket-plugin";
 
 import * as src from "/Users/malphonce/Projects/cloudnux/cloudnux/example/packages/modules/identity/src/index.ts";
 
@@ -41,6 +42,27 @@ async function entries(app: RouterInstance) {
        handler: async (job, execution) => {
           return scheduleHandler(src["runScheduledTask"], job,execution)
        }});
+        app.websockets.registerHandler({
+          path: "/v1/ws",
+          event: "connect",
+          handler: async (connectionId, event, data) => {
+            return websocketHandler(src["handleWebSocketConnect"], connectionId, event, data);
+          }
+        });
+        app.websockets.registerHandler({
+          path: "/v1/ws",
+          event: "disconnect",
+          handler: async (connectionId, event, data) => {
+            return websocketHandler(src["handleWebSocketDisconnect"], connectionId, event, data);
+          }
+        });
+        app.websockets.registerHandler({
+          path: "/v1/ws",
+          event: "message",
+          handler: async (connectionId, event, data) => {
+            return websocketHandler(src["handleWebSocketMessage"], connectionId, event, data);
+          }
+        });
 }
 
 export default entries;

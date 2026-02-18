@@ -4,10 +4,11 @@ import "fastify-raw-body";
 import { FastifyRequest, FastifyReply } from "fastify";
 
 import { env, tokenUtils } from "@cloudnux/utils";
-import { EventFunctionContext, EventRequest, FunctionsService, HTTPAuth, HttpFunctionContext, HttpMethod, HTTPRequest, ScheduleFunctionContext, ScheduleRequest } from "@cloudnux/core-cloud-provider";
+import { EventFunctionContext, EventRequest, FunctionsService, HTTPAuth, HttpFunctionContext, HttpMethod, HTTPRequest, ScheduleFunctionContext, ScheduleRequest, WebSocketFunctionContext, WebSocketRequest } from "@cloudnux/core-cloud-provider";
 
 import { QueueMessage } from "../queue-plugin/types";
 import { ScheduledJob, JobExecution } from "../schedule-plugin/types";
+import { WebSocketEvent } from "../websocket-plugin/types";
 
 
 const getFullUrlFromRequest = (request: FastifyRequest) => {
@@ -116,6 +117,22 @@ export function createLocalFunctionsService(): FunctionsService {
             return context.response.body;
         },
         buildEventResponse: (context: EventFunctionContext) => {
+            if (context.response.status === "error") {
+                throw new Error(JSON.stringify(context.response.body));
+            }
+            return context.response.body;
+        },
+
+        createWebSocketRequest: (connectionId: string, event: WebSocketEvent, data?: any) => {
+            const wsRequest: WebSocketRequest = {
+                connectionId,
+                event,
+                path: "",
+                body: data,
+            };
+            return [wsRequest];
+        },
+        buildWebSocketResponse: (context: WebSocketFunctionContext) => {
             if (context.response.status === "error") {
                 throw new Error(JSON.stringify(context.response.body));
             }

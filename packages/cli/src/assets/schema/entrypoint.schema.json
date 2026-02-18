@@ -292,7 +292,14 @@
                 "options"
             ]
         },
-        "FileTrigger": {
+        "WebSocketEvent": {
+            "enum": [
+                "connect",
+                "disconnect",
+                "message"
+            ]
+        },
+        "WebSocketTrigger": {
             "type": "object",
             "properties": {
                 "options": {
@@ -301,12 +308,19 @@
                         "path": {
                             "type": "string"
                         },
-                        "action": {
+                        "event": {
+                            "$ref": "#/definitions/WebSocketEvent"
+                        },
+                        "route": {
+                            "type": "string"
+                        },
+                        "routeKey": {
                             "type": "string"
                         }
                     },
                     "required": [
-                        "path"
+                        "path",
+                        "event"
                     ],
                     "additionalProperties": false
                 }
@@ -323,7 +337,7 @@
                         "http",
                         "schedule",
                         "event",
-                        "file"
+                        "websocket"
                     ]
                 }
             },
@@ -368,12 +382,12 @@
                     "if": {
                         "properties": {
                             "type": {
-                                "const": "file"
+                                "const": "websocket"
                             }
                         }
                     },
                     "then": {
-                        "$ref": "#/definitions/FileTrigger"
+                        "$ref": "#/definitions/WebSocketTrigger"
                     }
                 }
             ],

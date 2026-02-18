@@ -3,11 +3,12 @@ import { createRouter, localCloudProvider } from '@cloudnux/local-cloud-provider
 import { queuesPlugin } from "@cloudnux/local-cloud-provider/queue-plugin";
 import { schedulerPlugin } from "@cloudnux/local-cloud-provider/schedule-plugin";
 import { devConsolePlugin } from "@cloudnux/local-cloud-provider/dev-console-plugin";
+import { websocketsPlugin } from "@cloudnux/local-cloud-provider/websocket-plugin";
 
 useCloudProvider(localCloudProvider);
 
-import module1Entries from "./module1"  
 import identityEntries from "./identity"  
+import module1Entries from "./module1"  
 
 
 // Function to send logs to the parent process
@@ -66,8 +67,11 @@ const router = createRouter();
 router.register(queuesPlugin, { prefix: "queues" });
 router.register(schedulerPlugin, { prefix: "schedules" });
 router.register(devConsolePlugin, {  prefix: 'console' });
+router.register(websocketsPlugin, { prefix: "websockets" });
 
-  router.register(module1Entries, { prefix: "api" });
   router.register(identityEntries, { prefix: "api" });
+  router.register(module1Entries, { prefix: "api" });
 
-router.listen({ port: 3000, host : "::" });
+router.listen({ port: 3000, host : "::" }, () => {
+  console.log(`Server listening on port ${router.server.address().port} ...`)
+});

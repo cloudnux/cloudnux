@@ -25,6 +25,7 @@ const isValidQueueName = (queueName: string): boolean => {
 export const createQueueManager = ({
     config,
     queues,
+    dirtyQueues,
     saveQueueState,
     loadQueueState,
     scheduleProcessing,
@@ -169,9 +170,9 @@ export const createQueueManager = ({
         // Handle immediate processing if batch size is reached
         handleImmediateProcessing(queues[queueName], config, processBatch, queueName);
 
-        // Save queue state after adding new message
-        if (config.persistence.enabled && saveQueueState) {
-            await saveQueueState(queueName, queues[queueName]);
+        // Mark queue as dirty for periodic persistence
+        if (config.persistence.enabled) {
+            dirtyQueues.add(queueName);
         }
 
         return {
@@ -199,9 +200,9 @@ export const createQueueManager = ({
         // Schedule processing if not already scheduled
         scheduleProcessing(queueName, queues[queueName]);
 
-        // Save queue state after moving messages
-        if (saveQueueState) {
-            await saveQueueState(queueName, queues[queueName]);
+        // Mark queue as dirty for periodic persistence
+        if (config.persistence.enabled) {
+            dirtyQueues.add(queueName);
         }
 
         return {
@@ -227,9 +228,9 @@ export const createQueueManager = ({
 
         logDLQOperation('Purging', purgedCount, queueName);
 
-        // Save queue state after purging DLQ
-        if (saveQueueState) {
-            await saveQueueState(queueName, queues[queueName]);
+        // Mark queue as dirty for periodic persistence
+        if (config.persistence.enabled) {
+            dirtyQueues.add(queueName);
         }
 
         return {

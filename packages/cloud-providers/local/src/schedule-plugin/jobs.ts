@@ -35,12 +35,12 @@ export const createJobFromDefinition = (
             timezone: jobDef.timezone ?? config.cron.defaultTimezone
         });
 
-        logger.info(`${chalk.blue('📅 Job')} ${chalk.green(jobDef.name)}: ${result.description} - Next: ${chalk.cyan(result.nextRun.toLocaleString())}`);
+        logger.debug(`${chalk.blue('📅 Job')} ${chalk.green(jobDef.name)}: ${result.description} - Next: ${chalk.cyan(result.nextRun.toLocaleString())}`);
 
         const upcoming = getNextExecutions(cronExpression, 3, {
             timezone: jobDef.timezone ?? config.cron.defaultTimezone
         });
-        logger.info(`${chalk.blue('   Upcoming:')} ${upcoming.map(d => d.toLocaleTimeString()).join(', ')}`);
+        logger.debug(`${chalk.blue('   Upcoming:')} ${upcoming.map(d => d.toLocaleTimeString()).join(', ')}`);
     }
 
     const job: ScheduledJob = {

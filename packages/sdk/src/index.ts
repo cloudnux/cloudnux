@@ -2,6 +2,7 @@ export * from "./services/event-broker";
 export * from "./services/storage";
 export * from "./services/locations";
 export * from "./services/functions";
+export * from "./services/websocket";
 export * from "./provider";
 
 //export http api types and interfaces
@@ -27,5 +28,11 @@ export type {
     ScheduleRequest,
     EventFunctionContext,
     EventRequest,
-    EventResponse
+    EventResponse,
+    WebSocketService,
+    WebSocketFunctionContext,
+    WebSocketRequest,
+    WebSocketResponse,
 } from "@cloudnux/core-cloud-provider";
+
+export { ErrorCode } from "@cloudnux/core-cloud-provider";

@@ -40,7 +40,6 @@ export const createQueueService = (handler: EventHandler, module?: string): Queu
     dlq: [],
     timeoutId: null,
     processingBatch: false,
-    activeProcessing: 0,
     module
 });
 
@@ -103,7 +102,6 @@ export const createQueueSummary = (queueService: QueueService, config: QueueConf
     processing: queueService.processing.length,
     dlq: queueService.dlq.length,
     isProcessing: queueService.processingBatch,
-    activeProcessing: queueService.activeProcessing,
     configuration: {
         batchSize: config.batchSize,
         batchWindowMs: config.batchWindowMs,
@@ -159,7 +157,7 @@ export const logError = (message: string, messageId: string, queueName: string, 
 };
 
 export const logRetryScheduled = (messageId: string, delayMs: number): void => {
-    logger.info(`${chalk.blue('⏱️ Scheduling retry')} for message ${chalk.yellow(messageId)} in ${chalk.cyan(delayMs)}ms`);
+    logger.debug(`${chalk.blue('⏱️ Scheduling retry')} for message ${chalk.yellow(messageId)} in ${chalk.cyan(delayMs)}ms`);
 };
 
 export const logDLQOperation = (operation: string, count: number, queueName: string): void => {

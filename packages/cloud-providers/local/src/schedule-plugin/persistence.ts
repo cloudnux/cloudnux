@@ -46,7 +46,7 @@ export const saveSchedulerState = async (
         await fs.writeFile(tempFile, JSON.stringify(serializedState, null, 2), 'utf8');
         await fs.rename(tempFile, stateFile);
 
-        logger.info(`${logSymbols.info} ${chalk.blue('Enhanced scheduler state saved')}`);
+        logger.debug(`${logSymbols.info} ${chalk.blue('Enhanced scheduler state saved')}`);
     } catch (error: any) {
         logger.error('Failed to save scheduler state:', error);
     }
@@ -61,7 +61,7 @@ export const loadSchedulerStateData = async (
         return JSON.parse(data);
     } catch (error: any) {
         if (error.code === 'ENOENT') {
-            logger.info(`${chalk.blue('No previous scheduler state found - starting fresh')}`);
+            logger.debug(`${chalk.blue('No previous scheduler state found - starting fresh')}`);
         } else {
             logger.error('Failed to load scheduler state:', error);
         }
@@ -82,7 +82,7 @@ export const validateAndAdjustNextRun = (
     }
 
     if (savedNextRun <= now) {
-        logger.info(`${chalk.yellow('⏰ Saved next run is in the past for')} ${chalk.green(job.name)} - recalculating`);
+        logger.debug(`${chalk.yellow('⏰ Saved next run is in the past for')} ${chalk.green(job.name)} - recalculating`);
         return calculateNextRunFromLastRun(job, job.lastRun, config);
     }
 
@@ -90,7 +90,7 @@ export const validateAndAdjustNextRun = (
     const isRapidRestart = timeSinceRestart < config.restartBehavior.rapidRestartThreshold;
 
     if (isRapidRestart) {
-        logger.info(`${chalk.blue('⚡ Rapid restart detected for')} ${chalk.green(job.name)} - preserving saved timing`);
+        logger.debug(`${chalk.blue('⚡ Rapid restart detected for')} ${chalk.green(job.name)} - preserving saved timing`);
         return savedNextRun;
     }
 
@@ -99,7 +99,7 @@ export const validateAndAdjustNextRun = (
         const timeDiff = Math.abs(savedNextRun.getTime() - expectedNextRun.getTime());
 
         if (timeDiff > config.restartBehavior.maxTimingDrift) {
-            logger.info(`${chalk.yellow('🔧 Adjusting timing for')} ${chalk.green(job.name)} - drift of ${Math.round(timeDiff / 1000)}s detected`);
+            logger.debug(`${chalk.yellow('🔧 Adjusting timing for')} ${chalk.green(job.name)} - drift of ${Math.round(timeDiff / 1000)}s detected`);
             return expectedNextRun;
         }
     }
@@ -122,7 +122,7 @@ export const restoreJobFromSavedData = (
     };
 
     if (definitionChanged) {
-        logger.info(`${chalk.yellow('🔄 Job definition changed:')} ${chalk.green(savedJob.name)} - recalculating schedule`);
+        logger.debug(`${chalk.yellow('🔄 Job definition changed:')} ${chalk.green(savedJob.name)} - recalculating schedule`);
         updatedJob.nextRun = calculateNextRunFromLastRun(updatedJob, updatedJob.lastRun, config);
     } else {
         const savedNextRun = savedJob.nextRun ? new Date(savedJob.nextRun) : undefined;
@@ -133,7 +133,7 @@ export const restoreJobFromSavedData = (
         const result = parseCronExpression(updatedJob.cronExpression, updatedJob.lastRun, {
             timezone: updatedJob.timezone
         });
-        logger.info(`${chalk.blue('📅 Job restored:')} ${chalk.green(savedJob.name)} - ${result.description} - next: ${chalk.cyan(updatedJob.nextRun.toLocaleString())}`);
+        logger.debug(`${chalk.blue('📅 Job restored:')} ${chalk.green(savedJob.name)} - ${result.description} - next: ${chalk.cyan(updatedJob.nextRun.toLocaleString())}`);
     }
 
     return { ...scheduler, job: updatedJob };

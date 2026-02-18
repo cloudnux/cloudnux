@@ -14,19 +14,11 @@ export const cleanupExecutionHistory = (
             state.executionHistory.length - state.config.cleanup.maxExecutionHistory
         );
 
-        logger.info(`${chalk.blue('🧹 Cleaned up')} ${removed.length} old execution records`);
+        logger.debug(`${chalk.blue('🧹 Cleaned up')} ${removed.length} old execution records`);
         return removed;
     }
 
     return [];
-};
-
-export const startCleanupInterval = (
-    state: SchedulerState
-): NodeJS.Timeout => {
-    return setInterval(() => {
-        cleanupExecutionHistory(state);
-    }, state.config.cleanup.cleanupInterval);
 };
 
 export const clearAllTimers = (schedulers: Record<string, any>): void => {
@@ -45,7 +37,7 @@ export const waitForRunningJobs = async (
     const startTime = Date.now();
 
     while (getRunningExecutions() > 0 && (Date.now() - startTime) < maxWaitTime) {
-        logger.info(`${chalk.yellow('⏳ Waiting for')} ${getRunningExecutions()} running jobs to complete...`);
+        logger.debug(`${chalk.yellow('⏳ Waiting for')} ${getRunningExecutions()} running jobs to complete...`);
         await new Promise(resolve => setTimeout(resolve, 1000));
     }
 };
@@ -62,9 +54,9 @@ export const createShutdownHandler = (
     // Clear all timers
     clearAllTimers(state.schedulers);
 
-    // Clear cleanup interval
-    if (state.cleanupInterval) {
-        clearInterval(state.cleanupInterval);
+    // Clear unified tick interval
+    if (state.tickInterval) {
+        clearInterval(state.tickInterval);
     }
 
     // Wait for running jobs

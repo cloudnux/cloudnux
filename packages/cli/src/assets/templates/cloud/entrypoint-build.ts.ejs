@@ -2,52 +2,71 @@ import { createRouter } from "@cloudnux/aws-cloud-provider/router";
 import { awsCloudProvider } from "@cloudnux/aws-cloud-provider";
 import {
     httpHandler,
-    eventHandler,
+    eventBrokerHandler,
     scheduleHandler,
+    websocketHandler,
     useCloudProvider,
-    useCloudProvider
   } from "@cloudnux/cloud-sdk"; 
+import { initializeLogger, logger } from "@cloudnux/utils";
 
 import * as src from "../../../packages/modules/<%=module%>/src";
 
 useCloudProvider(awsCloudProvider);
 
 const router = createRouter();
-
 <%_ for(var [key,entry] of Object.entries(entries)) { _%>
     <%_ if(entry.trigger.type.toLowerCase() === "http") { _%>
-        router.http(
-             "<%= entry.trigger.options.method %>",
-             "<%= entry.trigger.options.route %>",
-             httpHandler(src["<%= entry.handler %>"]));
+router.http(
+        "<%= entry.trigger.options.method %>",
+        "<%= entry.trigger.options.route %>",
+        (event, context) => {
+            return httpHandler(src["<%= entry.handler %>"], event, context);
+        }
+);
     <%_ } _%>
-
     <%_ if(entry.trigger.type.toLowerCase() === "schedule") { _%>
-        router.schedule(
-             "<%= entry.trigger.options.name %>",
-             "<%= entry.trigger.options.cron %>",
-             scheduleHandler(src["<%= entry.handler %>"]));
+router.schedule(
+        "<%= entry.trigger.options.name %>",
+        "<%= entry.trigger.options.pattern %>",
+        (event, context) => {
+            return scheduleHandler(src["<%= entry.handler %>"], event, context);
+        }
+);
     <%_ } _%>
-
     <%_ if(entry.trigger.type.toLowerCase() === "event") { _%>
-        router.event(
+router.event(
              "<%= entry.trigger.options.source %>",
              "<%= entry.trigger.options.sourceType %>",
-             "<%= entry.trigger.options.filter %>",
-             eventHandler(src["<%= entry.handler %>"]));
+             (event, context) => {
+                return eventBrokerHandler(src["<%= entry.handler %>"], event, context);
+            }
+); 
     <%_ } _%>
-
+    <%_ if(entry.trigger.type.toLowerCase() === "websocket") { _%>
+        <%_ const wsRouteKey = entry.trigger.options.event === "connect" ? "$connect" : entry.trigger.options.event === "disconnect" ? "$disconnect" : entry.trigger.options.route || "$default" _%>
+router.websocket(
+            "<%= wsRouteKey %>",
+            (event, context) => {
+                return websocketHandler(src["<%= entry.handler %>"],event,context);
+            }
+);
+    <%_ } _%>
 <%_ } _%>
 
-
 export async function handler(event, context) {
-
-
+    initializeLogger("<%=module%>",context.awsRequestId);
+    logger.info("request started", { requestId: context.awsRequestId });
+    logger.debug("Received event", { event, requestId: context.awsRequestId });
+   let response;
     try {
-        //await initialize();
-        const output = await router.run(event, context);
-        return output;
-    } catch (error) {
+        response = await router.run(event, context);
+        return response;
+    }
+    catch (error) {
+        logger.error("Error occurred", { error, requestId: context.awsRequestId });
         throw error;
+    }
+    finally {
+        logger.info("request finished", { response, requestId: context.awsRequestId });
     }
 }

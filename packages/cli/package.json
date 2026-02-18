@@ -5,6 +5,8 @@
 	"bin": {
 		"nux": "dist/cli.mjs"
 	},
+	"main": "./dist/cli.js",
+	"types": "./dist/cli.d.ts",
 	"type": "module",
 	"engines": {
 		"node": ">=22"
@@ -12,33 +14,29 @@
 	"scripts": {
 		"dev": "tsup",
 		"build": "tsup",
-		"link": "yarn link"
+		"link": "yarn link",
+		"type-check": "tsc --noEmit",
+		"clean": "rm -rf dist"
 	},
 	"files": [
 		".deploy",
 		"dist",
-		"pakage.json",
+		"package.json",
 		"README.md"
 	],
 	"dependencies": {
-		"@inkjs/ui": "^2.0.0",
 		"@types/findup-sync": "^4.0.5",
 		"ejs": "^3.1.10",
 		"fast-glob": "^3.3.2",
 		"fastify": "^5.2.1",
 		"fastify-raw-body": "^5.0.0",
 		"findup-sync": "^5.0.0",
-		"immer": "^10.1.1",
-		"ink": "^4.1.0",
-		"ink-spinner": "^5.0.0",
 		"interpret": "^3.1.1",
 		"jsonwebtoken": "^9.0.2",
 		"meow": "^11.0.0",
 		"pino-pretty": "^13.0.0",
-		"react": "^18.2.0",
 		"rechoir": "^0.8.0",
 		"tsup": "^8.3.5",
-		"zustand": "^5.0.2",
 		"@cloudnux/aws-cloud-provider": "0.7.0",
 		"@cloudnux/local-cloud-provider": "0.5.0",
 		"@cloudnux/cloud-sdk": "0.5.0",
@@ -48,11 +46,7 @@
 		"@types/ejs": "^3.1.5",
 		"@types/findup-sync": "^4.0.5",
 		"@types/jsonwebtoken": "^9.0.7",
-		"@types/react": "^18.0.32",
 		"@types/rechoir": "^0.6.4",
-		"chalk": "^5.2.0",
-		"ink-testing-library": "^4.0.0",
-		"react-devtools-core": "^6.0.1",
 		"typescript": "^5.0.3"
 	},
 	"publishConfig": {

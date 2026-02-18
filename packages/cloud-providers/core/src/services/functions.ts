@@ -1,4 +1,4 @@
-import { HandlerType, HttpMethod } from "../entrypoint";
+import { HandlerType, HttpMethod, WebSocketEvent } from "../entrypoint";
 
 /**
  * Represents the context object for a function handler.
@@ -163,12 +163,41 @@ export type EventFunctionContext = FunctionContext & {
 }
 //#endregion
 
+//#region [WebSocket]
+export type WebSocketRequest = {
+    connectionId: string,
+    event: WebSocketEvent,
+    path: string,
+    route?: string,
+    body?: string | Record<string, any>,
+    headers?: Record<string, string | string[] | undefined>,
+    query?: Record<string, string>,
+    requestId?: string,
+}
+
+export type WebSocketResponse = {
+    status: "success" | "error",
+    body?: any,
+}
+
+export type WebSocketFunctionContext = FunctionContext & {
+    type: "WebSocket";
+    connectionId: string;
+    event: WebSocketEvent;
+    request: WebSocketRequest;
+    response: WebSocketResponse;
+    message<T = Record<string, any>>(): T;
+}
+//#endregion
+
 export interface FunctionsService {
     createHttRequest(...args: any[]): [HTTPRequest, HTTPAuth?];
     createScheduleRequest(...args: any[]): [ScheduleRequest];
     createEventRequest(...args: any[]): [EventRequest];
+    createWebSocketRequest(...args: any[]): [WebSocketRequest];
 
     buildHttpResponse(httpFunctionContext: HttpFunctionContext, ...args: any[]): any
     buildScheduleResponse(scheduleFunctionContext: ScheduleFunctionContext, ...args: any[]): any;
     buildEventResponse(eventFunctionContext: EventFunctionContext, ...args: any[]): any;
+    buildWebSocketResponse(webSocketFunctionContext: WebSocketFunctionContext, ...args: any[]): any;
 }

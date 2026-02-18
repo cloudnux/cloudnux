@@ -33,7 +33,7 @@ export const registerDashboardRoute = (
     app: FastifyInstance,
     state: SchedulerState
 ): void => {
-    app.get("/dashboard", async function (_, reply) {
+    app.get("/schedule/dashboard", async function (_, reply) {
         const dashboardData = createDashboardData(state);
         return reply.status(200).send(dashboardData);
     });
@@ -43,7 +43,7 @@ export const registerExecutionsRoute = (
     app: FastifyInstance,
     state: SchedulerState
 ): void => {
-    app.get("/executions", async function (_, reply) {
+    app.get("/schedule/executions", async function (_, reply) {
         const executionsData = createExecutionsData(state);
         return reply.status(200).send(executionsData);
     });
@@ -54,7 +54,7 @@ export const registerTriggerJobRoute = (
     state: SchedulerState,
     executeJobFn: (scheduler: any) => Promise<void>
 ): void => {
-    app.post<{ Params: { jobId: string } }>("/jobs/:jobId/trigger", async function (request, reply) {
+    app.post<{ Params: { jobId: string } }>("/schedule/jobs/:jobId/trigger", async function (request, reply) {
         const scheduler = state.schedulers[request.params.jobId];
 
         if (!scheduler) {
@@ -77,7 +77,7 @@ export const registerEnableJobRoute = (
     state: SchedulerState,
     scheduleJobFn: (scheduler: any) => void
 ): void => {
-    app.put<{ Params: { jobId: string } }>("/jobs/:jobId/enable", async function (request, reply) {
+    app.put<{ Params: { jobId: string } }>("/schedule/jobs/:jobId/enable", async function (request, reply) {
         const scheduler = state.schedulers[request.params.jobId];
 
         if (!scheduler) {
@@ -96,7 +96,7 @@ export const registerDisableJobRoute = (
     app: FastifyInstance,
     state: SchedulerState
 ): void => {
-    app.put<{ Params: { jobId: string } }>("/jobs/:jobId/disable", async function (request, reply) {
+    app.put<{ Params: { jobId: string } }>("/schedule/jobs/:jobId/disable", async function (request, reply) {
         const scheduler = state.schedulers[request.params.jobId];
 
         if (!scheduler) {
