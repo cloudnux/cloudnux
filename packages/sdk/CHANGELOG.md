@@ -1,5 +1,12 @@
 # @cloudnux/cloud-sdk
 
+## 0.5.1
+
+### Patch Changes
+
+- Updated dependencies [[`a3066d9`](https://github.com/cloudnux/cloudnux/commit/a3066d92d0bc23495c561d9bdb9bd8be53abef93)]:
+  - @cloudnux/core-cloud-provider@0.5.0
+
 ## 0.5.0
 
 ### Minor Changes

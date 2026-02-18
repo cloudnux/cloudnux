@@ -1,5 +1,22 @@
 # @cloudnux/local-cloud-provider
 
+## 0.7.0
+
+### Minor Changes
+
+- [#6](https://github.com/cloudnux/cloudnux/pull/6) [`700f5fc`](https://github.com/cloudnux/cloudnux/commit/700f5fca9c6eb71a10706d3313cbbe7a66cdc5f4) Thanks [@minawalphonce](https://github.com/minawalphonce)! - add coordinates to aws location
+
+## 0.6.0
+
+### Minor Changes
+
+- [#5](https://github.com/cloudnux/cloudnux/pull/5) [`a3066d9`](https://github.com/cloudnux/cloudnux/commit/a3066d92d0bc23495c561d9bdb9bd8be53abef93) Thanks [@minawalphonce](https://github.com/minawalphonce)! - fix typing
+
+### Patch Changes
+
+- Updated dependencies [[`a3066d9`](https://github.com/cloudnux/cloudnux/commit/a3066d92d0bc23495c561d9bdb9bd8be53abef93)]:
+  - @cloudnux/core-cloud-provider@0.5.0
+
 ## 0.5.0
 
 ### Minor Changes
