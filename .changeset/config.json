@@ -7,7 +7,16 @@
         }
     ],
     "commit": false,
-    "fixed": [],
+    "fixed": [
+        [
+            "@cloudnux/cli",
+            "@cloudnux/dev-console",
+            "@cloudnux/cloud-sdk",
+            "@cloudnux/core-cloud-provider",
+            "@cloudnux/aws-cloud-provider",
+            "@cloudnux/local-cloud-provider"
+        ]
+    ],
     "linked": [],
     "access": "public",
     "baseBranch": "main",
