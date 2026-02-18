@@ -1,9 +1,10 @@
-import { APIGatewayProxyEventV2WithJWTAuthorizer, APIGatewayProxyResultV2, Context, ScheduledEvent, SQSRecord, SNSEventRecord, SQSBatchItemFailure } from "aws-lambda";
+import { APIGatewayProxyEvent, APIGatewayProxyEventV2WithJWTAuthorizer, APIGatewayProxyResultV2, Context, ScheduledEvent, SQSRecord, SNSEventRecord, SQSBatchItemFailure } from "aws-lambda";
 import {
     FunctionsService, HttpMethod,
     HTTPRequest, HTTPAuth, HttpFunctionContext,
     ScheduleRequest,
-    EventRequest, EventFunctionContext
+    EventRequest, EventFunctionContext,
+    WebSocketRequest, WebSocketFunctionContext
 } from "@cloudnux/core-cloud-provider";
 
 import { tokenUtils } from "@cloudnux/utils"
@@ -113,6 +114,35 @@ export function createLocalFunctionsService(): FunctionsService {
                 throw new Error('Unsupported event type');
             }
         },
+        createWebSocketRequest: (event: APIGatewayProxyEvent, ctx: Context) => {
+            const connectionId = event.requestContext?.connectionId!;
+            const routeKey = event.requestContext?.routeKey;
+
+            // Map AWS route keys to WebSocket events
+            let wsEvent: "connect" | "disconnect" | "message";
+            let route: string | undefined;
+            if (routeKey === "$connect") {
+                wsEvent = "connect";
+            } else if (routeKey === "$disconnect") {
+                wsEvent = "disconnect";
+            } else {
+                wsEvent = "message";
+                route = routeKey === "$default" ? undefined : routeKey;
+            }
+
+            const wsRequest: WebSocketRequest = {
+                connectionId,
+                event: wsEvent,
+                path: event.requestContext?.stage ?? "",
+                route,
+                body: event.body || undefined,
+                headers: event.headers,
+                // AWS doesn't have a native query string parsing for WebSocket events, so we can leave it empty or implement custom parsing if needed
+                query: {},
+                requestId: ctx.awsRequestId,
+            };
+            return [wsRequest];
+        },
 
         buildHttpResponse: (ctx: HttpFunctionContext) => {
             const response = ctx.response;
@@ -145,6 +175,15 @@ export function createLocalFunctionsService(): FunctionsService {
                 }
             }
             return undefined; // No failure response needed
+        },
+        buildWebSocketResponse: (ctx: WebSocketFunctionContext) => {
+            if (ctx.response.status === "error") {
+                return {
+                    statusCode: 500,
+                    body: JSON.stringify(ctx.response.body),
+                };
+            }
+            return { statusCode: 200 };
         }
     }
 }

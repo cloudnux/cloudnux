@@ -23,5 +23,4 @@ export class BuildTaskManager extends BaseTaskManager {
             }
         }
     }
-
 }

@@ -138,7 +138,7 @@ export const createSchedulerManager = ({
             }
 
             if (scheduler.job.enabled) {
-                logger.info(`${logSymbols.info} ${chalk.blue('Job is already enabled:')} ${chalk.magenta(jobName)}`);
+                logger.debug(`${logSymbols.info} ${chalk.blue('Job is already enabled:')} ${chalk.magenta(jobName)}`);
                 return;
             }
 
@@ -165,7 +165,7 @@ export const createSchedulerManager = ({
             }
 
             if (!scheduler.job.enabled) {
-                logger.info(`${logSymbols.info} ${chalk.blue('Job is already disabled:')} ${chalk.magenta(jobName)}`);
+                logger.debug(`${logSymbols.info} ${chalk.blue('Job is already disabled:')} ${chalk.magenta(jobName)}`);
                 return;
             }
 

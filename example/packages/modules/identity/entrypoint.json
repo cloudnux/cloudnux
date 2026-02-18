@@ -50,6 +50,36 @@
                     "pattern": "rate(1 hour)"
                 }
             }
+        },
+        "webSocket": {
+            "handler": "handleWebSocketConnect",
+            "trigger": {
+                "type": "websocket",
+                "options": {
+                    "path": "/v1/ws",
+                    "event": "connect"
+                }
+            }
+        },
+        "webSocketDisconnect": {
+            "handler": "handleWebSocketDisconnect",
+            "trigger": {
+                "type": "websocket",
+                "options": {
+                    "path": "/v1/ws",
+                    "event": "disconnect"
+                }
+            }
+        },
+        "webSocketMessage": {
+            "handler": "handleWebSocketMessage",
+            "trigger": {
+                "type": "websocket",
+                "options": {
+                    "path": "/v1/ws",
+                    "event": "message"
+                }
+            }
         }
     }
 }

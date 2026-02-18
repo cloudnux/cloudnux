@@ -40,12 +40,25 @@ export const buildServer: Task = {
                 return options;
             },
             format: ["esm"],
+            banner: {
+                js: `
+                    import __node_module from 'node:module';
+                    import __node_url from 'node:url';
+                    import __node_path from 'node:path';
+                    const require = __node_module.createRequire(import.meta.url);
+                    const __filename = __node_url.fileURLToPath(import.meta.url);
+                    const __dirname = __node_path.dirname(__filename);
+                    `.trim()
+            },
+            outExtension: () => ({ js: '.mjs' }),
             bundle: true,
-            sourcemap: false,
+            sourcemap: true,
+            minify: false,
             outDir: moduleDir,
             platform: "node",
             dts: false,
             watch: false,
+            shims: false,
             define: {
                 __DEV__: process.env.__DEV__ || "false",
             },

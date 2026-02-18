@@ -1,8 +1,9 @@
 
 import { RouterInstance } from '@cloudnux/local-cloud-provider';
-import { httpHandler, scheduleHandler, eventBrokerHandler } from "@cloudnux/cloud-sdk";
+import { httpHandler, scheduleHandler, eventBrokerHandler, websocketHandler } from "@cloudnux/cloud-sdk";
 import "@cloudnux/local-cloud-provider/schedule-plugin";
 import "@cloudnux/local-cloud-provider/queue-plugin";
+import "@cloudnux/local-cloud-provider/websocket-plugin";
 
 import * as src from "/Users/malphonce/Projects/cloudnux/cloudnux/example/packages/modules/module1/src/index.ts";
 

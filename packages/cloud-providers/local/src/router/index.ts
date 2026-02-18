@@ -1,6 +1,9 @@
 import Fastify, { FastifyInstance } from "fastify";
 import fastifyRawBody from "fastify-raw-body";
-import cors from '@fastify/cors'
+import cors from '@fastify/cors';
+import fastifyPrintRoutes from 'fastify-print-routes';
+
+import { setWebSocketManager } from "../services/websocket";
 
 export type RouterInstance = FastifyInstance
 
@@ -16,9 +19,13 @@ export function createRouter(options: { logger?: boolean } = {}): RouterInstance
     encoding: 'utf8',
   });
 
-  //TODO: get config from the nux.config 
-  fastify.register(cors, {
+  //TODO: get config from the nux.config
+  fastify.register(cors, {});
 
+  fastify.register(fastifyPrintRoutes);
+
+  fastify.addHook('onReady', () => {
+    setWebSocketManager(fastify.websockets);
   });
 
   return fastify;

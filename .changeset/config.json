@@ -13,7 +13,6 @@
     "baseBranch": "main",
     "updateInternalDependencies": "patch",
     "ignore": [
-        "@cloudnux/cli",
         "@cloudnux/utils",
         "@cloudnux/gcp-cloud-provider",
         "@cloudnux/azure-cloud-provider"

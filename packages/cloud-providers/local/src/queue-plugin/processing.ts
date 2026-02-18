@@ -59,7 +59,7 @@ const handleProcessingError = async (
 export const createBatchProcessor = (
     processMessage: (queueName: string, message: QueueMessage, queueService: QueueService) => Promise<void>,
     config: QueueConfig,
-    saveQueueState?: (queueName: string) => Promise<void>
+    dirtyQueues?: Set<string>
 ) => async (queueName: string, queueService: QueueService): Promise<void> => {
     // Clear timeout to prevent double processing
     if (queueService.timeoutId) {
@@ -83,18 +83,14 @@ export const createBatchProcessor = (
 
         queueService.processing.push(...messagesToProcess);
 
-        // Process messages sequentially
-        // for (const message of messagesToProcess) {
-        //     await processMessage(queueName, message, queueService);
-        // }
         // Process messages in parallel
         await Promise.all(messagesToProcess.map(message => {
             return processMessage(queueName, message, queueService);
         }));
 
-        // Save queue state after batch processing
-        if (config.persistence.enabled && saveQueueState) {
-            await saveQueueState(queueName);
+        // Mark queue as dirty for periodic persistence
+        if (config.persistence.enabled && dirtyQueues) {
+            dirtyQueues.add(queueName);
         }
     } finally {
         queueService.processingBatch = false;

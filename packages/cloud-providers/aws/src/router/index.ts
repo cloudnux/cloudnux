@@ -20,18 +20,20 @@ export type EventHndlerType = APIGatewayProxyEventV2 | SNSEventRecord | SQSRecor
 export type HandlerFunction = (event: EventHndlerType, context: Context) => Promise<any>;
 
 export interface RouteDefinition {
-    type: 'http' | 'schedule' | 'event';
+    type: 'http' | 'schedule' | 'event' | 'websocket';
     handler: HandlerFunction;
     // HTTP specific
     method?: HttpMethod;
     routeKey?: string;
-    // Schedule specific  
+    // Schedule specific
     pattern?: string;
     name?: string;
     // Event specific
     source?: string;
     sourceType?: string;
     filter?: MessageFilter;
+    // WebSocket specific
+    wsRouteKey?: string;
 }
 
 export function createRouter() {
@@ -39,6 +41,9 @@ export function createRouter() {
     const routes: RouteDefinition[] = [];
 
     function detectEventType(event: EventType): string {
+        if ('requestContext' in event && 'connectionId' in event.requestContext) {
+            return 'websocket';
+        }
         if ('requestContext' in event && 'http' in event.requestContext) {
             return 'http';
         }
@@ -213,6 +218,32 @@ export function createRouter() {
         throw new Error('No event handler found');
     }
 
+    async function handleWebSocketEvent(
+        event: any,
+        context: Context,
+        routes: RouteDefinition[]
+    ): Promise<any> {
+        const routeKey = event.requestContext?.routeKey;
+
+        for (const route of routes) {
+            if (route.type === 'websocket' && route.wsRouteKey === routeKey) {
+                try {
+                    return await route.handler(event, context);
+                } catch (error) {
+                    return {
+                        statusCode: 500,
+                        body: JSON.stringify({
+                            error: 'Internal Server Error',
+                            message: error instanceof Error ? error.message : 'Unknown error'
+                        })
+                    };
+                }
+            }
+        }
+
+        throw new Error(`No WebSocket handler found for route key: ${routeKey}`);
+    }
+
     return {
         // Register HTTP route
         http(method: HttpMethod, route: string, handler: HandlerFunction) {
@@ -245,6 +276,15 @@ export function createRouter() {
             });
         },
 
+        // Register WebSocket route
+        websocket(wsRouteKey: string, handler: HandlerFunction) {
+            routes.push({
+                type: 'websocket',
+                wsRouteKey,
+                handler
+            });
+        },
+
         async run(event: EventType, context: Context): Promise<any> {
             const eventType = detectEventType(event);
             switch (eventType) {
@@ -254,6 +294,8 @@ export function createRouter() {
                     return await handleScheduleEvent(event as ScheduledEvent, context, routes);
                 case 'event':
                     return await handleEventBrokerEvent(event, context, routes);
+                case 'websocket':
+                    return await handleWebSocketEvent(event, context, routes);
                 default:
                     throw new Error(`Unsupported event type: ${eventType}`);
             }

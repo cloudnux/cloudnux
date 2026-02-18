@@ -1,4 +1,4 @@
-export type HandlerType = "Http" | "Schedule" | "Event";
+export type HandlerType = "Http" | "Schedule" | "Event" | "WebSocket";
 
 export type BaseEntry<TTrigger> = {
     handler: string,

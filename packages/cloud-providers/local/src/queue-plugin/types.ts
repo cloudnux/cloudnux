@@ -22,7 +22,6 @@ export interface QueueService {
     dlq: QueueMessage[];
     timeoutId: NodeJS.Timeout | null;
     processingBatch: boolean;
-    activeProcessing: number;
     module?: string;
 }
 
@@ -47,7 +46,6 @@ export interface QueueSummary {
     processing: number;
     dlq: number;
     isProcessing: boolean;
-    activeProcessing: number;
     configuration: {
         batchSize: number;
         batchWindowMs: number;
@@ -106,6 +104,7 @@ export interface QueueManager {
 export interface QueueDecoratorOptions {
     config: QueueConfig;
     queues: Record<string, QueueService>;
+    dirtyQueues: Set<string>;
     saveQueueState?: (queueName: string, queueService: QueueService) => Promise<void>;
     loadQueueState?: (queueName: string) => Promise<void>;
     scheduleProcessing: (queueName: string, queueService: QueueService) => void,

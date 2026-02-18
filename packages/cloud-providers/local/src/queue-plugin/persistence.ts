@@ -28,7 +28,9 @@ const restoreDates = (messages: any[]): void => {
 export const createPersistenceInitializer = (
     config: QueueConfig,
     loadAllQueueStates: () => Promise<void>,
-    saveAllQueueStates: () => Promise<void>
+    saveDirtyQueueStates: () => Promise<void>,
+    saveAllQueueStates: () => Promise<void>,
+    intervalIdHolder: { id?: NodeJS.Timeout }
 ) => async (): Promise<void> => {
     try {
         await fs.mkdir(config.persistence.directory, { recursive: true });
@@ -38,12 +40,15 @@ export const createPersistenceInitializer = (
         }
 
         if (config.persistence.saveInterval > 0) {
-            setInterval(saveAllQueueStates, config.persistence.saveInterval);
+            intervalIdHolder.id = setInterval(saveDirtyQueueStates, config.persistence.saveInterval);
         }
 
         if (config.persistence.saveOnShutdown) {
             const shutdownHandler = async () => {
                 logger.debug('Saving queue state before shutdown...');
+                if (intervalIdHolder.id) {
+                    clearInterval(intervalIdHolder.id);
+                }
                 await saveAllQueueStates();
                 process.exit(0);
             };
@@ -74,7 +79,7 @@ export const createQueueStateSaver = (config: QueueConfig) => async (queueName: 
         // Rename temporary file to the actual file (atomic operation)
         await fs.rename(tempFilePath, queueFilePath);
 
-        logger.info(`${logSymbols.info} ${chalk.blue('Queue state saved:')} ${chalk.green(queueName)}`);
+        logger.debug(`${logSymbols.info} ${chalk.blue('Queue state saved:')} ${chalk.green(queueName)}`);
     } catch (error: any) {
         logger.error(`Failed to save queue state for ${queueName}:`, error);
     }
@@ -92,6 +97,27 @@ export const createAllQueuesStateSaver = (
         logger.debug(`${logSymbols.success} ${chalk.green('All queue states saved to')} ${chalk.yellow(config.persistence.directory)}`);
     } catch (error: any) {
         logger.error(`${logSymbols.error} ${chalk.red('Failed to save all queue states:')} ${chalk.yellow(error.message)}`);
+    }
+};
+
+// Higher-order function to create dirty queues state saver (only saves changed queues)
+export const createDirtyQueuesStateSaver = (
+    saveQueueState: (queueName: string, queueService: QueueService) => Promise<void>,
+    dirtyQueues: Set<string>
+) => (queues: Record<string, QueueService>) => async (): Promise<void> => {
+    if (dirtyQueues.size === 0) return;
+
+    try {
+        const queueNames = [...dirtyQueues];
+        dirtyQueues.clear();
+
+        for (const queueName of queueNames) {
+            if (queues[queueName]) {
+                await saveQueueState(queueName, queues[queueName]);
+            }
+        }
+    } catch (error: any) {
+        logger.error(`${logSymbols.error} ${chalk.red('Failed to save dirty queue states:')} ${chalk.yellow(error.message)}`);
     }
 };
 

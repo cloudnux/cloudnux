@@ -71,7 +71,7 @@ export const scheduleJob = (
             executeJobFn(updatedScheduler);
         }, timeUntilNextRun);
 
-        logger.info(`${chalk.blue('📅 Scheduled job')} ${chalk.green(scheduler.job.name)} to run in ${chalk.cyan(Math.round(timeUntilNextRun / 1000))}s`);
+        logger.debug(`${chalk.blue('📅 Scheduled job')} ${chalk.green(scheduler.job.name)} to run in ${chalk.cyan(Math.round(timeUntilNextRun / 1000))}s`);
     }
 
     return updatedScheduler;
@@ -83,12 +83,18 @@ export const executeJobWithTimeout = async (
     execution: JobExecution,
     timeoutMs: number
 ): Promise<any> => {
-    return Promise.race([
-        handler(job, execution),
-        new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Job execution timeout')), timeoutMs)
-        )
-    ]);
+    let timerId: NodeJS.Timeout;
+
+    try {
+        return await Promise.race([
+            handler(job, execution),
+            new Promise((_, reject) => {
+                timerId = setTimeout(() => reject(new Error('Job execution timeout')), timeoutMs);
+            })
+        ]);
+    } finally {
+        clearTimeout(timerId!);
+    }
 };
 
 export const updateJobAfterExecution = (

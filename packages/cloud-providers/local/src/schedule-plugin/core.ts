@@ -17,7 +17,7 @@ import {
     handleExecutionSuccess
 } from "./execution";
 import { saveSchedulerState, loadSchedulerState } from "./persistence";
-import { startCleanupInterval, createShutdownHandler, setupGracefulShutdown } from "./cleanup";
+import { cleanupExecutionHistory, createShutdownHandler, setupGracefulShutdown } from "./cleanup";
 
 
 export const DEFAULT_CONFIG: SchedulerConfig = {
@@ -67,6 +67,8 @@ export const createInitialState = (
         executionHistory: [],
         isShuttingDown: false,
         runningExecutions: 0,
+        isDirty: false,
+        lastCleanupTime: Date.now(),
         lastRestartTime: new Date(),
         config,
     };
@@ -109,22 +111,20 @@ export const createSchedulerFunctions = (
 
             const completedExecution = handleExecutionSuccess(execution, result);
             state.executions[execution.id] = completedExecution;
-
-            scheduler.job = updateJobAfterExecution(scheduler.job, execution, state.config);
-
         } catch (error: any) {
             const failedExecution = handleExecutionError(execution, error);
             state.executions[execution.id] = failedExecution;
         } finally {
             scheduler.isRunning = false;
             state.runningExecutions--;
+            scheduler.job = updateJobAfterExecution(scheduler.job, execution, state.config);
 
             if (scheduler.job.enabled && !state.isShuttingDown) {
                 scheduleJobFn(scheduler);
             }
 
             if (state.config.persistence.enabled) {
-                await saveSchedulerState(state);
+                state.isDirty = true;
             }
         }
     };
@@ -156,14 +156,26 @@ export const initializeScheduler = async (
             state.schedulers = schedulers;
             state.executionHistory = executionHistory;
 
-            // Save state periodically
-            if (state.config.persistence.saveInterval > 0) {
-                setInterval(() => saveSchedulerState(state), state.config.persistence.saveInterval);
-            }
         }
 
-        // Start cleanup interval
-        state.cleanupInterval = startCleanupInterval(state);
+        // Unified tick: handles both state persistence and cleanup
+        const tickInterval = state.config.persistence.saveInterval > 0
+            ? state.config.persistence.saveInterval
+            : state.config.cleanup.cleanupInterval;
+
+        state.tickInterval = setInterval(async () => {
+            // Save state only when dirty
+            if (state.isDirty && state.config.persistence.enabled) {
+                state.isDirty = false;
+                await saveSchedulerState(state);
+            }
+
+            // Run cleanup when enough time has elapsed
+            if (Date.now() - state.lastCleanupTime >= state.config.cleanup.cleanupInterval) {
+                state.lastCleanupTime = Date.now();
+                cleanupExecutionHistory(state);
+            }
+        }, tickInterval);
 
         // Schedule all enabled jobs
         for (const scheduler of Object.values(state.schedulers)) {

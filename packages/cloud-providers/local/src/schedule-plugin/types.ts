@@ -90,7 +90,9 @@ export interface SchedulerState {
     executionHistory: JobExecution[];
     isShuttingDown: boolean;
     runningExecutions: number;
-    cleanupInterval?: NodeJS.Timeout;
+    tickInterval?: NodeJS.Timeout;
+    isDirty: boolean;
+    lastCleanupTime: number;
     lastRestartTime: Date;
     config: SchedulerConfig;
 }

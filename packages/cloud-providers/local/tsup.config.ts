@@ -46,6 +46,21 @@ export default defineConfig([
         outDir: 'dist/schedule-plugin',
         shims: true
     },
+    // web socket plugin build
+    {
+        entry: ['src/websocket-plugin/index.ts'],
+        format: ['esm'],
+        platform: "node",
+        dts: true,
+        splitting: false,
+        sourcemap: true,
+        clean: false, // Don't clean since we're building multiple entries
+        minify: false,
+        target: 'es2024',
+        cjsInterop: true,
+        outDir: 'dist/websocket-plugin',
+        shims: true
+    },
     //dev console plugin build
     {
         entry: ['src/dev-console-plugin/index.ts'],
