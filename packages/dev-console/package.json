@@ -1,6 +1,6 @@
 {
   "name": "@cloudnux/dev-console",
-  "version": "0.0.1",
+  "version": "0.10.0",
   "description": "Web-based control panel for CloudNux development",
   "main": "dist/index.js",
   "type": "module",
