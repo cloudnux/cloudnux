@@ -1,5 +1,13 @@
 # @cloudnux/core-cloud-provider
 
+## 0.12.0
+
+### Minor Changes
+
+- remove utils as library as external
+
+## 0.11.0
+
 ## 0.10.0
 
 ### Minor Changes

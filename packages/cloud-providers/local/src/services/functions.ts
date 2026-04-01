@@ -3,8 +3,8 @@ import * as querystring from "querystring"
 import "fastify-raw-body";
 import { FastifyRequest, FastifyReply } from "fastify";
 
-import { env, tokenUtils } from "@cloudnux/utils";
-import { EventFunctionContext, EventRequest, FunctionsService, HTTPAuth, HttpFunctionContext, HttpMethod, HTTPRequest, ScheduleFunctionContext, ScheduleRequest, WebSocketFunctionContext, WebSocketRequest } from "@cloudnux/core-cloud-provider";
+import { env, logger, tokenUtils } from "@cloudnux/utils";
+import { EventBatchItemResult, EventFunctionContext, EventRequest, FunctionsService, HTTPAuth, HttpFunctionContext, HttpMethod, HTTPRequest, ScheduleFunctionContext, ScheduleRequest, WebSocketFunctionContext, WebSocketRequest } from "@cloudnux/core-cloud-provider";
 
 import { QueueMessage } from "../queue-plugin/types";
 import { ScheduledJob, JobExecution } from "../schedule-plugin/types";
@@ -93,15 +93,31 @@ export function createLocalFunctionsService(): FunctionsService {
             return [scheduleRequest]
         },
         createEventRequest: (message: QueueMessage) => {
-
             const eventRequest: EventRequest = {
                 body: message.payload,
-                attributes: message.attributes,
+                attributes: {
+                    ...message.attributes,
+                    messageId: message.id,
+                },
                 requestId: message.id,
                 timestamp: message.timestamp,
                 attempts: message.attempts
             }
             return [eventRequest];
+        },
+        createWebSocketRequest: (connectionId: string, event: WebSocketEvent, data: any, request: FastifyRequest) => {
+            logger.info(request.params as any);
+            const wsRequest: WebSocketRequest = {
+                connectionId,
+                event,
+                url: getFullUrlFromRequest(request),
+                params: request.params as Record<string, string>,
+                body: data,
+                queryString: request.query as Record<string, string>,
+                headers: request.headers,
+                requestId: request.id
+            };
+            return [wsRequest];
         },
 
         buildHttpResponse: (context: HttpFunctionContext, _: FastifyRequest, reply: FastifyReply) => {
@@ -116,28 +132,21 @@ export function createLocalFunctionsService(): FunctionsService {
             }
             return context.response.body;
         },
-        buildEventResponse: (context: EventFunctionContext) => {
+        buildEventResponse: async (context: EventFunctionContext): Promise<EventBatchItemResult> => {
             if (context.response.status === "error") {
-                throw new Error(JSON.stringify(context.response.body));
+                const { messageId } = context.attributes<{ messageId: string }>();
+                return { failureId: messageId };
             }
-            return context.response.body;
-        },
-
-        createWebSocketRequest: (connectionId: string, event: WebSocketEvent, data?: any) => {
-            const wsRequest: WebSocketRequest = {
-                connectionId,
-                event,
-                path: "",
-                body: data,
-            };
-            return [wsRequest];
+            return undefined;
         },
         buildWebSocketResponse: (context: WebSocketFunctionContext) => {
             if (context.response.status === "error") {
-                throw new Error(JSON.stringify(context.response.body));
+                const err = Object.assign(
+                    new Error(context.response.body?.message ?? "Connection rejected"),
+                    { statusCode: context.response.statusCode ?? 500 }
+                );
+                throw err;
             }
-            return context.response.body;
         }
     }
-
 }

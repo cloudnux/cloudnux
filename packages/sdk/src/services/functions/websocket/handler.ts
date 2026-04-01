@@ -8,18 +8,18 @@ type Handler = (context: WebSocketFunctionContext) => Promise<void> | void;
 
 export async function websocketHandler(handler: Handler, ...args: any[]) {
     try {
-        logger.debug("Executing WebSocket handler with args", { args });
+        logger.debug({ args }, "Executing WebSocket handler with args");
         const [wsRequest] = cloudFunctions().createWebSocketRequest(...args);
-        logger.debug("Created WebSocket request", {
+        logger.debug({
             request: wsRequest,
-        });
+        }, "Created WebSocket request");
         const context = createWebSocketContext(wsRequest);
         await handler(context);
-        logger.debug("WebSocket Handler executed successfully, building response", { response: context.response });
+        logger.debug({ response: context.response }, "WebSocket Handler executed successfully, building response");
         return cloudFunctions().buildWebSocketResponse(context, ...args);
     }
     catch (error) {
-        logger.error("Error in WebSocket handler", { error });
+        logger.error(error as any);
         throw error;
     }
 }

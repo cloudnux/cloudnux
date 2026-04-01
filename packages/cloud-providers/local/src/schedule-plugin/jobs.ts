@@ -1,7 +1,3 @@
-//import * as fs from "fs/promises";
-import chalk from "chalk";
-import logSymbols from "log-symbols";
-
 import { logger } from "@cloudnux/utils";
 
 import { JobDefinition, ScheduledJob, SchedulerService, SchedulerConfig } from "./types";
@@ -13,7 +9,7 @@ export const validateJobDefinition = (
 ): void => {
     const expressionType = detectExpressionType(jobDef.cronExpression);
     if (expressionType === "unknown") {
-        logger.error(`${logSymbols.error} ${chalk.red('Invalid cron expression for job:')} ${jobDef.name}`);
+        logger.error(`Invalid cron expression for job: ${jobDef.name}`);
         throw new Error(`Invalid cron expression for job: ${jobDef.name}`);
     }
 };
@@ -35,12 +31,12 @@ export const createJobFromDefinition = (
             timezone: jobDef.timezone ?? config.cron.defaultTimezone
         });
 
-        logger.debug(`${chalk.blue('📅 Job')} ${chalk.green(jobDef.name)}: ${result.description} - Next: ${chalk.cyan(result.nextRun.toLocaleString())}`);
+        logger.debug(`Job ${jobDef.name}: ${result.description} - Next: ${result.nextRun.toLocaleString()}`);
 
         const upcoming = getNextExecutions(cronExpression, 3, {
             timezone: jobDef.timezone ?? config.cron.defaultTimezone
         });
-        logger.debug(`${chalk.blue('   Upcoming:')} ${upcoming.map(d => d.toLocaleTimeString()).join(', ')}`);
+        logger.debug(`Upcoming: ${upcoming.map(d => d.toLocaleTimeString()).join(', ')}`);
     }
 
     const job: ScheduledJob = {

@@ -1,4 +1,5 @@
 import { FastifyPluginOptions } from "fastify";
+import { EventBatchItemResult } from "@cloudnux/core-cloud-provider";
 
 export interface QueueMessage {
     id: string;
@@ -13,7 +14,7 @@ export interface QueueMessage {
     originalId?: string;
 }
 
-export type EventHandler = (message: QueueMessage) => Promise<void>;
+export type EventHandler = (message: QueueMessage) => Promise<EventBatchItemResult>;
 
 export interface QueueService {
     handler: EventHandler;

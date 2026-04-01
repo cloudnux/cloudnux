@@ -1,6 +1,4 @@
 import * as fs from "fs/promises";
-import chalk from "chalk";
-import logSymbols from "log-symbols";
 import { FastifyInstance } from "fastify";
 
 import { logger } from "@cloudnux/utils";
@@ -83,11 +81,11 @@ export const createSchedulerFunctions = (
 
         if (!canExecute) {
             if (reason === 'Maximum concurrent executions reached') {
-                logger.warn(`${chalk.yellow('⚠️  Delaying job')} ${chalk.green(scheduler.job.name)} - ${reason}`);
+                logger.warn(`Delaying job ${scheduler.job.name} - ${reason}`);
                 scheduler.job.nextRun = new Date(Date.now() + 30000);
                 scheduleJobFn(scheduler);
             } else if (reason === 'Job reached maximum runs') {
-                logger.info(`${chalk.yellow('⏹️  Job')} ${chalk.green(scheduler.job.name)} reached max runs (${scheduler.job.maxRuns})`);
+                logger.info(`Job ${scheduler.job.name} reached max runs (${scheduler.job.maxRuns})`);
             }
             return;
         }
@@ -99,7 +97,7 @@ export const createSchedulerFunctions = (
         scheduler.isRunning = true;
         state.runningExecutions++;
 
-        logger.info(`${chalk.blue('🚀 Executing job')} ${chalk.green(scheduler.job.name)} (${execution.id})`);
+        logger.info(`Executing job ${scheduler.job.name} (${execution.id})`);
 
         try {
             const result = await executeJobWithTimeout(
@@ -184,9 +182,9 @@ export const initializeScheduler = async (
             }
         }
 
-        logger.debug(`${logSymbols.success} ${chalk.green('Scheduler initialized:')} ${Object.keys(state.schedulers).length} jobs loaded`);
+        logger.debug(`Scheduler initialized: ${Object.keys(state.schedulers).length} jobs loaded`);
     } catch (error: any) {
-        logger.error(`${logSymbols.error} ${chalk.red('Failed to initialize scheduler:')} ${error.message}`);
+        logger.error(`Failed to initialize scheduler: ${error.message}`);
         throw error;
     }
 };

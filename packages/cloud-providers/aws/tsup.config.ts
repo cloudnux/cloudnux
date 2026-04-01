@@ -12,7 +12,7 @@ export default defineConfig([
         minify: false,
         target: 'es2024',
         outDir: 'dist',
-        shims: true,
+        shims: false,
         cjsInterop: true,
         noExternal: [/.*/],
         external: [
@@ -37,5 +37,4 @@ export default defineConfig([
             '@cloudnux/core-cloud-provider',
         ]
     },
-
 ])

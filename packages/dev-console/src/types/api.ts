@@ -70,11 +70,37 @@ export interface SchedulesResponse {
   schedules: ScheduleInfo[]
 }
 
+export interface WebSocketConnection {
+  connectionId: string
+  path: string
+  connectedAt: string
+}
+
+export interface WebSocketPath {
+  path: string
+  connections: WebSocketConnection[]
+}
+
+export interface WebSocketsResponse {
+  paths: WebSocketPath[]
+}
+
+export interface WebSocketPathResponse {
+  path: string
+  connections: WebSocketConnection[]
+}
+
+export interface WebSocketInfo {
+  path: string
+  connectionCount: number
+}
+
 export interface Module {
   name: string
   routes: RouteInfo[]
   queues: QueueInfo[]
   schedules: ScheduleInfo[]
+  websockets?: WebSocketInfo[]
 }
 
 export interface ModulesResponse {

@@ -4,11 +4,15 @@ import { FastifyInstance, FastifyPluginAsync } from "fastify";
 import fsPlugin from "fastify-plugin";
 import websocketPlugin from "@fastify/websocket";
 
+import { logger } from "@cloudnux/utils";
+
+
 import {
     WebSocketPluginOptions,
     WebSocketConfig,
     WebSocketConnection,
     WebSocketRouteHandler,
+    RegisteredWebSocketPath,
 } from "./types";
 
 const DEFAULT_CONFIG: WebSocketConfig = {
@@ -31,6 +35,7 @@ export const websocketsPlugin: FastifyPluginAsync<WebSocketPluginOptions> =
         const connections = new Map<string, WebSocketConnection>();
         const handlers: WebSocketRouteHandler[] = [];
         const registeredPaths = new Set<string>();
+        const pathModuleMap = new Map<string, string | undefined>();
 
         // Register @fastify/websocket
         await app.register(websocketPlugin);
@@ -40,8 +45,19 @@ export const websocketsPlugin: FastifyPluginAsync<WebSocketPluginOptions> =
             if (registeredPaths.has(path)) return;
             registeredPaths.add(path);
 
-            app.get(path, { websocket: true }, (socket) => {
-                const connectionId = crypto.randomUUID();
+            app.get(path, {
+                websocket: true,
+                preHandler: async (request) => {
+                    const connectionId = crypto.randomUUID();
+                    (request as any)._wsConnectionId = connectionId;
+
+                    const connectHandlers = handlers.filter(h => h.path === path && h.event === "connect");
+                    for (const h of connectHandlers) {
+                        await h.handler(connectionId, "connect", null, request);
+                    }
+                },
+            }, (socket, request) => {
+                const connectionId = (request as any)._wsConnectionId ?? crypto.randomUUID();
                 const connection: WebSocketConnection = {
                     connectionId,
                     socket,
@@ -53,22 +69,20 @@ export const websocketsPlugin: FastifyPluginAsync<WebSocketPluginOptions> =
                 // Filter handlers for this path at runtime so late-registered handlers are included
                 const pathHandlers = () => handlers.filter(h => h.path === path);
 
-                // Fire connect handlers
-                const connectHandlers = pathHandlers().filter(h => h.event === "connect");
-                for (const h of connectHandlers) {
-                    h.handler(connectionId, "connect").catch(() => { });
-                }
-
                 // Handle incoming messages
                 socket.on("message", (raw) => {
                     const data = raw.toString();
 
                     const currentHandlers = pathHandlers();
 
-                    // Try to match a specific route handler
-                    const routeKey = typeof data === "object" && data !== null
-                        ? data[config.routeKeyField]
-                        : undefined;
+                    // Try to parse and match a specific route handler
+                    let routeKey: string | undefined;
+                    try {
+                        const parsed = JSON.parse(data);
+                        routeKey = parsed?.[config.routeKeyField];
+                    } catch {
+                        // not JSON, no route key
+                    }
 
                     let matched = false;
                     if (routeKey) {
@@ -77,7 +91,7 @@ export const websocketsPlugin: FastifyPluginAsync<WebSocketPluginOptions> =
                         );
                         for (const h of routeHandlers) {
                             matched = true;
-                            h.handler(connectionId, "message", data).catch(() => { });
+                            h.handler(connectionId, "message", data, request).catch((e) => { logger.error(e) });
                         }
                     }
 
@@ -87,7 +101,7 @@ export const websocketsPlugin: FastifyPluginAsync<WebSocketPluginOptions> =
                             h => h.event === "message" && !h.route
                         );
                         for (const h of defaultHandlers) {
-                            h.handler(connectionId, "message", data).catch(() => { });
+                            h.handler(connectionId, "message", data, request).catch((e) => { logger.error(e) });
                         }
                     }
                 });
@@ -96,7 +110,7 @@ export const websocketsPlugin: FastifyPluginAsync<WebSocketPluginOptions> =
                 socket.on("close", () => {
                     const disconnectHandlers = pathHandlers().filter(h => h.event === "disconnect");
                     for (const h of disconnectHandlers) {
-                        h.handler(connectionId, "disconnect").catch(() => { });
+                        h.handler(connectionId, "disconnect", null, request).catch((e) => { logger.error(e) });
                     }
                     connections.delete(connectionId);
                 });
@@ -107,6 +121,9 @@ export const websocketsPlugin: FastifyPluginAsync<WebSocketPluginOptions> =
         const manager = {
             registerHandler(handler: WebSocketRouteHandler) {
                 handlers.push(handler);
+                if (!pathModuleMap.has(handler.path)) {
+                    pathModuleMap.set(handler.path, handler.module);
+                }
                 ensureRouteForPath(handler.path);
             },
             getConnections(path?: string): WebSocketConnection[] {
@@ -115,6 +132,13 @@ export const websocketsPlugin: FastifyPluginAsync<WebSocketPluginOptions> =
                     return allConnections.filter(c => c.path === path);
                 }
                 return allConnections;
+            },
+            getRegisteredPaths(module?: string): RegisteredWebSocketPath[] {
+                const all: RegisteredWebSocketPath[] = Array.from(pathModuleMap.entries()).map(([path, mod]) => ({ path, module: mod }));
+                if (module) {
+                    return all.filter(p => p.module === module);
+                }
+                return all;
             },
             async sendToClient(connectionId: string, data: any): Promise<void> {
                 const connection = connections.get(connectionId);

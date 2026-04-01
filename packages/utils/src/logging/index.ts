@@ -1,124 +1,95 @@
 import { env } from "../config";
-
 import { Logger, logLevels } from "./types";
 import { errorToString } from "./error-to-string";
+import { getWriter } from "./writer";
 
-export let logger: Logger;
-export function initializeLogger(module: string, requestId: string = "") {
-    const currentLogLevel = logLevels[env('LOG_LEVEL')?.toLowerCase() as keyof typeof logLevels] ?? logLevels.info;
-    logger = {
-        fatal: (message: unknown, meta?: Record<string, any>) => {
-            if (currentLogLevel >= logLevels.fatal) {
-                console.error({
-                    level: 'fatal',
-                    message: errorToString(message),
-                    timestamp: new Date().toISOString(),
-                    module,
-                    requestId,
-                    ...meta
-                });
-            }
-        },
-        error: (message: unknown, meta?: Record<string, any>) => {
-            if (currentLogLevel >= logLevels.error) {
-                console.error({
-                    level: 'error',
-                    message: errorToString(message),
-                    timestamp: new Date().toISOString(),
-                    module,
-                    requestId,
-                    ...meta
-                });
-            }
-        },
-        warn: (message: unknown, meta?: Record<string, any>) => {
-            if (currentLogLevel >= logLevels.warn) {
-                console.warn({
-                    level: 'warn',
-                    message: errorToString(message),
-                    timestamp: new Date().toISOString(),
-                    module,
-                    requestId,
-                    ...meta
-                });
-            }
-        },
-        info: (message: unknown, meta?: Record<string, any>) => {
-            if (currentLogLevel >= logLevels.info) {
-                console.info({
-                    level: 'info',
-                    message: errorToString(message),
-                    timestamp: new Date().toISOString(),
-                    module,
-                    requestId,
-                    ...meta
-                });
-            }
-        },
-        debug: (message: unknown, meta?: Record<string, any>) => {
-            if (currentLogLevel >= logLevels.debug) {
-                console.log({
-                    level: 'debug',
-                    message: errorToString(message),
-                    timestamp: new Date().toISOString(),
-                    module,
-                    requestId,
-                    ...meta
-                });
-            }
-        }
-    }
+export { setWriter, getWriter } from "./writer";
+export type { LogWriter, LogEntry } from "./writer";
+
+const levelValues = {
+    fatal: 70,
+    error: 60,
+    warn: 50,
+    info: 40,
+    debug: 30,
+    trace: 20,
+} as const;
+
+type LevelName = keyof typeof levelValues;
+
+let currentLogLevel = 2;
+let _module = "default";
+let _requestId = "";
+
+export function initializeLogger(moduleName: string, requestIdValue: string = "") {
+    _module = moduleName;
+    _requestId = requestIdValue;
 }
 
-// export const logger: Logger = {
-//     fatal: (message: unknown, meta?: Record<string, any>) => {
-//         if (currentLogLevel >= logLevels.fatal) {
-//             console.error(
-//                 `[${new Date().toTimeString()}]`,
-//                 `${chalk.bgRed.white(" fatal ")}${EOL}`,
-//                 errorToString(message),
-//                 meta ? `${EOL}${JSON.stringify(meta, null, 2)}` : ""
-//             );
-//         }
-//     },
-//     error: (message: unknown, meta?: Record<string, any>) => {
-//         if (currentLogLevel >= logLevels.error) {
-//             console.error(
-//                 `[${new Date().toTimeString()}]`,
-//                 `${chalk.bgRed.white(" error ")}${EOL}`,
-//                 errorToString(message),
-//                 meta ? `${EOL}${JSON.stringify(meta, null, 2)}` : ""
-//             );
-//         }
-//     },
-//     warn: (message: unknown, meta?: Record<string, any>) => {
-//         if (currentLogLevel >= logLevels.warn) {
-//             console.warn(
-//                 `[${new Date().toTimeString()}]`,
-//                 `${chalk.bgYellow.black(" warn ")}${EOL}`,
-//                 errorToString(message),
-//                 meta ? `${EOL}${JSON.stringify(meta, null, 2)}` : ""
-//             );
-//         }
-//     },
-//     info: (message: unknown, meta?: Record<string, any>) => {
-//         if (currentLogLevel >= logLevels.info) {
-//             console.info(
-//                 `[${new Date().toTimeString()}]`,
-//                 `${chalk.bgBlue.white(" info ")}${EOL}`,
-//                 message,
-//                 meta ? `${EOL}${JSON.stringify(meta, null, 2)}` : ""
-//             );
-//         }
-//     },
-//     debug: (message: unknown, meta?: Record<string, any>) => {
-//         if (currentLogLevel >= logLevels.debug) {
-//             console.debug(
-//                 `[${new Date().toTimeString()}]`,
-//                 `${chalk.bgWhite.black(" debug ")}${EOL}`,
-//                 message,
-//                 meta ? `${EOL}${JSON.stringify(meta, null, 2)}` : ""
-//             );
-//         }
-//     }
-// }
+function writeLine(level: LevelName, mergeObject: Record<string, any> | null, msg: string, bindings: Record<string, string>) {
+    getWriter()({
+        level: levelValues[level],
+        levelName: level,
+        time: Date.now(),
+        module: bindings.module || _module,
+        reqId: bindings.reqId || _requestId,
+        msg: level === "error" || level === "fatal" ? errorToString(msg) : msg,
+        ...(mergeObject ? { meta: mergeObject } : {}),
+    });
+}
+
+function createLogger(bindings: Record<string, string> = {}): Logger & { child: (b: Record<string, string>) => ReturnType<typeof createLogger> } {
+    const currentLogLevelName = (env("LOG_LEVEL")?.toLowerCase() ?? "info") as keyof typeof logLevels;
+    currentLogLevel = logLevels[currentLogLevelName] ?? logLevels.info;
+
+    return {
+        level: currentLogLevelName,
+        fatal: (mergeObject: Record<string, any> | string, msg?: string) => {
+            if (currentLogLevel >= logLevels.fatal) {
+                typeof mergeObject === "string" || mergeObject instanceof Error
+                    ? writeLine("fatal", null, mergeObject as any, bindings)
+                    : writeLine("fatal", mergeObject, msg ?? "", bindings);
+            }
+        },
+        error: (mergeObject: Record<string, any> | string, msg?: string) => {
+            if (currentLogLevel >= logLevels.error) {
+                typeof mergeObject === "string" || mergeObject instanceof Error
+                    ? writeLine("error", null, mergeObject as any, bindings)
+                    : writeLine("error", mergeObject, msg ?? "", bindings);
+            }
+        },
+        warn: (mergeObject: Record<string, any> | string, msg?: string) => {
+            if (currentLogLevel >= logLevels.warn) {
+                typeof mergeObject === "string"
+                    ? writeLine("warn", null, mergeObject, bindings)
+                    : writeLine("warn", mergeObject, msg ?? "", bindings);
+            }
+        },
+        info: (mergeObject: Record<string, any> | string, msg?: string) => {
+            if (currentLogLevel >= logLevels.info) {
+                typeof mergeObject === "string"
+                    ? writeLine("info", null, mergeObject, bindings)
+                    : writeLine("info", mergeObject, msg ?? "", bindings);
+            }
+        },
+        debug: (mergeObject: Record<string, any> | string, msg?: string) => {
+            if (currentLogLevel >= logLevels.debug) {
+                typeof mergeObject === "string"
+                    ? writeLine("debug", null, mergeObject, bindings)
+                    : writeLine("debug", mergeObject, msg ?? "", bindings);
+            }
+        },
+        trace: (mergeObject: Record<string, any> | string, msg?: string) => {
+            if (currentLogLevel >= logLevels.trace) {
+                typeof mergeObject === "string"
+                    ? writeLine("trace", null, mergeObject, bindings)
+                    : writeLine("trace", mergeObject, msg ?? "", bindings);
+            }
+        },
+        silent: () => { },
+        child: (childBindings: Record<string, string>) =>
+            createLogger({ ...bindings, ...childBindings }),
+    };
+}
+
+export const logger = createLogger();

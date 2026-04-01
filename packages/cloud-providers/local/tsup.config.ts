@@ -13,7 +13,7 @@ export default defineConfig([
         minify: false,
         target: 'es2024',
         outDir: 'dist',
-        shims: true,
+        shims: false,
         cjsInterop: true,
     },
     // Queue plugin build
@@ -29,7 +29,7 @@ export default defineConfig([
         target: 'es2024',
         cjsInterop: true,
         outDir: 'dist/queue-plugin',
-        shims: true
+        shims: false,
     },
     // Schedule plugin build
     {
@@ -44,7 +44,7 @@ export default defineConfig([
         target: 'es2024',
         cjsInterop: true,
         outDir: 'dist/schedule-plugin',
-        shims: true
+        shims: false,
     },
     // web socket plugin build
     {
@@ -59,7 +59,7 @@ export default defineConfig([
         target: 'es2024',
         cjsInterop: true,
         outDir: 'dist/websocket-plugin',
-        shims: true
+        shims: false,
     },
     //dev console plugin build
     {
@@ -74,6 +74,6 @@ export default defineConfig([
         target: 'es2024',
         cjsInterop: true,
         outDir: 'dist/dev-console-plugin',
-        shims: true
+        shims: false,
     }
 ])

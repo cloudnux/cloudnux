@@ -1,6 +1,3 @@
-import chalk from "chalk";
-import logSymbols from "log-symbols";
-
 import { logger } from "@cloudnux/utils";
 
 import { JobExecution, ScheduledJob, SchedulerConfig, SchedulerService, SchedulerState, JobHandler } from "./types";
@@ -71,7 +68,7 @@ export const scheduleJob = (
             executeJobFn(updatedScheduler);
         }, timeUntilNextRun);
 
-        logger.debug(`${chalk.blue('📅 Scheduled job')} ${chalk.green(scheduler.job.name)} to run in ${chalk.cyan(Math.round(timeUntilNextRun / 1000))}s`);
+        logger.debug(`Scheduled job ${scheduler.job.name} to run in ${Math.round(timeUntilNextRun / 1000)}s`);
     }
 
     return updatedScheduler;
@@ -119,7 +116,7 @@ export const handleExecutionError = (
     execution: JobExecution,
     error: Error,
 ): JobExecution => {
-    logger.error(`${logSymbols.error} ${chalk.red('Job failed')} ${execution.jobId}: ${error.message}`);
+    logger.error(`Job failed ${execution.jobId}: ${error.message}`);
 
     return completeExecution(execution, undefined, error.message);
 };
@@ -130,7 +127,7 @@ export const handleExecutionSuccess = (
 ): JobExecution => {
     const duration = execution.endTime ? execution.endTime.getTime() - execution.startTime.getTime() : 0;
 
-    logger.debug(`${logSymbols.success} ${chalk.green('Job completed')} in ${duration}ms`);
+    logger.debug(`Job completed in ${duration}ms`);
 
     return completeExecution(execution, result);
 };

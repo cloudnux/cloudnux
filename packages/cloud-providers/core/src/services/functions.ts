@@ -150,7 +150,8 @@ export type EventResponse = {
     status: "success" | "error",
     code?: ErrorCode,
     body?: Record<string, any>
-    stack?: string
+    stack?: string,
+    retryDelay?: number,
 };
 
 export type EventFunctionContext = FunctionContext & {
@@ -160,23 +161,28 @@ export type EventFunctionContext = FunctionContext & {
     response: EventResponse;
     message<T = Record<string, any>>(): T;
     attributes<T = Record<string, any>>(): T;
+    retryWithDelay(seconds: number): void;
 }
+
+export type EventBatchItemResult = { failureId: string } | undefined;
 //#endregion
 
 //#region [WebSocket]
 export type WebSocketRequest = {
     connectionId: string,
     event: WebSocketEvent,
-    path: string,
     route?: string,
-    body?: string | Record<string, any>,
+    url?: string,
+    params: Record<string, string | undefined> | null,
+    body?: string | Record<string, any> | null,
     headers?: Record<string, string | string[] | undefined>,
-    query?: Record<string, string>,
+    queryString: Record<string, string | undefined> | null,
     requestId?: string,
 }
 
 export type WebSocketResponse = {
     status: "success" | "error",
+    statusCode?: number,
     body?: any,
 }
 
@@ -187,6 +193,10 @@ export type WebSocketFunctionContext = FunctionContext & {
     request: WebSocketRequest;
     response: WebSocketResponse;
     message<T = Record<string, any>>(): T;
+    params<T = Record<string, string>>(): T;
+    unauthorized(body?: any): void;
+    forbidden(body?: any): void;
+    validationError(details: Record<string, any>): void;
 }
 //#endregion
 
@@ -198,6 +208,6 @@ export interface FunctionsService {
 
     buildHttpResponse(httpFunctionContext: HttpFunctionContext, ...args: any[]): any
     buildScheduleResponse(scheduleFunctionContext: ScheduleFunctionContext, ...args: any[]): any;
-    buildEventResponse(eventFunctionContext: EventFunctionContext, ...args: any[]): any;
+    buildEventResponse(eventFunctionContext: EventFunctionContext, ...args: any[]): Promise<EventBatchItemResult>;
     buildWebSocketResponse(webSocketFunctionContext: WebSocketFunctionContext, ...args: any[]): any;
 }

@@ -6,8 +6,7 @@ import {
     scheduleHandler,
     websocketHandler,
     useCloudProvider,
-  } from "@cloudnux/cloud-sdk"; 
-import { initializeLogger, logger } from "@cloudnux/utils";
+  } from "@cloudnux/cloud-sdk";
 
 import * as src from "../../../packages/modules/<%=module%>/src";
 
@@ -47,26 +46,13 @@ router.event(
 router.websocket(
             "<%= wsRouteKey %>",
             (event, context) => {
-                return websocketHandler(src["<%= entry.handler %>"],event,context);
+                return websocketHandler(src["<%= entry.handler %>"],event,context, <%- JSON.stringify(entry.trigger, null, 2) %> );
             }
 );
     <%_ } _%>
 <%_ } _%>
 
 export async function handler(event, context) {
-    initializeLogger("<%=module%>",context.awsRequestId);
-    logger.info("request started", { requestId: context.awsRequestId });
-    logger.debug("Received event", { event, requestId: context.awsRequestId });
-   let response;
-    try {
-        response = await router.run(event, context);
-        return response;
-    }
-    catch (error) {
-        logger.error("Error occurred", { error, requestId: context.awsRequestId });
-        throw error;
-    }
-    finally {
-        logger.info("request finished", { response, requestId: context.awsRequestId });
-    }
+    response = await router.run(event, context);
+    return response;
 }

@@ -9,7 +9,17 @@ export interface RouteInfo {
 class RouteRegistry {
   private routes: RouteInfo[] = []
 
+  private static readonly IGNORED_METHODS = new Set(['OPTIONS', 'HEAD'])
+
   register(routeOptions: any): void {
+    const methods: string[] = Array.isArray(routeOptions.method)
+      ? routeOptions.method
+      : [routeOptions.method]
+
+    if (methods.every(m => RouteRegistry.IGNORED_METHODS.has(m.toUpperCase()))) {
+      return
+    }
+
     const routeInfo: RouteInfo = {
       method: routeOptions.method,
       url: routeOptions.url,

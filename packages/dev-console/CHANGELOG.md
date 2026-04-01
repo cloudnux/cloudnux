@@ -1,5 +1,17 @@
 # @cloudnux/dev-console
 
+## 0.12.0
+
+### Minor Changes
+
+- remove utils as library as external
+
+## 0.11.0
+
+### Minor Changes
+
+- fix logging and dev-console UI for local dev
+
 ## 0.10.0
 
 ### Minor Changes

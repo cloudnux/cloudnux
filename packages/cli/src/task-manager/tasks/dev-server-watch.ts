@@ -1,78 +1,69 @@
 import path from "node:path";
 import { fork } from "node:child_process";
-import tsup from "tsup";
-import { PluginBuild } from "esbuild";
+import esbuild from "esbuild";
 
-import { Task, TaskParam } from "../../types.js";
-
-// function mapCloud(provider: string) {
-//     switch (provider) {
-//         case "aws":
-//             return "@cloudnux/aws-cloud-provider";
-//         case "azure":
-//             return "@cloudnux/azure-cloud-provider";
-//         case "gcp":
-//             return "@cloudnux/gcp-cloud-provider";
-//         default:
-//             return provider;
-//     }
-// }
+import { Task } from "../../types.js";
 
 export const devServerWatch: Task = {
     title: 'Dev Server Watch',
     skip: () => false,
-    action: async (params: TaskParam) => {
-        const { workingDir, logger, eventEmitter } = params;
+    action: async (params) => {
+        const { workingDir, logger, eventEmitter, externalPackages } = params;
         const entryPath = path.resolve(workingDir, "app.ts");
-        await tsup.build({
-            entry: {
-                index: entryPath
+        const outputFile = path.resolve(workingDir, "index.mjs");
+
+        let child: ReturnType<typeof fork> | null = null;
+
+        const ctx = await esbuild.context({
+            format: "esm",
+            banner: {
+                js: `
+                    import __node_module from 'node:module';
+                    import __node_url from 'node:url';
+                    import __node_path from 'node:path';
+                    const require = __node_module.createRequire(import.meta.url);
+                    const __filename = __node_url.fileURLToPath(import.meta.url);
+                    const __dirname = __node_path.dirname(__filename);
+                    `.trim()
             },
-            esbuildOptions: (options) => {
-                options.absWorkingDir = workingDir;
-                return options;
-            },
-            format: ["cjs"],
+            external: [...externalPackages],
+            entryPoints: { index: entryPath },
+            absWorkingDir: workingDir,
             bundle: true,
-            noExternal: [],
             sourcemap: true,
             minify: false,
-            outDir: workingDir,
+            outdir: workingDir,
+            outExtension: { ".js": ".mjs" },
             platform: "node",
-            cjsInterop: true,
-            shims: true,
-            dts: false,
-            watch: false,
-            env: {
-                __ENV_PATH__: '"' + path.resolve(workingDir, "../../.env").replace(/\\/g, "\\\\") + '"',
-                __DEV__: process.env.__DEV__ || '"development"',
-            },
             define: {
                 __ENV_PATH__: '"' + path.resolve(workingDir, "../../.env").replace(/\\/g, "\\\\") + '"',
                 __DEV__: process.env.__DEV__ || '"development"',
             },
-            esbuildPlugins: [
+            plugins: [
                 {
-                    name: "capture-logs",
-                    setup: (build) => {
-                        build.onEnd((buildResult) => {
-                            if (buildResult.errors.length > 0) {
-                                buildResult.errors.forEach(logger);
+                    name: "restart-on-build",
+                    setup(build) {
+                        build.onEnd(({ errors }) => {
+                            if (errors.length > 0) return;
+
+                            if (child) {
+                                child.kill("SIGINT");
+                                if (!child.killed) {
+                                    console.error(`cannot stop process ${child.pid}`);
+                                }
                             }
-                            if (buildResult.warnings.length > 0) {
-                                buildResult.warnings.forEach(logger);
-                            }
+                            child = startModule(outputFile, ["--enable-source-maps"], logger, eventEmitter);
                         });
                     }
-                },
-                startServerPlugin(logger, eventEmitter)
-            ],
-            silent: true // Prevent console output
+                }
+            ]
         });
+
+        await ctx.watch();
     }
 }
 
-function startModule(main: any, execArgv: any, logger: any, eventEmitter: (type: string, data?: any) => void) {
+function startModule(main: string, execArgv: string[], logger: any, eventEmitter: (type: string, data?: any) => void) {
     const child = fork(main, { env: process.env, execArgv });
 
     child.on('message', (message: { type: string; payload: any }) => {
@@ -103,30 +94,4 @@ function startModule(main: any, execArgv: any, logger: any, eventEmitter: (type:
         child.kill("SIGINT");
     });
     return child;
-}
-
-function startServerPlugin(logger: any, eventEmitter: (type: string, data?: any) => void) {
-    logger("Starting server plugin");
-    return {
-        name: "start servers",
-        setup(build: PluginBuild) {
-            /** @type ChildProcess  */
-            let child: any;
-            build.onEnd(async function ({ errors, outputFiles }) {
-                if (child) {
-                    child.kill("SIGINT");
-                    if (!child.killed) {
-                        console.error(`cannot stop process ${child.pid}`);
-                    }
-                }
-
-                if (errors && errors.length > 0) {
-                    errors.forEach(logger);
-                    return;
-                }
-                const main = outputFiles?.find(file => file.path.endsWith(".js") || file.path.endsWith(".cjs"))?.path;
-                child = startModule(main, ["--enable-source-maps"], logger, eventEmitter);
-            });
-        },
-    }
 }

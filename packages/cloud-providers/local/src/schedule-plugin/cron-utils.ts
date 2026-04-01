@@ -1,4 +1,3 @@
-import chalk from 'chalk';
 import { parseExpression } from 'cron-parser';
 
 import { logger } from "@cloudnux/utils"
@@ -76,7 +75,7 @@ export function parseCronExpression(
 
     } catch (error: any) {
         //BREAKPOINT: LOGGING
-        logger.error(`${chalk.red('Invalid cron expression:')} ${cronExpression} - ${error.message}`);
+        logger.error(`Invalid cron expression: ${cronExpression} - ${error.message}`);
 
         // Fallback to a safe default (every hour)
         const fallbackTime = new Date();
@@ -120,7 +119,7 @@ export function getNextExecutions(
         return executions;
     } catch (error: any) {
         //BREAKPOINT: LOGGING
-        logger.error(`${chalk.red('Error getting next executions:')} ${error.message}`);
+        logger.error(`Error getting next executions: ${error.message}`);
         return [];
     }
 }

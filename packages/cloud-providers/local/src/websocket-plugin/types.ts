@@ -1,4 +1,4 @@
-import { FastifyPluginOptions } from "fastify";
+import { FastifyPluginOptions, FastifyRequest } from "fastify";
 import { WebSocket } from "ws";
 
 export type WebSocketEvent = "connect" | "disconnect" | "message";
@@ -10,13 +10,19 @@ export interface WebSocketConnection {
     connectedAt: Date;
 }
 
-export type WebSocketEventHandler = (connectionId: string, event: WebSocketEvent, data?: any) => Promise<any>;
+export type WebSocketEventHandler = (connectionId: string, event: WebSocketEvent, data: any | null, request: FastifyRequest) => Promise<any>;
 
 export interface WebSocketRouteHandler {
     path: string;
     event: WebSocketEvent;
     route?: string;
+    module?: string;
     handler: WebSocketEventHandler;
+}
+
+export interface RegisteredWebSocketPath {
+    path: string;
+    module?: string;
 }
 
 export interface WebSocketConfig {
@@ -31,6 +37,7 @@ export interface WebSocketPluginOptions extends FastifyPluginOptions {
 export interface WebSocketManager {
     registerHandler(handler: WebSocketRouteHandler): void;
     getConnections(path?: string): WebSocketConnection[];
+    getRegisteredPaths(module?: string): RegisteredWebSocketPath[];
     sendToClient(connectionId: string, data: any): Promise<void>;
 }
 

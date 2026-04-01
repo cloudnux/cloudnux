@@ -15,15 +15,16 @@ export const transformDevServer: Task = {
     action: async ({
         moduleNames,
         devServerTemplateFunc,
-        workingDir
+        workingDir,
+        port,
     }) => {
-
         const rendered = devServerTemplateFunc({
             source: "./src",
-            moduleNames
+            moduleNames,
+            port
         });
 
-        await fs.mkdir(workingDir, { recursive: true });
+        await fs.mkdir(path.join(workingDir), { recursive: true });
         await fs.writeFile(path.join(workingDir, `app.ts`), rendered, "utf-8");
     }
 }

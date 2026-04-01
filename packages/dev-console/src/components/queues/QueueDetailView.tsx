@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useQueueDetails } from '../../hooks'
 import TerminalLogs from '../modules/TerminalLogs'
+import { getBaseUrl } from '../../utils'
 
 interface QueueDetailViewProps {
   moduleName: string
@@ -254,21 +255,21 @@ const QueueDetailView: React.FC<QueueDetailViewProps> = ({ moduleName, queueName
                   <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
                     POST
                   </span>
-                  <code className="text-xs font-mono text-gray-700">http://localhost:3000/queues/{queueName}</code>
+                  <code className="text-xs font-mono text-gray-700">{getBaseUrl()}/queues/{queueName}</code>
                   <span className="text-xs text-gray-500">- Enqueue message</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
                     GET
                   </span>
-                  <code className="text-xs font-mono text-gray-700">http://localhost:3000/queues/{queueName}</code>
+                  <code className="text-xs font-mono text-gray-700">{getBaseUrl()}/queues/{queueName}</code>
                   <span className="text-xs text-gray-500">- Get queue details</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
                     GET
                   </span>
-                  <code className="text-xs font-mono text-gray-700">http://localhost:3000/queues/{queueName}/process-dlq</code>
+                  <code className="text-xs font-mono text-gray-700">{getBaseUrl()}/queues/{queueName}/process-dlq</code>
                   <span className="text-xs text-gray-500">- Process DLQ messages</span>
                 </div>
               </div>
@@ -277,21 +278,21 @@ const QueueDetailView: React.FC<QueueDetailViewProps> = ({ moduleName, queueName
                   <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
                     GET
                   </span>
-                  <code className="text-xs font-mono text-gray-700">http://localhost:3000/queues/{queueName}/purge-dlq</code>
+                  <code className="text-xs font-mono text-gray-700">{getBaseUrl()}/queues/{queueName}/purge-dlq</code>
                   <span className="text-xs text-gray-500">- Purge DLQ messages</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
                     GET
                   </span>
-                  <code className="text-xs font-mono text-gray-700">http://localhost:3000/queues/dashboard</code>
+                  <code className="text-xs font-mono text-gray-700">{getBaseUrl()}/queues/dashboard</code>
                   <span className="text-xs text-gray-500">- All queues overview</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
                     DELETE
                   </span>
-                  <code className="text-xs font-mono text-gray-700">http://localhost:3000/queues/{queueName}</code>
+                  <code className="text-xs font-mono text-gray-700">{getBaseUrl()}/queues/{queueName}</code>
                   <span className="text-xs text-gray-500">- Delete queue</span>
                 </div>
               </div>
@@ -633,10 +634,8 @@ const QueueDetailView: React.FC<QueueDetailViewProps> = ({ moduleName, queueName
       </div>
 
       {/* Queue Logs */}
-      <TerminalLogs 
+      <TerminalLogs
         moduleName={moduleName}
-        triggerName={queueName}
-        triggerType="queue"
         title={`${queueName} Queue Logs`}
       />
     </div>

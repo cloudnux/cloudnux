@@ -1,6 +1,7 @@
 import React from 'react'
 import { useScheduleDetails } from '../../hooks'
 import TerminalLogs from '../modules/TerminalLogs'
+import { getBaseUrl } from '../../utils'
 
 interface ScheduleDetailViewProps {
   moduleName: string
@@ -132,14 +133,14 @@ const ScheduleDetailView: React.FC<ScheduleDetailViewProps> = ({ moduleName, sch
                 <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
                   GET
                 </span>
-                <code className="text-xs font-mono text-gray-700">http://localhost:3000/schedules/{scheduleName}</code>
+                <code className="text-xs font-mono text-gray-700">{getBaseUrl()}/schedules/{scheduleName}</code>
                 <span className="text-xs text-gray-500">- Get schedule details</span>
               </div>
               <div className="flex items-center space-x-2">
                 <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
                   POST
                 </span>
-                <code className="text-xs font-mono text-gray-700">http://localhost:3000/schedules/{scheduleName}/trigger</code>
+                <code className="text-xs font-mono text-gray-700">{getBaseUrl()}/schedules/{scheduleName}/trigger</code>
                 <span className="text-xs text-gray-500">- Trigger job now</span>
               </div>
             </div>
@@ -148,14 +149,14 @@ const ScheduleDetailView: React.FC<ScheduleDetailViewProps> = ({ moduleName, sch
                 <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800">
                   PUT
                 </span>
-                <code className="text-xs font-mono text-gray-700">http://localhost:3000/schedules/{scheduleName}/enable</code>
+                <code className="text-xs font-mono text-gray-700">{getBaseUrl()}/schedules/{scheduleName}/enable</code>
                 <span className="text-xs text-gray-500">- Enable schedule</span>
               </div>
               <div className="flex items-center space-x-2">
                 <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800">
                   PUT
                 </span>
-                <code className="text-xs font-mono text-gray-700">http://localhost:3000/schedules/{scheduleName}/disable</code>
+                <code className="text-xs font-mono text-gray-700">{getBaseUrl()}/schedules/{scheduleName}/disable</code>
                 <span className="text-xs text-gray-500">- Disable schedule</span>
               </div>
             </div>
@@ -272,10 +273,8 @@ const ScheduleDetailView: React.FC<ScheduleDetailViewProps> = ({ moduleName, sch
       </div>
 
       {/* Schedule Logs */}
-      <TerminalLogs 
+      <TerminalLogs
         moduleName={moduleName}
-        triggerName={scheduleName}
-        triggerType="schedule"
         title={`${scheduleName} Schedule Logs`}
       />
     </div>

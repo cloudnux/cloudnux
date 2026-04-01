@@ -138,9 +138,10 @@ export function createEventBrokerService() {
 
                             // We intentionally don't await this call to avoid blocking
                             // This is a best-effort approach to make messages visible again
-                            sqsClient.send(changeVisibilityCommand).catch(err => {
-                                logger.warn('Failed to reset message visibility:', err);
-                            });
+                            sqsClient.send(changeVisibilityCommand)
+                                .catch(err => {
+                                    logger.warn({ err }, 'Failed to reset message visibility:');
+                                });
                         } catch (err) {
                             logger.warn(`Error changing message visibility:${err}`);
                         }
@@ -182,7 +183,7 @@ export function createEventBrokerService() {
                             // Delete the message
                             await sqsClient.send(deleteCommand);
                         } catch (err) {
-                            logger.warn(`Error deleting message:`, { err });
+                            logger.warn({ err }, `Error deleting message:`);
                         }
                     }
                 }

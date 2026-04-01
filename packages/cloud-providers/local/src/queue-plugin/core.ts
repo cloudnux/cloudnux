@@ -1,6 +1,3 @@
-import chalk from "chalk";
-import logSymbols from "log-symbols";
-
 import { logger } from "@cloudnux/utils";
 
 import { EventHandler, QueueConfig, QueueMessage, QueueService, QueueSummary } from "./types";
@@ -149,17 +146,17 @@ export const purgeDLQ = (queueService: QueueService): number => {
 
 // Logging functions (side effects isolated)
 export const logSuccess = (message: string, messageId: string, queueName: string): void => {
-    logger.debug(`${logSymbols.success} ${chalk.green(message)} ${chalk.yellow(messageId)} in queue ${chalk.magenta(queueName)}`);
+    logger.debug(`Success: ${message} ${messageId} in queue ${queueName}`);
 };
 
 export const logError = (message: string, messageId: string, queueName: string, error: string): void => {
-    logger.error(`${logSymbols.error} ${chalk.red(message)} ${chalk.yellow(messageId)} in queue ${chalk.magenta(queueName)}: ${error}`);
+    logger.error(`Error: ${message} ${messageId} in queue ${queueName}: ${error}`);
 };
 
 export const logRetryScheduled = (messageId: string, delayMs: number): void => {
-    logger.debug(`${chalk.blue('⏱️ Scheduling retry')} for message ${chalk.yellow(messageId)} in ${chalk.cyan(delayMs)}ms`);
+    logger.debug(`Scheduling retry for message ${messageId} in ${delayMs}ms`);
 };
 
 export const logDLQOperation = (operation: string, count: number, queueName: string): void => {
-    logger.warn(`${logSymbols.warning} ${chalk.yellow(operation)} ${chalk.red(count)} messages from DLQ for ${chalk.green(queueName)}`);
+    logger.warn(`${operation} ${count} messages from DLQ for ${queueName}`);
 };

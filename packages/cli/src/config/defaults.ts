@@ -18,6 +18,7 @@ export const defaultConfig: Config = {
     externalPackages: ["aws-sdk", "@aws-sdk/*"],
     environments: {
         develop: {
+            port: 3000,
             moduleTemplatePath: "./templates/local/module.ts.ejs",
             devServerTemplatePath: "./templates/local/dev-server.ts.ejs",
             tasks: [

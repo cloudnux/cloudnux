@@ -1,5 +1,23 @@
 # @cloudnux/aws-cloud-provider
 
+## 0.12.0
+
+### Minor Changes
+
+- remove utils as library as external
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @cloudnux/core-cloud-provider@0.12.0
+
+## 0.11.0
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @cloudnux/core-cloud-provider@0.11.0
+
 ## 0.10.0
 
 ### Minor Changes
