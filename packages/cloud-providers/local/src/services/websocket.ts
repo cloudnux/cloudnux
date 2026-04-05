@@ -14,6 +14,12 @@ export function createLocalWebSocketService(): WebSocketService {
                 throw new Error("WebSocket plugin not initialized");
             }
             return _manager.sendToClient(connectionId, data);
-        }
+        },
+        async disconnect(connectionId: string): Promise<void> {
+            if (!_manager) {
+                throw new Error("WebSocket plugin not initialized");
+            }
+            return _manager.disconnect(connectionId);
+        },
     };
 }

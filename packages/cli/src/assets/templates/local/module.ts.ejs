@@ -47,8 +47,8 @@ async function entries(app: RouterInstance) {
           <%_ if(entry.trigger.options.route) { _%>
           route: "<%= entry.trigger.options.route %>",
           <%_ } _%>
-          handler: async (connectionId, event, data, request) => {
-            return websocketHandler(src["<%= entry.handler %>"], connectionId, event, data, request);
+          handler: async (connectionId, event, data, request, reply) => {
+            return websocketHandler(src["<%= entry.handler %>"], connectionId, event, data, request, reply);
           }
         });
     <%_ } _%>

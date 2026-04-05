@@ -139,14 +139,23 @@ export function createLocalFunctionsService(): FunctionsService {
             }
             return undefined;
         },
-        buildWebSocketResponse: (context: WebSocketFunctionContext) => {
+        buildWebSocketResponse: (context: WebSocketFunctionContext, _, __, ___, ____, reply: FastifyReply) => {
+            logger.debug(context.response, "[buildWebSocketResponse]");
             if (context.response.status === "error") {
-                const err = Object.assign(
-                    new Error(context.response.body?.message ?? "Connection rejected"),
-                    { statusCode: context.response.statusCode ?? 500 }
-                );
-                throw err;
+                if (reply) {
+                    logger.debug(context.response, "[buildWebSocketResponse] reply");
+                    reply
+                        .status(context.response.statusCode ?? 500)
+                        .send(context.response.body);
+                }
+                return;
             }
+            if (reply) {
+                reply
+                    .status(context.response.statusCode ?? 200)
+                    .send();
+            }
+            return;
         }
     }
 }

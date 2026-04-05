@@ -47,13 +47,13 @@ export const websocketsPlugin: FastifyPluginAsync<WebSocketPluginOptions> =
 
             app.get(path, {
                 websocket: true,
-                preHandler: async (request) => {
+                preHandler: async (request, reply) => {
                     const connectionId = crypto.randomUUID();
                     (request as any)._wsConnectionId = connectionId;
 
                     const connectHandlers = handlers.filter(h => h.path === path && h.event === "connect");
                     for (const h of connectHandlers) {
-                        await h.handler(connectionId, "connect", null, request);
+                        await h.handler(connectionId, "connect", null, request, reply);
                     }
                 },
             }, (socket, request) => {
@@ -147,6 +147,13 @@ export const websocketsPlugin: FastifyPluginAsync<WebSocketPluginOptions> =
                 }
                 const payload = typeof data === "string" ? data : JSON.stringify(data);
                 connection.socket.send(payload);
+            },
+            async disconnect(connectionId: string): Promise<void> {
+                const connection = connections.get(connectionId);
+                if (!connection) {
+                    throw new Error(`WebSocket connection ${connectionId} not found`);
+                }
+                connection.socket.close();
             },
         };
 
