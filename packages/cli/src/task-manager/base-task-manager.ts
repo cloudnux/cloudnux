@@ -1,4 +1,5 @@
 import path from "node:path";
+import fs from "node:fs/promises";
 import fg from "fast-glob";
 import _pickBy from "lodash/pickBy.js"
 
@@ -6,6 +7,7 @@ import { Config, Task, TaskEntry, TaskParam } from "../types.js";
 
 export abstract class BaseTaskManager {
     private _tasksCount: number;
+    private resolvedNamespace?: string;
 
     protected config: Config;
     protected environment: string;
@@ -56,6 +58,7 @@ export abstract class BaseTaskManager {
             ...envConfig,
             title: this.getTaskTitle(task, params),
             environment: this.environment,
+            namespace: this.resolvedNamespace,
             modulesPath: this.config.modulesPath,
             selectedModule: this.selectedModule,
             modules: this.modules,
@@ -115,6 +118,14 @@ export abstract class BaseTaskManager {
     protected abstract execute(): Promise<void>;
 
     public async run() {
+        this.resolvedNamespace = this.config.namespace;
+        if (!this.resolvedNamespace) {
+            try {
+                const pkg = JSON.parse(await fs.readFile(path.join(process.cwd(), 'package.json'), 'utf-8'));
+                this.resolvedNamespace = pkg.name;
+            } catch { /* no package.json at cwd */ }
+        }
+
         const entrypoints = await fg(this.config.modulesPath);
         const modules = entrypoints.reduce((acc, entrypoint) => {
             const name = path.basename(path.dirname(entrypoint));

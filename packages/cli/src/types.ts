@@ -67,7 +67,13 @@ export type Environment<TTaskParams extends TaskParamBase = any> = {
 
 export type Config<TTaskParams extends TaskParamBase = any> = {
     /**
-     * glob Path to find all modules (package.json) having entrypoints 
+     * Namespace prefix for all resources (lambdas, state keys, etc.)
+     * @default root package.json `name` field
+     */
+    namespace?: string,
+
+    /**
+     * glob Path to find all modules (package.json) having entrypoints
      * @default './packages/modules/**\/package.json'
     */
     modulesPath: string,

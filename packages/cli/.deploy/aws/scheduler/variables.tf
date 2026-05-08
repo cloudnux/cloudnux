@@ -10,8 +10,8 @@ variable "schedules" {
     maximum_window_in_minutes = optional(number)
   }))
 }
-variable "component" {
-  description = "The name of the component."
+variable "module" {
+  description = "The name of the module."
   type        = string
 }
 

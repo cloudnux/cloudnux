@@ -43,6 +43,7 @@ export const defaultConfig: Config = {
             moduleTemplatePath: "./templates/cloud/entrypoint-build.ts.ejs",
             triggerTemplatePath: "./templates/cloud/entrypoint-triggers.tf.ejs",
             tasks: [
+                { task: transferTerraformModules },
                 { task: loadModuleTemplate },
                 { task: loadTriggerTemplate },
                 {

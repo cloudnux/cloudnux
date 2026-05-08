@@ -4,7 +4,7 @@ data "aws_iam_role" "eventbridge_role" {
 
 resource "aws_scheduler_schedule_group" "this" {
 
-  name = var.component
+  name = var.module
 
   lifecycle {
     create_before_destroy = true

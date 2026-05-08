@@ -32,6 +32,10 @@
                         },
                         "method": {
                             "$ref": "#/definitions/MethodType"
+                        },
+                        "gateway": {
+                            "type": "string",
+                            "description": "Tag value used to look up the target AWS API Gateway V2 (HTTP) instance"
                         }
                     },
                     "required": [
@@ -316,6 +320,10 @@
                         },
                         "routeKey": {
                             "type": "string"
+                        },
+                        "gateway": {
+                            "type": "string",
+                            "description": "Tag value used to look up the target AWS API Gateway V2 (WebSocket) instance"
                         }
                     },
                     "required": [

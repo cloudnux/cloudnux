@@ -1,7 +1,7 @@
 terraform {
   backend "s3" {
-    key                  = "anubis_<%= module %>/terraform.state"
-    workspace_key_prefix = "state/<%= module %>"
+    key                  = "<%= namespace %>_<%= module %>/terraform.state"
+    workspace_key_prefix = "state/<%= namespace %>_<%= module %>"
   }
 
   required_providers {
@@ -15,70 +15,118 @@ terraform {
 }
 
 data "aws_lambda_function" "this" {
-    function_name = "anubis_<%= module %>"
+  function_name = "<%= namespace %>_<%= module %>"
 }
 
-data "aws_apigatewayv2_apis" "this" {
-   tags = {
-     application = "konshu"
-   }
+<%_
+// ── HTTP triggers ────────────────────────────────────────────────────────────
+const httpEntries = Object.entries(entries).filter(([, e]) => e.trigger.type.toLowerCase() === "http");
+const httpByGateway = httpEntries.reduce((acc, entry) => {
+  const tag = entry[1].trigger.options.gateway;
+  if (tag) { if (!acc[tag]) acc[tag] = []; acc[tag].push(entry); }
+  return acc;
+}, {});
+_%>
+<%_ for (const [gatewayTag, gatewayEntries] of Object.entries(httpByGateway)) {
+  const safeName = gatewayTag.replace(/[^a-zA-Z0-9]/g, '_');
+_%>
+data "aws_apigatewayv2_apis" "http_<%= safeName %>" {
+  tags = {
+    Name = "<%= gatewayTag %>"
+  }
 }
 
-<%_ const httpEntries = Object.entries(entries).filter(([k,e]) => e.trigger.type.toLowerCase() === "http")  _%>
-<%_ if(httpEntries.length > 0) { _%>
-module "http_trigger_for_<%= module %>" {
-  source         = "../.deploy/aws/http"
-  api_gateway_id = sort(data.aws_apigatewayv2_apis.this.ids)[0]
+module "http_trigger_<%= safeName %>_for_<%= namespace %>_<%= module %>" {
+  source         = "<%= tfModules.http %>"
+  api_gateway_id = sort(data.aws_apigatewayv2_apis.http_<%= safeName %>.ids)[0]
   lambda_arn     = data.aws_lambda_function.this.arn
-  lambda_name    =   "anubis_<%= module %>"
+  lambda_name    = "<%= namespace %>_<%= module %>"
   entrypoints = {
-  <%_ for(const [key,entry] of httpEntries){ _%>
+  <%_ for (const [key, entry] of gatewayEntries) { _%>
     "<%= key %>" = {
-      description        = "<% entry.trigger.options.description %>"
-      method             = "<%= entry.trigger.options.method %>"
-      path               = "<%= entry.trigger.options.route %>"
+      description = ""
+      method      = "<%= entry.trigger.options.method %>"
+      path        = "<%= entry.trigger.options.route %>"
     }
-    <%_ } _%>
+  <%_ } _%>
   }
 }
 <%_ } _%>
 
-<%_ const scheduleEntries = Object.entries(entries).filter(([k,e]) => e.trigger.type.toLowerCase() === "schedule") _%>
-<%_ if(scheduleEntries.length > 0) { _%>
-module "schedule_trigger_for_<%= module _%>" {
-   source              = "../.deploy/aws/scheduler"
-   module           = "anubis_<%= module %>"
-   target_arn          = data.aws_lambda_function.this.arn
-   schedules = {
-   <%_ for(const [key,entry] of scheduleEntries) { _%>
-     "<%= key %>" = {
-       name     = "<%= key %>"
-       pattern  = "<%= entry.trigger.options.pattern %>"
-       timezone = "UTC"
-       state    = "DISABLED"
-       retry_policy = {
-         maximum_retry_attempts = 3
-       }
-     }
-   <%_ } _%>
- }
+<%_
+// ── Schedule triggers ────────────────────────────────────────────────────────
+const scheduleEntries = Object.entries(entries).filter(([, e]) => e.trigger.type.toLowerCase() === "schedule");
+_%>
+<%_ if (scheduleEntries.length > 0) { _%>
+module "schedule_trigger_for_<%= namespace %>_<%= module %>" {
+  source     = "<%= tfModules.scheduler %>"
+  module     = "<%= namespace %>_<%= module %>"
+  target_arn = data.aws_lambda_function.this.arn
+  schedules = {
+  <%_ for (const [key, entry] of scheduleEntries) { _%>
+    "<%= key %>" = {
+      name     = "<%= key %>"
+      pattern  = "<%= entry.trigger.options.pattern %>"
+      timezone = "UTC"
+      state    = "DISABLED"
+      retry_policy = {
+        maximum_retry_attempts = 3
+      }
+    }
+  <%_ } _%>
+  }
 }
-
 <%_ } _%>
 
-<%_ const eventEntries = Object.entries(entries).filter(([k,e]) => e.trigger.type.toLowerCase() === "event" && e.trigger.options.sourceType?.toLowerCase() === "sqs") _%>
-<%_ if(eventEntries.length > 0) { _%>
-module "sqs_trigger_for_<%= module %>" {
-  source      = "../.deploy/aws/sqs"
-  lambda_name = "anubis_<%= module %>"
+<%_
+// ── Event (SQS) triggers ─────────────────────────────────────────────────────
+const sqsEntries = Object.entries(entries).filter(([, e]) => e.trigger.type.toLowerCase() === "event" && e.trigger.options.sourceType?.toLowerCase() === "sqs");
+_%>
+<%_ if (sqsEntries.length > 0) { _%>
+module "sqs_trigger_for_<%= namespace %>_<%= module %>" {
+  source      = "<%= tfModules.sqs %>"
+  lambda_name = "<%= namespace %>_<%= module %>"
   event_sources = {
-  <%_ for(const [key,entry] of eventEntries) { _%>
+  <%_ for (const [key, entry] of sqsEntries) { _%>
     "<%= key %>" = {
-      queue_name  = "<%= entry.trigger.options.source %>"
-      enabled     = true
-      batch_size  = 10
+      queue_name = "<%= entry.trigger.options.source %>"
+      enabled    = true
+      batch_size = 10
     }
-    <%_ } _%>
+  <%_ } _%>
+  }
+}
+<%_ } _%>
+
+<%_
+// ── WebSocket triggers ───────────────────────────────────────────────────────
+const wsEntries = Object.entries(entries).filter(([, e]) => e.trigger.type.toLowerCase() === "websocket");
+const wsByGateway = wsEntries.reduce((acc, entry) => {
+  const tag = entry[1].trigger.options.gateway;
+  if (tag) { if (!acc[tag]) acc[tag] = []; acc[tag].push(entry); }
+  return acc;
+}, {});
+_%>
+<%_ for (const [gatewayTag, wsGatewayEntries] of Object.entries(wsByGateway)) {
+  const safeName = gatewayTag.replace(/[^a-zA-Z0-9]/g, '_');
+_%>
+data "aws_apigatewayv2_apis" "ws_<%= safeName %>" {
+  tags = {
+    Name = "<%= gatewayTag %>"
+  }
+}
+
+module "ws_trigger_<%= safeName %>_for_<%= namespace %>_<%= module %>" {
+  source         = "<%= tfModules.websocket %>"
+  api_gateway_id = sort(data.aws_apigatewayv2_apis.ws_<%= safeName %>.ids)[0]
+  lambda_arn     = data.aws_lambda_function.this.arn
+  lambda_name    = "<%= namespace %>_<%= module %>"
+  routes = {
+  <%_ for (const [key, entry] of wsGatewayEntries) { _%>
+    "<%= key %>" = {
+      event = "<%= entry.trigger.options.event %>"
+    }
+  <%_ } _%>
   }
 }
 <%_ } _%>

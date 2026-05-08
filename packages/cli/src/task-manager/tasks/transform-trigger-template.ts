@@ -18,6 +18,7 @@ export const transformTriggerTemplate: Task = {
         triggerTemplateFunc,
         entrypointPath,
         moduleName,
+        namespace,
         workingDir,
         source,
     }) => {
@@ -25,8 +26,14 @@ export const transformTriggerTemplate: Task = {
         const rendered = triggerTemplateFunc({
             source: (process.platform === "win32") ? source.replace(/\\/g, "/") : source,
             module: moduleName,
+            namespace,
+            tfModules: {
+                http:      "../.deploy/aws/http",
+                scheduler: "../.deploy/aws/scheduler",
+                sqs:       "../.deploy/aws/sqs",
+                websocket: "../.deploy/aws/websocket",
+            },
             ...JSON.parse(entrypointContent),
-
         });
         // if folder does not exist, create it
         const moduleDir = path.join(workingDir, moduleName);
