@@ -79,6 +79,9 @@ export function createEventBrokerService() {
          * @returns Promise resolving when publishing is complete
          */
         async publish(target: string, message: string | Record<string, any>, options?: any): Promise<void> {
+            if (!target)
+                throw new Error("Target queue URL or topic ARN is required for publishing a message.");
+
             const messageBody = typeof message === 'string' ? message : JSON.stringify(message);
 
             if (isSnsTopicArn(target)) {

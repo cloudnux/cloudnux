@@ -9,6 +9,7 @@ import {
 import {
   HttpStatus,
   ApiContentResponse,
+  ApiCursorListResponse,
   ApiDeleteResponse,
   ApiError,
   ApiListResponse,
@@ -76,7 +77,10 @@ export function createHttpContext(
       } as T;
     },
 
-    output: output,
+    output(status: number, body?: string | object, headers?: Record<string, string | string[]>) {
+      const bodyStr = typeof body === "string" ? body : JSON.stringify(body);
+      output(status, bodyStr, headers);
+    },
 
     error(message: string, code?: ErrorCode, details?: Record<string, any>, stack?: string) {
       error(
@@ -116,6 +120,26 @@ export function createHttpContext(
           timestamp: new Date().toISOString()
         }
       } as ApiListResponse<T>), {
+        "content-type": "application/json"
+      });
+    },
+    cursorList<T>(
+      items: T[],
+      nextCursor: string | null,
+      pageSize: number,
+      prevCursor?: string | null
+    ) {
+      return output(HttpStatus.OK, JSON.stringify({
+        success: true,
+        data: items,
+        meta: {
+          nextCursor,
+          prevCursor,
+          pageSize,
+          hasMore: nextCursor !== null,
+          timestamp: new Date().toISOString()
+        }
+      } as ApiCursorListResponse<T>), {
         "content-type": "application/json"
       });
     },
@@ -174,11 +198,19 @@ export function createHttpContext(
     },
     businessError(message: string, details?: Record<string, any>) {
       return error(
-        HttpStatus.BAD_REQUEST,
+        HttpStatus.UNPROCESSABLE_ENTITY,
         ErrorCode.BUSINESS_RULE_VIOLATION,
         message,
         details
       );
+    },
+    unauthorized(message = "Authentication required") {
+      // 401 — caller is not authenticated (no/invalid token)
+      return error(HttpStatus.UNAUTHORIZED, ErrorCode.UNAUTHORIZED, message);
+    },
+    forbidden(message = "You do not have permission to perform this action") {
+      // 403 — caller IS authenticated but lacks permission
+      return error(HttpStatus.FORBIDDEN, ErrorCode.ACCESS_DENIED, message);
     }
   };
 }

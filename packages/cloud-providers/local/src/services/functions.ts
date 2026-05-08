@@ -140,22 +140,15 @@ export function createLocalFunctionsService(): FunctionsService {
             return undefined;
         },
         buildWebSocketResponse: (context: WebSocketFunctionContext, _, __, ___, ____, reply: FastifyReply) => {
-            logger.debug(context.response, "[buildWebSocketResponse]");
             if (context.response.status === "error") {
                 if (reply) {
-                    logger.debug(context.response, "[buildWebSocketResponse] reply");
-                    reply
+                    return reply
                         .status(context.response.statusCode ?? 500)
                         .send(context.response.body);
                 }
-                return;
+                return undefined;
             }
-            if (reply) {
-                reply
-                    .status(context.response.statusCode ?? 200)
-                    .send();
-            }
-            return;
+            return undefined;
         }
     }
 }

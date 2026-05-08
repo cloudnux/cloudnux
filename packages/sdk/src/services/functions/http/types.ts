@@ -14,11 +14,16 @@ export type ApiError = {
 }
 
 export type ApiResponseMeta = {
-    // Pagination fields
+    // Offset pagination fields
     page?: number;
     pageSize?: number;
     totalItems?: number;
     totalPages?: number;
+
+    // Cursor pagination fields
+    nextCursor?: string | null;
+    prevCursor?: string | null;
+    hasMore?: boolean;
 
     // Additional metadata
     timestamp?: string;
@@ -36,6 +41,17 @@ export interface ApiListResponse<T> extends ApiResponse<T[]> {
         pageSize: number;
         totalItems: number;
         totalPages: number;
+        timestamp: string;
+    };
+}
+
+export interface ApiCursorListResponse<T> extends ApiResponse<T[]> {
+    data: T[];
+    meta: {
+        nextCursor: string | null;
+        prevCursor?: string | null;
+        pageSize: number;
+        hasMore: boolean;
         timestamp: string;
     };
 }

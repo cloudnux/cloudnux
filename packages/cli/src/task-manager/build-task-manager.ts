@@ -2,11 +2,11 @@ import { Config, TaskParam } from "../types.js";
 import { BaseTaskManager } from "./base-task-manager.js";
 
 export class BuildTaskManager extends BaseTaskManager {
-    constructor(config: Config, environment: string) {
-        super(config, environment);
+    constructor(config: Config, environment: string, moduleName?: string) {
+        super(config, environment, moduleName);
     }
 
-    public async execute(): Promise<void> {
+    protected override async execute(): Promise<void> {
         const envConfig = this.config.environments[this.environment];
         if (!envConfig) {
             throw new Error(`Environment ${this.environment} not found in config`);

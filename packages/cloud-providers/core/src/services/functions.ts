@@ -108,12 +108,16 @@ export type HttpFunctionContext = FunctionContext & {
     params<T = Record<string, string>>(): T;
 
     list<T>(items: T[], page: number, pageSize: number, totalItems: number): void;
+    cursorList<T>(items: T[], nextCursor: string | null, pageSize: number, prevCursor?: string | null): void;
     created<T>(data: T): void;
     deleted(id?: string | number): void;
     validationError(details: Record<string, any>): void;
     serverError(err: Error): void;
     businessError(message: string, details?: Record<string, any>): void;
-    output(status: number, body?: string, headers?: Record<string, string | string[]>): void;
+
+    unauthorized(message?: string): void;
+    forbidden(message?: string): void;
+    output(status: number, body?: string | object, headers?: Record<string, string | string[]>): void;
 }
 
 //#endregion

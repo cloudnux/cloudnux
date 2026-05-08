@@ -6,13 +6,14 @@ export function loadArgs() {
     const args = meow(
         `
 	Usage
-	  $ nux <enviroment>
+	  $ nux <enviroment> [module] [options]
 
 	Options
 		--config  Your config file path
 
 	Examples
 	  $ nux develop --config=./config.json
+      $ nux production api --config=./config.json
 `,
         {
             importMeta: import.meta,

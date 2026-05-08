@@ -1,6 +1,6 @@
 terraform {
   backend "s3" {
-    key                  = "<%= module %>/terraform.state"
+    key                  = "anubis_<%= module %>/terraform.state"
     workspace_key_prefix = "state/<%= module %>"
   }
 
@@ -15,43 +15,42 @@ terraform {
 }
 
 data "aws_lambda_function" "this" {
-    function_name = "<%= module %>"
+    function_name = "anubis_<%= module %>"
 }
 
 data "aws_apigatewayv2_apis" "this" {
    tags = {
-     application = "epf"
+     application = "konshu"
    }
 }
 
-<% const httpEntries = Object.entries(entries).filter(([k,e]) => e.trigger.type.toLowerCase() === "http")  %>
-<% if(httpEntries.length > 0) { %>
+<%_ const httpEntries = Object.entries(entries).filter(([k,e]) => e.trigger.type.toLowerCase() === "http")  _%>
+<%_ if(httpEntries.length > 0) { _%>
 module "http_trigger_for_<%= module %>" {
   source         = "../.deploy/aws/http"
   api_gateway_id = sort(data.aws_apigatewayv2_apis.this.ids)[0]
   lambda_arn     = data.aws_lambda_function.this.arn
-  lambda_name    =   "<%= module %>"
+  lambda_name    =   "anubis_<%= module %>"
   entrypoints = {
-  <% for(const [key,entry] of httpEntries){ %>
+  <%_ for(const [key,entry] of httpEntries){ _%>
     "<%= key %>" = {
       description        = "<% entry.trigger.options.description %>"
       method             = "<%= entry.trigger.options.method %>"
       path               = "<%= entry.trigger.options.route %>"
     }
-    <% } %>
+    <%_ } _%>
   }
 }
+<%_ } _%>
 
-<% } %>
-
-<% const scheduleEntries = Object.entries(entries).filter(([k,e]) => e.trigger.type.toLowerCase() === "schedule") %>
-<% if(scheduleEntries.length > 0) { %>
-module "schedule_trigger_for_<%= module %>" {
+<%_ const scheduleEntries = Object.entries(entries).filter(([k,e]) => e.trigger.type.toLowerCase() === "schedule") _%>
+<%_ if(scheduleEntries.length > 0) { _%>
+module "schedule_trigger_for_<%= module _%>" {
    source              = "../.deploy/aws/scheduler"
-   component           = "<%= module %>"
+   module           = "anubis_<%= module %>"
    target_arn          = data.aws_lambda_function.this.arn
    schedules = {
-   <% for(const [key,entry] of scheduleEntries) { %>
+   <%_ for(const [key,entry] of scheduleEntries) { _%>
      "<%= key %>" = {
        name     = "<%= key %>"
        pattern  = "<%= entry.trigger.options.pattern %>"
@@ -61,25 +60,25 @@ module "schedule_trigger_for_<%= module %>" {
          maximum_retry_attempts = 3
        }
      }
-   <% } %>
+   <%_ } _%>
  }
 }
-<% } %>
+
+<%_ } _%>
 
 <%_ const eventEntries = Object.entries(entries).filter(([k,e]) => e.trigger.type.toLowerCase() === "event" && e.trigger.options.sourceType?.toLowerCase() === "sqs") _%>
-<% if(eventEntries.length > 0) { %>
+<%_ if(eventEntries.length > 0) { _%>
 module "sqs_trigger_for_<%= module %>" {
   source      = "../.deploy/aws/sqs"
-  lambda_name = "<%= module %>"
+  lambda_name = "anubis_<%= module %>"
   event_sources = {
-  <% for(const [key,entry] of eventEntries) { %>
+  <%_ for(const [key,entry] of eventEntries) { _%>
     "<%= key %>" = {
       queue_name  = "<%= entry.trigger.options.source %>"
       enabled     = true
       batch_size  = 10
     }
-    <% } %>
+    <%_ } _%>
   }
 }
-
-<% } %>
+<%_ } _%>

@@ -4,7 +4,7 @@ export function createWebSocketContext(request: WebSocketRequest): WebSocketFunc
     const response: WebSocketResponse = {
         status: "success",
         body: {} as any,
-        statusCode: 200,
+        statusCode: 101,
     };
 
     const reject = (statusCode: number, body?: any) => {

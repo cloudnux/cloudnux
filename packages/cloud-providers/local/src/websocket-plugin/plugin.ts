@@ -55,6 +55,8 @@ export const websocketsPlugin: FastifyPluginAsync<WebSocketPluginOptions> =
                     for (const h of connectHandlers) {
                         await h.handler(connectionId, "connect", null, request, reply);
                     }
+                    if (reply.statusCode !== 200)
+                        return reply; // Prevent WebSocket upgrade if preHandler set an error status
                 },
             }, (socket, request) => {
                 const connectionId = (request as any)._wsConnectionId ?? crypto.randomUUID();

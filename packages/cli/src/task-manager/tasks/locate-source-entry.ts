@@ -24,13 +24,13 @@ async function getPackageEntryPaths(packagePath: string): Promise<string[]> {
     // Process exports
     if (pkg.exports) {
         const exportPaths = Object.entries(pkg.exports)
-            .filter(([_, value]) => {
+            .filter(([, value]) => {
                 if (typeof value === 'string') {
                     return value.endsWith('.ts') || value.endsWith('.tsx');
                 }
                 return false;
             })
-            .map(([_, value]) => path.join(pkgDir, value as string));
+            .map(([, value]) => path.join(pkgDir, value as string));
 
         exportPaths.forEach(path => paths.add(path));
     }

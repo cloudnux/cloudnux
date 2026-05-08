@@ -13,9 +13,7 @@ import { Task } from "../../types.js";
  */
 export const transformTriggerTemplate: Task = {
     title: ({ moduleName }) => `Transform terraform trigger ${moduleName}`,
-    skip: (params) => {
-        return params.environment === "develop";
-    },
+    skip: () => false,
     action: async ({
         triggerTemplateFunc,
         entrypointPath,
@@ -30,8 +28,6 @@ export const transformTriggerTemplate: Task = {
             ...JSON.parse(entrypointContent),
 
         });
-
-
         // if folder does not exist, create it
         const moduleDir = path.join(workingDir, moduleName);
         await fs.mkdir(moduleDir, { recursive: true });

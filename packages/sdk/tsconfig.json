@@ -1,5 +1,8 @@
 {
     "compilerOptions": {
+        "types": [
+            "node"
+        ],
         "target": "ES2022",
         "module": "ESNext",
         "moduleResolution": "bundler",
@@ -18,8 +21,7 @@
         "noImplicitReturns": true,
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true,
-        "resolveJsonModule": true,
-        "baseUrl": "."
+        "resolveJsonModule": true
     },
     "include": [
         "src/**/*"

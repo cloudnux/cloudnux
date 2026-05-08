@@ -1,12 +1,4 @@
-import path from "node:path";
-import fg from "fast-glob";
-
 import { Task } from "../../types.js";
-import { transformModule } from "./transform-module.js";
-import { locateSourceEntry } from "./locate-source-entry.js";
-import { transformTriggerTemplate } from "./transform-trigger-template.js";
-import { buildServer } from "./build-server.js";
-
 /**
  * identify the module entry point paths
  * @param {string} modulesPath
@@ -16,19 +8,18 @@ export const locateModules: Task = {
     title: "load all entrypoints.json",
     skip: () => false,
     action: async (params) => {
-        const { executeSubTasks } = params;
-        const entrypoints = await fg(params.modulesPath);
-        const moduleNames = entrypoints.map((entrypoint) => path.basename(path.dirname(entrypoint)));
-        let output = {
-            entrypoints,
-            moduleNames
-        };
+        const { executeSubTasks, modules } = params;
 
-        for (const entrypoint of entrypoints) {
+        const entrypoints = Object.entries(modules) as [string, string][];
+        let output = {
+            entrypoints: Object.values(modules),
+            moduleNames: Object.keys(modules)
+        };
+        for (const [moduleName, modulePath] of entrypoints) {
             const taskOutput = await executeSubTasks!({
                 ...params,
-                entrypointPath: entrypoint,
-                moduleName: path.basename(path.dirname(entrypoint))
+                entrypointPath: modulePath,
+                moduleName: moduleName
             });
             output = {
                 ...output,
@@ -36,11 +27,5 @@ export const locateModules: Task = {
             }
         }
         return output;
-    },
-    children: [
-        locateSourceEntry,
-        transformModule,
-        transformTriggerTemplate,
-        buildServer
-    ]
+    }
 }
