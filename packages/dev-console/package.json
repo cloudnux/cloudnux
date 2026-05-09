@@ -1,6 +1,6 @@
 {
   "name": "@cloudnux/dev-console",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "description": "Web-based control panel for CloudNux development",
   "repository": {
     "type": "git",
