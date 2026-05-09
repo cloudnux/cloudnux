@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import { Task } from "../../types.js";
+import { loadEntrypoint } from "../load-entrypoint.js";
 
 /**
  * convert the module trigger template into a compilable function 
@@ -22,7 +23,7 @@ export const transformTriggerTemplate: Task = {
         workingDir,
         source,
     }) => {
-        const entrypointContent = await fs.readFile(entrypointPath, "utf-8");
+        const entrypoint = await loadEntrypoint(entrypointPath);
         const rendered = triggerTemplateFunc({
             source: (process.platform === "win32") ? source.replace(/\\/g, "/") : source,
             module: moduleName,
@@ -33,7 +34,7 @@ export const transformTriggerTemplate: Task = {
                 sqs:       "../.deploy/aws/sqs",
                 websocket: "../.deploy/aws/websocket",
             },
-            ...JSON.parse(entrypointContent),
+            ...entrypoint,
         });
         // if folder does not exist, create it
         const moduleDir = path.join(workingDir, moduleName);

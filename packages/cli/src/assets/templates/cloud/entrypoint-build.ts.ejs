@@ -53,6 +53,6 @@ router.websocket(
 <%_ } _%>
 
 export async function handler(event, context) {
-    response = await router.run(event, context);
+    const response = await router.run(event, context);
     return response;
 }

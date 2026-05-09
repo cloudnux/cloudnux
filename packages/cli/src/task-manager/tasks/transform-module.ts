@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import { Task } from "../../types.js";
+import { loadEntrypoint } from "../load-entrypoint.js";
 
 const helpers = {
     $$convertRouteParamstoFastifyRouteTemplate: (route: string) => {
@@ -9,21 +10,16 @@ const helpers = {
     }
 }
 
-/**
- * convert the module template into a compilable function 
- * @param {string} moduleTemplateFunc
- * @returns {function} moduleTemplate
- */
 export const transformModule: Task = {
     title: ({ moduleName }) => `Transform module ${moduleName}`,
     skip: () => false,
     action: async (params) => {
         const { workingDir, moduleName, entrypointPath, source, moduleTemplateFunc } = params;
-        const entrypointContent = await fs.readFile(entrypointPath, "utf-8");
+        const entrypoint = await loadEntrypoint(entrypointPath);
         const rendered = moduleTemplateFunc({
             source: (process.platform === "win32") ? source.replace(/\\/g, "/") : source,
             module: moduleName,
-            ...JSON.parse(entrypointContent),
+            ...entrypoint,
             ...helpers
         });
 

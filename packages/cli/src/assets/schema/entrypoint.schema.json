@@ -6,11 +6,16 @@
     "properties": {
         "entries": {
             "$ref": "#/definitions/Record"
+        },
+        "includes": {
+            "type": "array",
+            "items": {
+                "type": "string"
+            },
+            "description": "Relative paths to partial entrypoint files whose entries are merged into this one"
         }
     },
-    "required": [
-        "entries"
-    ],
+    "required": [],
     "definitions": {
         "MethodType": {
             "enum": [
