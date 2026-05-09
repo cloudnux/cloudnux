@@ -2,6 +2,10 @@
   "name": "@cloudnux/dev-console",
   "version": "0.13.0",
   "description": "Web-based control panel for CloudNux development",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cloudnux/cloudnux.git"
+  },
   "type": "module",
   "exports": {
     "./dist/*": "./dist/*"
