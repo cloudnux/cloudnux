@@ -24,7 +24,7 @@ export const createProcessMessageHandler = (
             removeFromProcessing(queueService, message.id);
             logSuccess('Successfully processed message', message.id, queueName);
         }
-    } catch (error: any) {
+    } catch {
         await handleProcessingError(queueName, message, queueService, config);
     }
 };
