@@ -1,5 +1,11 @@
 # @cloudnux/cli
 
+## 0.16.0
+
+### Minor Changes
+
+- [#16](https://github.com/cloudnux/cloudnux/pull/16) [`557ad6d`](https://github.com/cloudnux/cloudnux/commit/557ad6d72c3f0c632d32ed9a196f810f1576100c) Thanks [@minawalphonce](https://github.com/minawalphonce)! - minor mapping fix for websocket
+
 ## 0.15.0
 
 ### Minor Changes
