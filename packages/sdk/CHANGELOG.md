@@ -1,5 +1,16 @@
 # @cloudnux/cloud-sdk
 
+## 0.13.0
+
+### Minor Changes
+
+- websocket full support, multi entrypoints with merge
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @cloudnux/core-cloud-provider@0.13.0
+
 ## 0.12.0
 
 ### Minor Changes

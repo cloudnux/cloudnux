@@ -1,5 +1,11 @@
 # @cloudnux/dev-console
 
+## 0.13.0
+
+### Minor Changes
+
+- websocket full support, multi entrypoints with merge
+
 ## 0.12.0
 
 ### Minor Changes
