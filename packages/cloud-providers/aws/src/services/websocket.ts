@@ -13,7 +13,7 @@ function getClient(endpoint?: string): ApiGatewayManagementApiClient {
     return _client;
 }
 
-export function createAwsWebSocketService(): WebSocketService {
+export function createWebSocketService(): WebSocketService {
     return {
         async sendToClient(connectionId: string, data: any): Promise<void> {
             const client = getClient();
