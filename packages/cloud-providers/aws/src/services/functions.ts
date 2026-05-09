@@ -56,7 +56,7 @@ function extractParams(template: string, actualPath: string): Record<string, str
     return params;
 }
 
-export function createLocalFunctionsService(): FunctionsService {
+export function createFunctionsService(): FunctionsService {
     return {
         createHttRequest(event: APIGatewayProxyEventV2WithJWTAuthorizer, ctx: Context) {
             const httpRequest: HTTPRequest = {
@@ -143,9 +143,9 @@ export function createLocalFunctionsService(): FunctionsService {
         createWebSocketRequest: (event: APIGatewayProxyEvent, ctx: Context, trigger: WebSocketTrigger) => {
             const connectionId = event.requestContext?.connectionId!;
             const routeKey = event.requestContext?.routeKey;
-            const path = event.headers["x-original-path"];
+            const path = event.requestContext?.path || event.headers["x-original-path"];
 
-            const params = extractParams(trigger.options.route || "", path || "") || {};
+            const params = extractParams(trigger.options.path || "", path || "") || {};
 
             // Map AWS route keys to WebSocket events
             let wsEvent: "connect" | "disconnect" | "message";

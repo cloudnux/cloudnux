@@ -3,8 +3,8 @@ import { CloudProvider } from "@cloudnux/core-cloud-provider";
 import { createEventBrokerService } from "./services/event-broker";
 import { createStorageService } from "./services/storage";
 import { createLocationService } from "./services/locations";
-import { createLocalFunctionsService } from "./services/functions";
-import { createAwsWebSocketService } from "./services/websocket";
+import { createFunctionsService } from "./services/functions";
+import { createWebSocketService } from "./services/websocket";
 
 export const awsCloudProvider: CloudProvider = {
     name: "aws-cloud-provider",
@@ -12,6 +12,6 @@ export const awsCloudProvider: CloudProvider = {
     createStorageService,
     createLocationService,
     createEventBrokerService,
-    createFunctionsService: createLocalFunctionsService,
-    createWebSocketService: createAwsWebSocketService
+    createFunctionsService,
+    createWebSocketService
 };
