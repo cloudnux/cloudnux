@@ -1,5 +1,11 @@
 # @cloudnux/core-cloud-provider
 
+## 0.14.0
+
+### Minor Changes
+
+- [#13](https://github.com/cloudnux/cloudnux/pull/13) [`b3ca362`](https://github.com/cloudnux/cloudnux/commit/b3ca36247701a9bc357dc5862fb201f6acef740c) Thanks [@minawalphonce](https://github.com/minawalphonce)! - publish websocket entrypoint includes and more
+
 ## 0.13.0
 
 ### Minor Changes
