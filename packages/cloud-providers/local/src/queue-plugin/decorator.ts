@@ -1,6 +1,4 @@
 import { FastifyInstance } from "fastify";
-import chalk from "chalk";
-import logSymbols from "log-symbols";
 
 import { logger } from "@cloudnux/utils";
 
@@ -57,7 +55,7 @@ export const createQueueManager = ({
 
             //TODO: add queue filtering logic
             if (queues[queueName]) {
-                logger.warn(`${logSymbols.warning} ${chalk.yellow('Queue already exists:')} ${chalk.magenta(queueName)}.`);
+                logger.warn(`Queue already exists: ${queueName}.`);
                 return;
             }
 
@@ -69,9 +67,9 @@ export const createQueueManager = ({
                 await loadQueueState(queueName);
             }
 
-            logger.info(`${logSymbols.success} ${chalk.green('Queue added:')} ${chalk.magenta(queueName)}`);
+            logger.info(`Queue added: ${queueName}`);
         } catch (error: any) {
-            logger.error(`${logSymbols.error} ${chalk.red('Failed to add queue')} ${chalk.magenta(queueName)}: ${error.message}`);
+            logger.error(`Failed to add queue ${queueName}: ${error.message}`);
             throw error;
         }
     };
@@ -88,7 +86,7 @@ export const createQueueManager = ({
             // Check if queue has pending messages
             const totalMessages = queueService.incoming.length + queueService.processing.length;
             if (totalMessages > 0) {
-                logger.warn(`${logSymbols.warning} ${chalk.yellow('Removing queue with')} ${chalk.red(totalMessages)} ${chalk.yellow('pending messages:')} ${chalk.magenta(queueName)}`);
+                logger.warn(`Removing queue with ${totalMessages} pending messages: ${queueName}`);
             }
 
             // Clear any scheduled processing
@@ -104,9 +102,9 @@ export const createQueueManager = ({
             // Remove from queues map
             delete queues[queueName];
 
-            logger.info(`${logSymbols.success} ${chalk.green('Queue removed:')} ${chalk.magenta(queueName)}`);
+            logger.info(`Queue removed: ${queueName}`);
         } catch (error: any) {
-            logger.error(`${logSymbols.error} ${chalk.red('Failed to remove queue')} ${chalk.magenta(queueName)}: ${error.message}`);
+            logger.error(`Failed to remove queue ${queueName}: ${error.message}`);
             throw error;
         }
     };

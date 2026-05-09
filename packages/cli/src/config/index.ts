@@ -1,5 +1,5 @@
 import fs from 'node:fs';
-import path from "node:path";
+//import path from "node:path";
 import rechoir from 'rechoir';
 import { extensions } from 'interpret';
 import findUp from "findup-sync";
@@ -74,16 +74,15 @@ export async function loadConfig(
     const result = rechoir.prepare(extensions, configFile);
     if (result === true || (Array.isArray(result) && result.length === 0)) {
         // Successfully loaded
-        const ext = path.extname(configFile);
+        //const ext = path.extname(configFile);
 
         const osSpecificImportPath = (process.platform === "win32") ? "file:///" : "";
-        let rawConfig;
-        if (ext === ".json") {
-            rawConfig = await import(osSpecificImportPath + configFile);
-        }
-        else{
-            rawConfig = await import(osSpecificImportPath + configFile);
-        }
+        let rawConfig = await import(osSpecificImportPath + configFile);
+        // if (ext === ".json") {
+        // }
+        // else{
+        //     rawConfig = await import(osSpecificImportPath + configFile);
+        // }
 
         rawConfig = await resolveConfig(rawConfig.default);
         // Merge with default config to ensure all fields exist

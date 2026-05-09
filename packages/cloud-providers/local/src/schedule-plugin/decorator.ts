@@ -1,6 +1,4 @@
 import { FastifyInstance } from "fastify";
-import chalk from "chalk";
-import logSymbols from "log-symbols";
 
 import { logger } from "@cloudnux/utils";
 
@@ -48,7 +46,7 @@ export const createSchedulerManager = ({
             // Check if job already exists
             const existingJob = Object.values(state.schedulers).find(s => s.job.name === jobDefinition.name);
             if (existingJob) {
-                logger.warn(`${logSymbols.warning} ${chalk.yellow('Job already exists:')} ${chalk.magenta(jobDefinition.name)}.`);
+                logger.warn(`Job already exists: ${jobDefinition.name}.`);
                 return existingJob.job.id;
             }
 
@@ -64,11 +62,11 @@ export const createSchedulerManager = ({
                 scheduleJobFn(scheduler);
             }
 
-            logger.info(`${logSymbols.success} ${chalk.green('Job added:')} ${chalk.magenta(jobDefinition.name)} (${job.id})`);
+            logger.info(`Job added: ${jobDefinition.name} (${job.id})`);
 
             return job.id;
         } catch (error: any) {
-            logger.error(`${logSymbols.error} ${chalk.red('Failed to add job')} ${chalk.magenta(jobDefinition.name)}: ${error.message}`);
+            logger.error(`Failed to add job ${jobDefinition.name}: ${error.message}`);
             throw error;
         }
     };
@@ -84,7 +82,7 @@ export const createSchedulerManager = ({
 
             // Check if job is currently running
             if (scheduler.isRunning) {
-                logger.warn(`${logSymbols.warning} ${chalk.yellow('Removing job that is currently running:')} ${chalk.magenta(jobName)}`);
+                logger.warn(`Removing job that is currently running: ${jobName}`);
             }
 
             // Clear any scheduled timeout
@@ -95,9 +93,9 @@ export const createSchedulerManager = ({
             // Remove from state
             delete state.schedulers[scheduler.job.id];
 
-            logger.info(`${logSymbols.success} ${chalk.green('Job removed:')} ${chalk.magenta(jobName)}`);
+            logger.info(`Job removed: ${jobName}`);
         } catch (error: any) {
-            logger.error(`${logSymbols.error} ${chalk.red('Failed to remove job')} ${chalk.magenta(jobName)}: ${error.message}`);
+            logger.error(`Failed to remove job ${jobName}: ${error.message}`);
             throw error;
         }
     };
@@ -138,7 +136,7 @@ export const createSchedulerManager = ({
             }
 
             if (scheduler.job.enabled) {
-                logger.debug(`${logSymbols.info} ${chalk.blue('Job is already enabled:')} ${chalk.magenta(jobName)}`);
+                logger.debug(`Job is already enabled: ${jobName}`);
                 return;
             }
 
@@ -148,9 +146,9 @@ export const createSchedulerManager = ({
             // Schedule it
             scheduleJobFn(scheduler);
 
-            logger.info(`${logSymbols.success} ${chalk.green('Job enabled:')} ${chalk.magenta(jobName)}`);
+            logger.info(`Job enabled: ${jobName}`);
         } catch (error: any) {
-            logger.error(`${logSymbols.error} ${chalk.red('Failed to enable job')} ${chalk.magenta(jobName)}: ${error.message}`);
+            logger.error(`Failed to enable job ${jobName}: ${error.message}`);
             throw error;
         }
     };
@@ -165,7 +163,7 @@ export const createSchedulerManager = ({
             }
 
             if (!scheduler.job.enabled) {
-                logger.debug(`${logSymbols.info} ${chalk.blue('Job is already disabled:')} ${chalk.magenta(jobName)}`);
+                logger.debug(`Job is already disabled: ${jobName}`);
                 return;
             }
 
@@ -178,9 +176,9 @@ export const createSchedulerManager = ({
                 scheduler.timerId = undefined;
             }
 
-            logger.info(`${logSymbols.success} ${chalk.green('Job disabled:')} ${chalk.magenta(jobName)}`);
+            logger.info(`Job disabled: ${jobName}`);
         } catch (error: any) {
-            logger.error(`${logSymbols.error} ${chalk.red('Failed to disable job')} ${chalk.magenta(jobName)}: ${error.message}`);
+            logger.error(`Failed to disable job ${jobName}: ${error.message}`);
             throw error;
         }
     };
@@ -201,9 +199,9 @@ export const createSchedulerManager = ({
             // Trigger immediately
             setImmediate(() => executeJob(scheduler));
 
-            logger.info(`${logSymbols.success} ${chalk.green('Job triggered:')} ${chalk.magenta(jobName)}`);
+            logger.info(`Job triggered: ${jobName}`);
         } catch (error: any) {
-            logger.error(`${logSymbols.error} ${chalk.red('Failed to trigger job')} ${chalk.magenta(jobName)}: ${error.message}`);
+            logger.error(`Failed to trigger job ${jobName}: ${error.message}`);
             throw error;
         }
     };

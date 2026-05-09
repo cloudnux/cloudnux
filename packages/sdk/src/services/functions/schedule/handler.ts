@@ -8,19 +8,19 @@ type Handler = (context: ScheduleFunctionContext) => Promise<void> | void;
 
 export async function scheduleHandler(handler: Handler, ...args: any[]) {
     try {
-        logger.debug("Executing Schedule handler with args", { args });
+        logger.debug({ args }, "Executing Schedule handler with args");
         const [scheduleRequest] = cloudFunctions().createScheduleRequest(...args);
-        logger.debug("Created Schedule request ", {
+        logger.debug({
             request: scheduleRequest,
-        });
+        }, "Created Schedule request ");
         const context = createScheduleContext(scheduleRequest);
         await handler(context);
-        logger.debug("Schedule Handler executed successfully, building response", { response: context.response });
+        logger.debug({ response: context.response }, "Schedule Handler executed successfully, building response");
         return cloudFunctions().buildScheduleResponse(context);
     }
     catch (error) {
         // Log the error and re-throw it for further handling
-        logger.error("Error in Schedule handler", { error });
+        logger.error({ error }, "Error in Schedule handler");
         throw error;
     }
 }

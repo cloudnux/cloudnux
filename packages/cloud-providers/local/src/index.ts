@@ -1,4 +1,5 @@
 import { CloudProvider } from "@cloudnux/core-cloud-provider";
+import "./logging/pretty-writer";
 
 import { createLocalEventBrokerService } from "./services/event-broker";
 import { createLocalStorageService } from "./services/storage";

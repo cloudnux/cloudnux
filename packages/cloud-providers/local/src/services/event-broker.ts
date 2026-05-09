@@ -56,6 +56,8 @@ export function createLocalEventBrokerService(): EventBrokerService {
          * @returns Promise resolving when publishing is complete
          */
         async publish(target: string, message: string | Record<string, any>, options?: PublishOptions): Promise<void> {
+            if (!target)
+                throw new Error("Target queue name or URL is required for publishing a message.");
             const queueUrl = getQueueUrl(target);
             const headers: Record<string, string> = {};
 

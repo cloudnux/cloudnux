@@ -1,16 +1,16 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router'
-import { RouteInfo, QueueInfo, ScheduleInfo } from '../../types/api'
+import { RouteInfo, QueueInfo, ScheduleInfo, WebSocketInfo } from '../../types/api'
 
-type TriggerType = 'http' | 'queue' | 'schedule'
-type ColorType = 'green' | 'blue' | 'purple'
+type TriggerType = 'http' | 'queue' | 'schedule' | 'websocket'
+type ColorType = 'green' | 'blue' | 'purple' | 'indigo'
 
 interface TriggerCardProps {
   type: TriggerType
   title: string
   count: number
   color: ColorType
-  items: RouteInfo[] | QueueInfo[] | ScheduleInfo[]
+  items: RouteInfo[] | QueueInfo[] | ScheduleInfo[] | WebSocketInfo[]
   moduleName?: string
 }
 
@@ -21,29 +21,13 @@ const TriggerCard: React.FC<TriggerCardProps> = ({ type, title, count, color, it
   const getColorClasses = (color: ColorType) => {
     switch (color) {
       case 'green':
-        return {
-          bg: 'bg-green-50',
-          border: 'border-green-200',
-          header: 'bg-green-100',
-          text: 'text-green-800',
-          badge: 'bg-green-500'
-        }
+        return { bg: 'bg-green-50', border: 'border-green-200', header: 'bg-green-100', text: 'text-green-800', badge: 'bg-green-500' }
       case 'blue':
-        return {
-          bg: 'bg-blue-50',
-          border: 'border-blue-200',
-          header: 'bg-blue-100',
-          text: 'text-blue-800',
-          badge: 'bg-blue-500'
-        }
+        return { bg: 'bg-blue-50', border: 'border-blue-200', header: 'bg-blue-100', text: 'text-blue-800', badge: 'bg-blue-500' }
       case 'purple':
-        return {
-          bg: 'bg-purple-50',
-          border: 'border-purple-200',
-          header: 'bg-purple-100',
-          text: 'text-purple-800',
-          badge: 'bg-purple-500'
-        }
+        return { bg: 'bg-purple-50', border: 'border-purple-200', header: 'bg-purple-100', text: 'text-purple-800', badge: 'bg-purple-500' }
+      case 'indigo':
+        return { bg: 'bg-indigo-50', border: 'border-indigo-200', header: 'bg-indigo-100', text: 'text-indigo-800', badge: 'bg-indigo-500' }
     }
   }
 
@@ -118,6 +102,22 @@ const TriggerCard: React.FC<TriggerCardProps> = ({ type, title, count, color, it
             {schedule.cronExpression && (
               <span className="font-mono text-gray-600">{schedule.cronExpression}</span>
             )}
+          </div>
+        </div>
+      )
+    }
+
+    if (type === 'websocket') {
+      const ws = item as WebSocketInfo
+      return (
+        <div
+          key={index}
+          className="p-2 bg-white rounded border text-xs cursor-pointer hover:bg-indigo-50 transition-colors"
+          onClick={() => moduleName && navigate(`/modules/${moduleName}/websockets/${ws.path.replace(/^\//, '')}`)}
+        >
+          <div className="flex items-center justify-between">
+            <span className="font-mono font-medium">{ws.path}</span>
+            <span className="text-indigo-600">{ws.connectionCount} conn</span>
           </div>
         </div>
       )

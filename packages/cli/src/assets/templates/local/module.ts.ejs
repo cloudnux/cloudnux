@@ -41,13 +41,14 @@ async function entries(app: RouterInstance) {
     <%_ } _%>
     <%_ if(entry.trigger.type === "websocket") { _%>
         app.websockets.registerHandler({
-          path: "<%= entry.trigger.options.path %>",
+          path: "<%= $$convertRouteParamstoFastifyRouteTemplate(entry.trigger.options.path) %>",
           event: "<%= entry.trigger.options.event %>",
+          module: "<%=module%>",
           <%_ if(entry.trigger.options.route) { _%>
           route: "<%= entry.trigger.options.route %>",
           <%_ } _%>
-          handler: async (connectionId, event, data) => {
-            return websocketHandler(src["<%= entry.handler %>"], connectionId, event, data);
+          handler: async (connectionId, event, data, request, reply) => {
+            return websocketHandler(src["<%= entry.handler %>"], connectionId, event, data, request, reply);
           }
         });
     <%_ } _%>

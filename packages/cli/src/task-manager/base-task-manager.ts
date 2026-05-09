@@ -1,23 +1,27 @@
-import EventEmitter from "node:events";
 import path from "node:path";
+import fs from "node:fs/promises";
+import fg from "fast-glob";
+import _pickBy from "lodash/pickBy.js"
 
-import { Config, Task, TaskParam } from "../types.js";
-
-export type EVENTS = "new" | "start" | "success" | "failure" | "skip" | "log" | "APP_REGISTERED" | "ROUTE_REGISTERED" | "LISTENING" | "ERROR" | "REQUEST" | "RESPONSE" | "LOG";
+import { Config, Task, TaskEntry, TaskParam } from "../types.js";
 
 export abstract class BaseTaskManager {
     private _tasksCount: number;
+    private resolvedNamespace?: string;
 
     protected config: Config;
     protected environment: string;
+    protected selectedModule?: string;
+    protected modules: Record<string, string>;
     protected taskResults: Record<string, any>;
-    protected events: EventEmitter;
 
-    constructor(config: Config, environment: string) {
+    constructor(config: Config, environment: string, selectedModule?: string) {
         this.config = config;
         this.environment = environment;
-        this.taskResults = new Map();
-        this.events = new EventEmitter();
+        this.selectedModule = selectedModule;
+        this.modules = {};
+        this.taskResults = {};
+
         const envConfig = this.config.environments[this.environment];
         if (!envConfig) {
             throw new Error(`Environment ${this.environment} not found in config`);
@@ -38,10 +42,11 @@ export abstract class BaseTaskManager {
     }
 
     protected async executeTask(
-        task: Task,
+        entry: TaskEntry,
         params: TaskParam,
         parentTaskId?: string
     ): Promise<any> {
+        const { task, children } = entry;
         const taskId = parentTaskId
             ? `${parentTaskId}:${this.generateTaskId()}`
             : this.generateTaskId();
@@ -53,7 +58,10 @@ export abstract class BaseTaskManager {
             ...envConfig,
             title: this.getTaskTitle(task, params),
             environment: this.environment,
+            namespace: this.resolvedNamespace,
             modulesPath: this.config.modulesPath,
+            selectedModule: this.selectedModule,
+            modules: this.modules,
             cloudProvider: this.config.cloudProvider,
             workingDir: path.resolve(this.config.workingDir, this.environment),
             externalPackages: this.config.externalPackages,
@@ -61,35 +69,19 @@ export abstract class BaseTaskManager {
         };
         delete taskParams.tasks;
 
-        // Emit new task event
-        this.events.emit("new", {
-            id: taskId,
-            title: taskParams.title,
-            parentTaskId
-        })
-
         // Skip if condition is met
         if (task.skip?.(taskParams)) {
-            this.events.emit("skip", {
-                id: taskId,
-            })
             return null;
         }
 
-        //=> task is ready to be executed
-        this.events.emit("start", {
-            id: taskId,
-        });
-
-
         // Execute subtasks if present
         const executeSubTasks = async (subTaskParams: TaskParam): Promise<any[]> => {
-            if (!task.children || task.children.length === 0) {
+            if (!children || children.length === 0) {
                 return [];
             }
 
             const results = [];
-            for (const child of task.children) {
+            for (const child of children) {
                 const newSubTaskParams = {
                     ...subTaskParams,
                     ...results.reduce((acc, result) => {
@@ -99,28 +91,12 @@ export abstract class BaseTaskManager {
                         };
                     }, {})
                 }
-                const result = await this.executeTask(child, newSubTaskParams, taskId);
+                const result = await this.executeTask({ task: child }, newSubTaskParams, taskId);
                 results.push(result);
             }
             return results;
         };
 
-        const logger = (arg: any, data?: any) => {
-            this.events.emit("log", {
-                id: taskId,
-                log: arg,
-                data
-            });
-        };
-
-        const eventEmitter = (type: string, data?: any) => {
-            this.events.emit(type, {
-                id: taskId,
-                data
-            })
-        }
-        taskParams.logger = logger;
-        taskParams.eventEmitter = eventEmitter;
         taskParams.executeSubTasks = executeSubTasks;
         // Execute the task action
         try {
@@ -133,32 +109,33 @@ export abstract class BaseTaskManager {
                     ...result
                 }
             }
-
-            // Emit task success event
-            this.events.emit("success", {
-                id: taskId,
-            });
-
             return result;
         } catch (error) {
-            // Emit task failure event
-            this.events.emit("failure", {
-                id: taskId,
-                error: (error as Error).message,
-            });
-            throw new Error(`Task ${taskId} failed: ${(error as Error).message}`);
+            throw new Error(`Task ${this.getTaskTitle(task, taskParams)} failed: ${(error as Error).message}`);
         }
     }
 
-    public on(event: EVENTS, listener: (...args: any[]) => void): void {
-        this.events.on(event, listener);
-    }
+    protected abstract execute(): Promise<void>;
 
-    public off(event?: EVENTS) {
-        if (event)
-            this.events.removeAllListeners(event);
-        else
-            this.events.removeAllListeners();
+    public async run() {
+        this.resolvedNamespace = this.config.namespace;
+        if (!this.resolvedNamespace) {
+            try {
+                const pkg = JSON.parse(await fs.readFile(path.join(process.cwd(), 'package.json'), 'utf-8'));
+                this.resolvedNamespace = pkg.name;
+            } catch { /* no package.json at cwd */ }
+        }
+
+        const entrypoints = await fg(this.config.modulesPath);
+        const modules = entrypoints.reduce((acc, entrypoint) => {
+            const name = path.basename(path.dirname(entrypoint));
+            acc[name] = entrypoint;
+            return acc;
+        }, {} as Record<string, string>);
+        this.modules = this.selectedModule
+            ? _pickBy(modules, (_, name) => name === this.selectedModule)
+            : modules;
+        await this.execute();
     }
 
     public get tasksCount() {

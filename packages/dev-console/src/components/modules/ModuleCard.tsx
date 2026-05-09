@@ -7,7 +7,7 @@ interface ModuleCardProps {
 }
 
 const ModuleCard: React.FC<ModuleCardProps> = ({ module, onSelect }) => {
-  const totalResources = module.routes.length + module.queues.length + module.schedules.length
+  const totalResources = module.routes.length + module.queues.length + module.schedules.length + (module.websockets?.length ?? 0)
 
   return (
     <div 
@@ -44,7 +44,7 @@ const ModuleCard: React.FC<ModuleCardProps> = ({ module, onSelect }) => {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           <div className="text-center p-3 bg-green-50 rounded-lg border border-green-100">
             <div className="text-2xl font-bold text-green-600 mb-1">
               {module.routes.length}
@@ -69,6 +69,15 @@ const ModuleCard: React.FC<ModuleCardProps> = ({ module, onSelect }) => {
             </div>
             <div className="text-xs font-medium text-purple-700 uppercase tracking-wide">
               Schedules
+            </div>
+          </div>
+
+          <div className="text-center p-3 bg-indigo-50 rounded-lg border border-indigo-100">
+            <div className="text-2xl font-bold text-indigo-600 mb-1">
+              {module.websockets?.length ?? 0}
+            </div>
+            <div className="text-xs font-medium text-indigo-700 uppercase tracking-wide">
+              WebSockets
             </div>
           </div>
         </div>

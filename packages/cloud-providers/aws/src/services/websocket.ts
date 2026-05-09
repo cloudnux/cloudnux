@@ -1,4 +1,4 @@
-import { ApiGatewayManagementApiClient, PostToConnectionCommand } from "@aws-sdk/client-apigatewaymanagementapi";
+import { ApiGatewayManagementApiClient, PostToConnectionCommand, DeleteConnectionCommand } from "@aws-sdk/client-apigatewaymanagementapi";
 import { WebSocketService } from "@cloudnux/core-cloud-provider";
 import { env } from "@cloudnux/utils";
 
@@ -22,6 +22,10 @@ export function createAwsWebSocketService(): WebSocketService {
                 ConnectionId: connectionId,
                 Data: new TextEncoder().encode(payload),
             }));
-        }
+        },
+        async disconnect(connectionId: string): Promise<void> {
+            const client = getClient();
+            await client.send(new DeleteConnectionCommand({ ConnectionId: connectionId }));
+        },
     };
 }

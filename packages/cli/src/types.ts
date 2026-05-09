@@ -29,20 +29,6 @@ export type TaskParam = {
      */
     environment: string,
 
-    /**
-     * logger function to log messages
-     */
-    logger: (arg: any, data?: any) => void;
-
-    /**
-     * event emitter function to emit events
-     */
-    eventEmitter: (type: string, data?: any) => void;
-
-    //TODO: reference same param from parent task
-    children?: Task[];
-
-
     [key: string]: any;
 
 }
@@ -52,6 +38,10 @@ export type Task<TTaskParams extends TaskParamBase = any> = {
     title: string | ((params: TTaskParams) => string);
     action: (params: TTaskParams) => any | Promise<any>;
     skip?: (params: TTaskParams) => boolean;
+}
+
+export type TaskEntry<TTaskParams extends TaskParamBase = any> = {
+    task: Task<TTaskParams>;
     children?: Task<TTaskParams>[];
 }
 
@@ -59,7 +49,7 @@ export type Environment<TTaskParams extends TaskParamBase = any> = {
     /**
      * tasks to be executed for this environment
      */
-    tasks: Task<TTaskParams>[],
+    tasks: TaskEntry<TTaskParams>[],
 
     /**
      * watch task
@@ -77,7 +67,13 @@ export type Environment<TTaskParams extends TaskParamBase = any> = {
 
 export type Config<TTaskParams extends TaskParamBase = any> = {
     /**
-     * glob Path to find all modules (package.json) having entrypoints 
+     * Namespace prefix for all resources (lambdas, state keys, etc.)
+     * @default root package.json `name` field
+     */
+    namespace?: string,
+
+    /**
+     * glob Path to find all modules (package.json) having entrypoints
      * @default './packages/modules/**\/package.json'
     */
     modulesPath: string,

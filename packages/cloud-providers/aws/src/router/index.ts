@@ -8,11 +8,24 @@ import {
     Context,
     SNSEventRecord,
     SQSRecord,
-    S3EventRecord
+    S3EventRecord,
+    SQSBatchResponse,
 } from 'aws-lambda';
 
 import { HttpMethod, MessageFilter } from "@cloudnux/core-cloud-provider"
-import { logger } from '@cloudnux/utils';
+import { logger, initializeLogger, setWriter } from '@cloudnux/utils';
+import { EOL } from "os";
+
+setWriter((entry) => {
+    process.stdout.write(JSON.stringify({
+        level: entry.levelName,
+        time: entry.time,
+        module: entry.module,
+        reqId: entry.reqId || undefined,
+        msg: entry.msg,
+        ...entry.meta,
+    }) + EOL);
+});
 
 export type EventType = APIGatewayProxyEventV2 | SNSEvent | SQSEvent | ScheduledEvent | S3Event;
 
@@ -148,7 +161,7 @@ export function createRouter() {
         //remove the "HTTP" prefix from the routeKey
         const routeKey = event.routeKey.split(" ")[1].toLowerCase();
         for (const route of routes) {
-            logger.debug("[http] method", { method, routeKey, route });
+            logger.debug({ method, routeKey, route }, "[http] method");
             if (route.type === 'http' &&
                 route.method === method &&
                 route.routeKey === routeKey) {
@@ -197,21 +210,20 @@ export function createRouter() {
         event: EventType,
         context: Context,
         routes: RouteDefinition[]
-    ): Promise<any> {
+    ): Promise<SQSBatchResponse> {
         const eventSourceInfo = getEventSourceInfo(event);
-        // Handle SNS, SQS
+        // Handle SQS only for now, we can expand to other event sources later
         for (const route of routes) {
             if (route.type === 'event' &&
                 eventSourceInfo.type === route.sourceType &&
                 eventSourceInfo.name === route.source) {
                 const eventMessage = event as SNSEvent | SQSEvent | S3Event;
-                try {
-                    return await Promise.all(eventMessage.Records.map(record => {
-                        return route.handler(record, context);
-                    }));
-                } catch (error) {
-                    throw error;
-                }
+                const results = await Promise.all(eventMessage.Records.map(record => route.handler(record, context)));
+                return {
+                    batchItemFailures: results
+                        .filter(r => r?.failureId)
+                        .map(r => ({ itemIdentifier: r!.failureId })),
+                };
             }
         }
 
@@ -286,19 +298,32 @@ export function createRouter() {
         },
 
         async run(event: EventType, context: Context): Promise<any> {
-            const eventType = detectEventType(event);
-            switch (eventType) {
-                case 'http':
-                    return await handleHttpEvent(event as APIGatewayProxyEventV2, context, routes);
-                case 'schedule':
-                    return await handleScheduleEvent(event as ScheduledEvent, context, routes);
-                case 'event':
-                    return await handleEventBrokerEvent(event, context, routes);
-                case 'websocket':
-                    return await handleWebSocketEvent(event, context, routes);
-                default:
-                    throw new Error(`Unsupported event type: ${eventType}`);
+            initializeLogger(context.functionName.split("_")[0], context.awsRequestId);
+            logger.info({ requestId: context.awsRequestId }, "request started");
+            logger.debug({ event, requestId: context.awsRequestId }, "Received event");
+            let response;
+            try {
+                const eventType = detectEventType(event);
+                switch (eventType) {
+                    case 'http':
+                        return await handleHttpEvent(event as APIGatewayProxyEventV2, context, routes);
+                    case 'schedule':
+                        return await handleScheduleEvent(event as ScheduledEvent, context, routes);
+                    case 'event':
+                        return await handleEventBrokerEvent(event, context, routes);
+                    case 'websocket':
+                        return await handleWebSocketEvent(event, context, routes);
+                    default:
+                        throw new Error(`Unsupported event type: ${eventType}`);
+                }
+            }
+            catch (error) {
+                logger.error({ error, requestId: context.awsRequestId }, "Error occurred");
+                throw error;
+            }
+            finally {
+                logger.info({ response, requestId: context.awsRequestId }, "request finished");
             }
         }
-    };
+    }
 }

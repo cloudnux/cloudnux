@@ -35,6 +35,20 @@ const ModuleDetailView: React.FC<ModuleDetailViewProps> = ({ moduleName, onBack 
     )
   }
 
+  const httpRoutes = module.routes
+  const queues = module.queues
+  const schedules = module.schedules
+  const websockets = module.websockets ?? []
+
+  const triggerCards = [
+    httpRoutes.length > 0 && { type: 'http' as const, title: 'HTTP Endpoints', count: httpRoutes.length, color: 'green' as const, items: httpRoutes },
+    queues.length > 0 && { type: 'queue' as const, title: 'Event Queues', count: queues.length, color: 'blue' as const, items: queues },
+    schedules.length > 0 && { type: 'schedule' as const, title: 'Scheduled Jobs', count: schedules.length, color: 'purple' as const, items: schedules },
+    websockets.length > 0 && { type: 'websocket' as const, title: 'WebSockets', count: websockets.length, color: 'indigo' as const, items: websockets },
+  ].filter(Boolean) as { type: any; title: string; count: number; color: any; items: any[] }[]
+
+  const gridCols = triggerCards.length <= 2 ? 'md:grid-cols-2' : triggerCards.length === 3 ? 'md:grid-cols-3' : 'md:grid-cols-4'
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -53,39 +67,27 @@ const ModuleDetailView: React.FC<ModuleDetailViewProps> = ({ moduleName, onBack 
             </span>
           </div>
           <div className="flex space-x-4 text-sm text-gray-600">
-            <span>{module.routes.length} routes</span>
-            <span>{module.queues.length} queues</span>
-            <span>{module.schedules.length} schedules</span>
+            {httpRoutes.length > 0 && <span>{httpRoutes.length} routes</span>}
+            {queues.length > 0 && <span>{queues.length} queues</span>}
+            {schedules.length > 0 && <span>{schedules.length} schedules</span>}
+            {websockets.length > 0 && <span>{websockets.length} websockets</span>}
           </div>
         </div>
       </div>
 
       {/* Trigger Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <TriggerCard
-          type="http"
-          title="HTTP Endpoints"
-          count={module.routes.length}
-          color="green"
-          items={module.routes}
-          moduleName={moduleName}
-        />
-        <TriggerCard
-          type="queue"
-          title="Event Queues"
-          count={module.queues.length}
-          color="blue"
-          items={module.queues}
-          moduleName={moduleName}
-        />
-        <TriggerCard
-          type="schedule"
-          title="Scheduled Jobs"
-          count={module.schedules.length}
-          color="purple"
-          items={module.schedules}
-          moduleName={moduleName}
-        />
+      <div className={`grid grid-cols-1 gap-6 ${gridCols}`}>
+        {triggerCards.map(card => (
+          <TriggerCard
+            key={card.type}
+            type={card.type}
+            title={card.title}
+            count={card.count}
+            color={card.color}
+            items={card.items}
+            moduleName={moduleName}
+          />
+        ))}
       </div>
 
       {/* Terminal Logs */}

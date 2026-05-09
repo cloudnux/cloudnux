@@ -2,6 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import { Task } from "../../types.js";
+import { loadEntrypoint } from "../load-entrypoint.js";
 
 /**
  * convert the module trigger template into a compilable function 
@@ -13,25 +14,28 @@ import { Task } from "../../types.js";
  */
 export const transformTriggerTemplate: Task = {
     title: ({ moduleName }) => `Transform terraform trigger ${moduleName}`,
-    skip: (params) => {
-        return params.environment === "develop";
-    },
+    skip: () => false,
     action: async ({
         triggerTemplateFunc,
         entrypointPath,
         moduleName,
+        namespace,
         workingDir,
         source,
     }) => {
-        const entrypointContent = await fs.readFile(entrypointPath, "utf-8");
+        const entrypoint = await loadEntrypoint(entrypointPath);
         const rendered = triggerTemplateFunc({
             source: (process.platform === "win32") ? source.replace(/\\/g, "/") : source,
             module: moduleName,
-            ...JSON.parse(entrypointContent),
-
+            namespace,
+            tfModules: {
+                http:      "../.deploy/aws/http",
+                scheduler: "../.deploy/aws/scheduler",
+                sqs:       "../.deploy/aws/sqs",
+                websocket: "../.deploy/aws/websocket",
+            },
+            ...entrypoint,
         });
-
-
         // if folder does not exist, create it
         const moduleDir = path.join(workingDir, moduleName);
         await fs.mkdir(moduleDir, { recursive: true });

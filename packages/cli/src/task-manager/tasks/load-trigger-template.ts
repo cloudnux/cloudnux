@@ -1,13 +1,10 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import ejs from "ejs";
-//import { fileURLToPath } from "node:url";
 
 import { Task } from "../../types.js";
 import { transformTriggerTemplate } from "./transform-trigger-template.js";
 
-// const __filename = fileURLToPath(import.meta.url);
-// const __dirname = path.dirname(__filename);
 
 /**
  * convert the module trigger template into a compilable function 
@@ -26,8 +23,5 @@ export const loadTriggerTemplate: Task = {
         return {
             triggerTemplateFunc: triggerTemplate
         }
-    },
-    children: [
-        transformTriggerTemplate
-    ]
+    }
 }

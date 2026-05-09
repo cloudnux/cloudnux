@@ -157,7 +157,7 @@ export function createLocalStorageService(): StorageService {
                 } catch (error) {
                     // Ignore error if metadata file doesn't exist
                     if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-                        logger.warn('Error deleting metadata file:', { error });
+                        logger.warn({ error }, 'Error deleting metadata file:');
                     }
                 }
             } catch (error) {

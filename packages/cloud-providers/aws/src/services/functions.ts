@@ -1,10 +1,12 @@
-import { APIGatewayProxyEvent, APIGatewayProxyEventV2WithJWTAuthorizer, APIGatewayProxyResultV2, Context, ScheduledEvent, SQSRecord, SNSEventRecord, SQSBatchItemFailure } from "aws-lambda";
+import { APIGatewayProxyEvent, APIGatewayProxyEventV2WithJWTAuthorizer, APIGatewayProxyResultV2, Context, ScheduledEvent, SQSRecord, SNSEventRecord } from "aws-lambda";
+import { SQSClient, ChangeMessageVisibilityCommand } from "@aws-sdk/client-sqs";
 import {
     FunctionsService, HttpMethod,
     HTTPRequest, HTTPAuth, HttpFunctionContext,
     ScheduleRequest,
-    EventRequest, EventFunctionContext,
-    WebSocketRequest, WebSocketFunctionContext
+    EventRequest, EventFunctionContext, EventBatchItemResult,
+    WebSocketRequest, WebSocketFunctionContext,
+    WebSocketTrigger,
 } from "@cloudnux/core-cloud-provider";
 
 import { tokenUtils } from "@cloudnux/utils"
@@ -34,6 +36,25 @@ const convertMessageAttributes = (messageAttributes: any): Record<string, string
     return converted;
 };
 
+
+//helper function to extract path parameters based on a template, e.g. /users/{userId} with actual path /users/123 would return { userId: "123" }
+function extractParams(template: string, actualPath: string): Record<string, string> | null {
+    const templateParts = template.split('/').filter(Boolean);
+    const pathParts = actualPath.split('/').filter(Boolean);
+
+    if (templateParts.length !== pathParts.length) return null;
+
+    const params: Record<string, string> = {};
+    for (let i = 0; i < templateParts.length; i++) {
+        const match = templateParts[i].match(/^\{(\w+)\}$/);
+        if (match) {
+            params[match[1]] = pathParts[i];
+        } else if (templateParts[i] !== pathParts[i]) {
+            return null;
+        }
+    }
+    return params;
+}
 
 export function createLocalFunctionsService(): FunctionsService {
     return {
@@ -77,11 +98,16 @@ export function createLocalFunctionsService(): FunctionsService {
         createEventRequest: (event: EventRecord, ctx: Context) => {
             if (isSQSRecord(event)) {
                 const attributes = convertMessageAttributes(event.messageAttributes);
+                // Derive queue URL from ARN: arn:aws:sqs:{region}:{accountId}:{queueName}
+                const arnParts = event.eventSourceARN.split(':');
+                const queueUrl = `https://sqs.${arnParts[3]}.amazonaws.com/${arnParts[4]}/${arnParts[5]}`;
                 const eventRequest: EventRequest = {
                     body: event.body,
                     attributes: {
                         ...attributes,
                         messageId: event.messageId,
+                        receiptHandle: event.receiptHandle,
+                        queueUrl,
                     },
                     requestId: ctx.awsRequestId,
                     //SQS timestamps are in milliseconds
@@ -114,9 +140,12 @@ export function createLocalFunctionsService(): FunctionsService {
                 throw new Error('Unsupported event type');
             }
         },
-        createWebSocketRequest: (event: APIGatewayProxyEvent, ctx: Context) => {
+        createWebSocketRequest: (event: APIGatewayProxyEvent, ctx: Context, trigger: WebSocketTrigger) => {
             const connectionId = event.requestContext?.connectionId!;
             const routeKey = event.requestContext?.routeKey;
+            const path = event.headers["x-original-path"];
+
+            const params = extractParams(trigger.options.route || "", path || "") || {};
 
             // Map AWS route keys to WebSocket events
             let wsEvent: "connect" | "disconnect" | "message";
@@ -133,12 +162,12 @@ export function createLocalFunctionsService(): FunctionsService {
             const wsRequest: WebSocketRequest = {
                 connectionId,
                 event: wsEvent,
-                path: event.requestContext?.stage ?? "",
                 route,
+                url: path || "/",
+                params: params,
+                queryString: event.queryStringParameters,
                 body: event.body || undefined,
                 headers: event.headers,
-                // AWS doesn't have a native query string parsing for WebSocket events, so we can leave it empty or implement custom parsing if needed
-                query: {},
                 requestId: ctx.awsRequestId,
             };
             return [wsRequest];
@@ -164,22 +193,27 @@ export function createLocalFunctionsService(): FunctionsService {
             // };
             return undefined;
         },
-        buildEventResponse: (ctx: EventFunctionContext) => {
-            const messageId = ctx.attributes().messageId;
+        buildEventResponse: async (ctx: EventFunctionContext): Promise<EventBatchItemResult> => {
+            const { messageId, receiptHandle, queueUrl } = ctx.attributes<{ messageId: string; receiptHandle: string; queueUrl: string }>();
             if (ctx.response.status === "error") {
                 if (messageId) {
-                    // If messageId is present, we can return a failure response
-                    return {
-                        itemIdentifier: messageId,
-                    } as SQSBatchItemFailure
+                    if (ctx.response.retryDelay !== undefined && receiptHandle && queueUrl) {
+                        const sqsClient = new SQSClient({});
+                        await sqsClient.send(new ChangeMessageVisibilityCommand({
+                            QueueUrl: queueUrl,
+                            ReceiptHandle: receiptHandle,
+                            VisibilityTimeout: ctx.response.retryDelay,
+                        }));
+                    }
+                    return { failureId: messageId };
                 }
             }
-            return undefined; // No failure response needed
+            return undefined;
         },
         buildWebSocketResponse: (ctx: WebSocketFunctionContext) => {
             if (ctx.response.status === "error") {
                 return {
-                    statusCode: 500,
+                    statusCode: ctx.response.statusCode ?? 500,
                     body: JSON.stringify(ctx.response.body),
                 };
             }

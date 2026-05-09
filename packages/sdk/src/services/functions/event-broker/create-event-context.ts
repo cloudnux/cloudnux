@@ -24,6 +24,10 @@ export function createEventContext({
             return attributes as T
         },
 
+        retryWithDelay(seconds: number) {
+            response.status = "error";
+            response.retryDelay = seconds;
+        },
         error(error?: any) {
             response.body = error;
             response.status = "error";

@@ -1,4 +1,4 @@
-import { Config, Environment, Task, TaskParamBase, TaskTitle } from "../types.js";
+import { Config, Environment, Task, TaskEntry, TaskParamBase, TaskTitle } from "../types.js";
 
 // Type guards for validation
 function isString(value: unknown): value is string {
@@ -25,10 +25,18 @@ function isTask<TTaskParams extends TaskParamBase>(value: unknown): value is Tas
     // Validate optional fields
     if (task.skip !== undefined && typeof task.skip !== 'function') return false;
 
-    // Validate children if they exist
-    if (task.children !== undefined) {
-        if (!Array.isArray(task.children)) return false;
-        return task.children.every(child => isTask(child));
+        return true;
+}
+
+function isTaskEntry<TTaskParams extends TaskParamBase>(value: unknown): value is TaskEntry<TTaskParams> {
+    if (!value || typeof value !== 'object') return false;
+
+    const entry = value as TaskEntry<TTaskParams>;
+    if (!isTask(entry.task)) return false;
+
+    if (entry.children !== undefined) {
+        if (!Array.isArray(entry.children)) return false;
+        return entry.children.every((child: unknown) => isTask(child));
     }
 
     return true;
@@ -40,7 +48,7 @@ function isEnvironment<TTaskParams extends TaskParamBase>(value: unknown): value
     const env = value as Environment<TTaskParams>;
     if (!Array.isArray(env.tasks)) return false;
 
-    return env.tasks.every(task => isTask(task));
+    return env.tasks.every(entry => isTaskEntry(entry));
 }
 
 export function validateConfig<TTaskParams extends TaskParamBase>(config: unknown): config is Config<TTaskParams> {

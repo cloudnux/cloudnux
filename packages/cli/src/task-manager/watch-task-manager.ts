@@ -2,15 +2,15 @@ import { Config, TaskParam } from "../types.js";
 import { BaseTaskManager } from "./base-task-manager.js";
 
 export class WatchTaskManager extends BaseTaskManager {
-    constructor(config: Config, environment: string) {
-        super(config, environment);
+    constructor(config: Config, environment: string, moduleName?: string) {
+        super(config, environment, moduleName);
     }
 
-    public async execute(): Promise<void> {
+    protected override async execute(): Promise<void> {
         const envConfig = this.config.environments[this.environment];
         if (envConfig.watch) {
             try {
-                await this.executeTask(envConfig.watch, {} as TaskParam);
+                await this.executeTask({ task: envConfig.watch }, {} as TaskParam);
             }
             catch (error) {
                 console.error(error);

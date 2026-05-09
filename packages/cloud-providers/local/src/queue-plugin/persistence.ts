@@ -1,7 +1,5 @@
 import * as fs from "fs/promises";
 import * as path from "path";
-import chalk from "chalk";
-import logSymbols from "log-symbols";
 
 import { logger } from "@cloudnux/utils";
 
@@ -57,9 +55,9 @@ export const createPersistenceInitializer = (
             process.on('SIGTERM', shutdownHandler);
         }
 
-        logger.debug(`${logSymbols.success} ${chalk.green('Queue persistence initialized:')} ${chalk.yellow(config.persistence.directory)}`);
+        logger.debug(`Queue persistence initialized: ${config.persistence.directory}`);
     } catch (error: any) {
-        logger.error(`${logSymbols.error} ${chalk.red('Failed to initialize queue persistence:')} ${chalk.yellow(error.message)}`);
+        logger.error(`Failed to initialize queue persistence: ${error?.message}`);
     }
 };
 
@@ -79,9 +77,9 @@ export const createQueueStateSaver = (config: QueueConfig) => async (queueName: 
         // Rename temporary file to the actual file (atomic operation)
         await fs.rename(tempFilePath, queueFilePath);
 
-        logger.debug(`${logSymbols.info} ${chalk.blue('Queue state saved:')} ${chalk.green(queueName)}`);
+        logger.debug(`Queue state saved: ${queueName}`);
     } catch (error: any) {
-        logger.error(`Failed to save queue state for ${queueName}:`, error);
+        logger.error(`Failed to save queue state for ${queueName}:`, error?.message);
     }
 };
 
@@ -94,9 +92,9 @@ export const createAllQueuesStateSaver = (
         for (const [queueName, queueService] of Object.entries(queues)) {
             await saveQueueState(queueName, queueService);
         }
-        logger.debug(`${logSymbols.success} ${chalk.green('All queue states saved to')} ${chalk.yellow(config.persistence.directory)}`);
+        logger.debug(`All queue states saved to ${config.persistence.directory}`);
     } catch (error: any) {
-        logger.error(`${logSymbols.error} ${chalk.red('Failed to save all queue states:')} ${chalk.yellow(error.message)}`);
+        logger.error(`Failed to save all queue states: ${error?.message}`);
     }
 };
 
@@ -117,7 +115,7 @@ export const createDirtyQueuesStateSaver = (
             }
         }
     } catch (error: any) {
-        logger.error(`${logSymbols.error} ${chalk.red('Failed to save dirty queue states:')} ${chalk.yellow(error.message)}`);
+        logger.error(`Failed to save dirty queue states: ${error?.message}`);
     }
 };
 
@@ -174,7 +172,7 @@ export const createQueueStateLoader = (
             }
         }
     } catch (error: any) {
-        logger.error(`Failed to load queue state for ${queueName}:`, error);
+        logger.error(`Failed to load queue state for ${queueName}:`, error?.message);
     }
 };
 
@@ -194,6 +192,6 @@ export const createAllQueuesStateLoader = (
 
         logger.debug('All queue states loaded');
     } catch (error: any) {
-        logger.error('Failed to load queue states:', error);
+        logger.error('Failed to load queue states:', error?.message);
     }
 };

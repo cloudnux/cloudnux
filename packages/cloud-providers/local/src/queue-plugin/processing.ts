@@ -16,12 +16,16 @@ export const createProcessMessageHandler = (
     config: QueueConfig
 ) => async (queueName: string, message: QueueMessage, queueService: QueueService): Promise<void> => {
     try {
-        await queueService.handler(message);
+        const result = await queueService.handler(message);
 
-        removeFromProcessing(queueService, message.id);
-        logSuccess('Successfully processed message', message.id, queueName);
+        if (result?.failureId) {
+            await handleProcessingError(queueName, message, queueService, config);
+        } else {
+            removeFromProcessing(queueService, message.id);
+            logSuccess('Successfully processed message', message.id, queueName);
+        }
     } catch (error: any) {
-        await handleProcessingError(queueName, message, queueService, error, config);
+        await handleProcessingError(queueName, message, queueService, config);
     }
 };
 
@@ -30,13 +34,12 @@ const handleProcessingError = async (
     queueName: string,
     message: QueueMessage,
     queueService: QueueService,
-    error: Error,
-    config: QueueConfig
+    config: QueueConfig,
 ): Promise<void> => {
-    logError('Error processing message', message.id, queueName, error.message);
+    logError('Error processing message', message.id, queueName, 'handler returned failure');
 
     if (message.attempts >= config.maxRetries) {
-        moveToDLQ(queueService, message, error.message);
+        moveToDLQ(queueService, message, 'max retries exceeded');
         return;
     }
 

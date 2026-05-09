@@ -50,6 +50,7 @@ jobs:
   publish:
     name: Publish to NPM
     runs-on: ubuntu-latest
+    needs: build
 
     permissions:
       contents: write
@@ -100,7 +101,7 @@ jobs:
 
       - name: Publish to NPM
         if: steps.changeset-check.outputs.has-changesets == 'true'
-        run: yarn changeset:publish
+        run: yarn changeset:publish --no-git-checks
         env:
           NPM_CONFIG_PROVENANCE: true
 

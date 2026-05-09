@@ -15,5 +15,5 @@ export default defineConfig({
   cjsInterop: true,
   outDir: 'dist',
   tsconfig: './tsconfig.json',
-  shims: true,
+  shims: false,
 })

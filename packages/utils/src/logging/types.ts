@@ -3,13 +3,18 @@ export const logLevels = {
     error: 0,
     warn: 1,
     info: 2,
-    debug: 3
+    debug: 3,
+    trace: 4,
 };
 
 export type Logger = {
-    fatal: (message: string, meta?: Record<string, any>) => void;
-    error: (message: string, meta?: Record<string, any>) => void;
-    warn: (message: string, meta?: Record<string, any>) => void;
-    info: (message: string, meta?: Record<string, any>) => void;
-    debug: (message: string, meta?: Record<string, any>) => void;
+    level: string;
+    fatal: (mergeObject: Record<string, any> | string, msg?: string) => void;
+    error: (mergeObject: Record<string, any> | string, msg?: string) => void;
+    warn: (mergeObject: Record<string, any> | string, msg?: string) => void;
+    info: (mergeObject: Record<string, any> | string, msg?: string) => void;
+    debug: (mergeObject: Record<string, any> | string, msg?: string) => void;
+    trace: (mergeObject: Record<string, any> | string, msg?: string) => void;
+    silent: (mergeObject: Record<string, any> | string, msg?: string) => void;
+    child: (bindings: Record<string, string>) => Logger;
 }

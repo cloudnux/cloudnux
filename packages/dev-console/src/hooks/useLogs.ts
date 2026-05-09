@@ -4,13 +4,11 @@ import { useEffect, useRef } from 'react'
 export interface LogEntry {
   id: string
   timestamp: string
-  level: 'fatal' | 'error' | 'warn' | 'info' | 'debug'
+  levelName: string
   message: string
   meta?: Record<string, any>
-  source?: string
-  module?: string
-  trigger?: string
-  triggerType?: 'http' | 'queue' | 'schedule'
+  module: string
+  reqId: string
 }
 
 interface LogsResponse {
@@ -22,28 +20,24 @@ const API_BASE = ''
 interface LogFilters {
   limit?: number
   level?: string
-  source?: string
   module?: string
-  trigger?: string
-  triggerType?: string
+  reqId?: string
 }
 
 export const useLogs = (filters: LogFilters = {}) => {
-  const { limit = 100, level, source, module, trigger, triggerType } = filters
+  const { limit = 100, level, module, reqId } = filters
   const queryClient = useQueryClient()
   const eventSourceRef = useRef<EventSource | null>(null)
 
   const query = useQuery<LogsResponse>({
-    queryKey: ['logs', limit, level, source, module, trigger, triggerType],
+    queryKey: ['logs', limit, level, module, reqId],
     queryFn: async () => {
       const params = new URLSearchParams()
       params.append('limit', limit.toString())
       if (level) params.append('level', level)
-      if (source) params.append('source', source)
       if (module) params.append('module', module)
-      if (trigger) params.append('trigger', trigger)
-      if (triggerType) params.append('triggerType', triggerType)
-      
+      if (reqId) params.append('reqId', reqId)
+
       const response = await fetch(`${API_BASE}/console/logs?${params}`)
       if (!response.ok) {
         throw new Error('Failed to fetch logs')
@@ -65,17 +59,14 @@ export const useLogs = (filters: LogFilters = {}) => {
     eventSource.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data)
-        
+
         if (data.type === 'initial') {
-          // Replace entire logs with initial data
-          queryClient.setQueryData(['logs', limit, level, source, module, trigger, triggerType], {
+          queryClient.setQueryData(['logs', limit, level, module, reqId], {
             logs: data.logs
           })
         } else if (data.type === 'log') {
-          // Add new log to existing data
-          queryClient.setQueryData(['logs', limit, level, source, module, trigger, triggerType], (oldData: LogsResponse | undefined) => {
+          queryClient.setQueryData(['logs', limit, level, module, reqId], (oldData: LogsResponse | undefined) => {
             if (!oldData) return { logs: [data.log] }
-            
             const newLogs = [data.log, ...oldData.logs].slice(0, limit)
             return { logs: newLogs }
           })
@@ -95,27 +86,26 @@ export const useLogs = (filters: LogFilters = {}) => {
         eventSourceRef.current = null
       }
     }
-  }, [queryClient, limit, level, source, module, trigger, triggerType])
+  }, [queryClient, limit, level, module, reqId])
 
   return query
 }
 
 export const useClearLogs = () => {
   const queryClient = useQueryClient()
-  
+
   const clearLogs = async () => {
     const response = await fetch(`${API_BASE}/console/logs`, {
       method: 'DELETE'
     })
-    
+
     if (response.ok) {
-      // Clear all logs queries
       queryClient.invalidateQueries({ queryKey: ['logs'] })
       return response.json()
     }
-    
+
     throw new Error('Failed to clear logs')
   }
-  
+
   return { clearLogs }
 }

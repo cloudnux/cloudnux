@@ -1,6 +1,3 @@
-import chalk from "chalk";
-import logSymbols from "log-symbols";
-
 import { logger } from "@cloudnux/utils";
 
 import { SchedulerState, JobExecution } from "./types";
@@ -14,7 +11,7 @@ export const cleanupExecutionHistory = (
             state.executionHistory.length - state.config.cleanup.maxExecutionHistory
         );
 
-        logger.debug(`${chalk.blue('🧹 Cleaned up')} ${removed.length} old execution records`);
+        logger.debug(`Cleaned up ${removed.length} old execution records`);
         return removed;
     }
 
@@ -37,7 +34,7 @@ export const waitForRunningJobs = async (
     const startTime = Date.now();
 
     while (getRunningExecutions() > 0 && (Date.now() - startTime) < maxWaitTime) {
-        logger.debug(`${chalk.yellow('⏳ Waiting for')} ${getRunningExecutions()} running jobs to complete...`);
+        logger.debug(`Waiting for ${getRunningExecutions()} running jobs to complete...`);
         await new Promise(resolve => setTimeout(resolve, 1000));
     }
 };
@@ -46,7 +43,7 @@ export const createShutdownHandler = (
     state: SchedulerState,
     saveStateFn: () => Promise<void>
 ) => async (): Promise<void> => {
-    logger.info(`${chalk.yellow('🛑 Enhanced scheduler shutting down...')}`);
+    logger.info(`Enhanced scheduler shutting down...`);
 
     // Mark as shutting down
     state.isShuttingDown = true;
@@ -67,7 +64,7 @@ export const createShutdownHandler = (
         await saveStateFn();
     }
 
-    logger.debug(`${logSymbols.success} ${chalk.green('Enhanced scheduler shutdown complete')}`);
+    logger.debug(`Enhanced scheduler shutdown complete`);
 };
 
 export const setupGracefulShutdown = (

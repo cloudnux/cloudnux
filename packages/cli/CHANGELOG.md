@@ -1,5 +1,39 @@
 # @cloudnux/cli
 
+## 0.13.0
+
+### Minor Changes
+
+- websocket full support, multi entrypoints with merge
+
+## 0.12.0
+
+### Minor Changes
+
+- remove utils as library as external
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @cloudnux/local-cloud-provider@0.12.0
+  - @cloudnux/aws-cloud-provider@0.12.0
+  - @cloudnux/dev-console@0.12.0
+  - @cloudnux/cloud-sdk@0.12.0
+
+## 0.11.0
+
+### Minor Changes
+
+- fix logging and dev-console UI for local dev
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @cloudnux/local-cloud-provider@0.11.0
+  - @cloudnux/dev-console@0.11.0
+  - @cloudnux/cloud-sdk@0.11.0
+  - @cloudnux/aws-cloud-provider@0.11.0
+
 ## 0.10.0
 
 ### Minor Changes
