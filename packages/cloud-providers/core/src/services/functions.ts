@@ -171,6 +171,8 @@ export type EventBatchItemResult = { failureId: string } | undefined;
 //#region [Invoke]
 export type InvokeRequest = {
     payload: any,
+    calledModule: string,
+    invokeTriggerName: string,
     requestId?: string,
 }
 

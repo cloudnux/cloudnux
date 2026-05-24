@@ -242,7 +242,8 @@ export function createRouter() {
         routes: RouteDefinition[]
     ): Promise<any> {
         for (const route of routes) {
-            if (route.type === 'invoke') {
+            if (route.type === 'invoke' &&
+                route.invokeName === event.invokeTriggerName) {
                 return await route.handler(event, context);
             }
         }

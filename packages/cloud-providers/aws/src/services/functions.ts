@@ -173,7 +173,15 @@ export function createFunctionsService(): FunctionsService {
             };
             return [wsRequest];
         },
-
+        createInvokeRequest: (event: { calledModule: string; invokeTriggerName: string; payload: any }, ctx: Context) => {
+            const invokeRequest: InvokeRequest = {
+                payload: event.payload,
+                invokeTriggerName: event.invokeTriggerName,
+                calledModule: event.calledModule,
+                requestId: ctx.awsRequestId,
+            };
+            return [invokeRequest];
+        },
         buildHttpResponse: (ctx: HttpFunctionContext) => {
             const response = ctx.response;
             if (500 <= response.status && response.status < 600) {
@@ -219,13 +227,6 @@ export function createFunctionsService(): FunctionsService {
                 };
             }
             return { statusCode: 200 };
-        },
-        createInvokeRequest: (event: { calledModule: string; invokeTriggerName: string; payload: any }, ctx: Context) => {
-            const invokeRequest: InvokeRequest = {
-                payload: event.payload,
-                requestId: ctx.awsRequestId,
-            };
-            return [invokeRequest];
         },
         buildInvokeResponse: (ctx: InvokeFunctionContext) => {
             return ctx.response.body;
