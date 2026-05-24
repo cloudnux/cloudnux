@@ -1,27 +1,23 @@
 import { EventResponse, EventFunctionContext, EventRequest } from "@cloudnux/core-cloud-provider";
 
-export function createEventContext({
-    body,
-    attributes,
-    timestamp = new Date(),
-    attempts = 0
-}: EventRequest): EventFunctionContext {
+export function createEventContext(request: EventRequest): EventFunctionContext {
     const response: EventResponse = {
         status: "success" as "success" | "error",
         body: {} as Record<string, any>
     };
     return {
-        timestamp,
-        attempts,
+        timestamp: request.timestamp || new Date(),
+        attempts: request.attempts || 0,
         type: "Event" as const,
         response,
+        request,
         message<T = Record<string, any>>() {
-            if (typeof body === "string")
-                return JSON.parse(body || "{}") as T
-            return body as T
+            if (typeof request.body === "string")
+                return JSON.parse(request.body || "{}") as T
+            return request.body as T
         },
         attributes<T = Record<string, any>>() {
-            return attributes as T
+            return request.attributes as T
         },
 
         retryWithDelay(seconds: number) {
@@ -35,6 +31,10 @@ export function createEventContext({
         success(body?: any) {
             response.body = body;
             response.status = "success";
+        },
+        serverError(err: Error) {
+            response.status = "error";
+            response.body = err;
         },
         notFound(body?: any) {
             response.body = body || {};

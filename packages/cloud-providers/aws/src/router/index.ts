@@ -33,7 +33,7 @@ export type EventHndlerType = APIGatewayProxyEventV2 | SNSEventRecord | SQSRecor
 export type HandlerFunction = (event: EventHndlerType, context: Context) => Promise<any>;
 
 export interface RouteDefinition {
-    type: 'http' | 'schedule' | 'event' | 'websocket';
+    type: 'http' | 'schedule' | 'event' | 'websocket' | 'invoke';
     handler: HandlerFunction;
     // HTTP specific
     method?: HttpMethod;
@@ -47,6 +47,8 @@ export interface RouteDefinition {
     filter?: MessageFilter;
     // WebSocket specific
     wsRouteKey?: string;
+    // Invoke specific
+    invokeName?: string;
 }
 
 export function createRouter() {
@@ -66,8 +68,12 @@ export function createRouter() {
         if ('Records' in event) {
             return 'event';
         }
+        if ('calledModule' in event && 'invokeTriggerName' in event) {
+            return 'invoke';
+        }
         return 'unknown';
     }
+
     function getEventSourceInfo(event: any): {
         type: "sns" | "sqs" | "s3" | "dynamodb" | "eventbridge" | "kinesis" | "unknown";
         name: string;
@@ -230,6 +236,19 @@ export function createRouter() {
         throw new Error('No event handler found');
     }
 
+    async function handleInvokeEvent(
+        event: any,
+        context: Context,
+        routes: RouteDefinition[]
+    ): Promise<any> {
+        for (const route of routes) {
+            if (route.type === 'invoke') {
+                return await route.handler(event, context);
+            }
+        }
+        throw new Error('No invoke handler found');
+    }
+
     async function handleWebSocketEvent(
         event: any,
         context: Context,
@@ -297,6 +316,15 @@ export function createRouter() {
             });
         },
 
+        // Register invoke route
+        invoke(name: string, handler: HandlerFunction) {
+            routes.push({
+                type: 'invoke',
+                invokeName: name,
+                handler
+            });
+        },
+
         async run(event: EventType, context: Context): Promise<any> {
             initializeLogger(context.functionName.split("_")[0], context.awsRequestId);
             logger.info({ requestId: context.awsRequestId }, "request started");
@@ -313,6 +341,8 @@ export function createRouter() {
                         return await handleEventBrokerEvent(event, context, routes);
                     case 'websocket':
                         return await handleWebSocketEvent(event, context, routes);
+                    case 'invoke':
+                        return await handleInvokeEvent(event, context, routes);
                     default:
                         throw new Error(`Unsupported event type: ${eventType}`);
                 }

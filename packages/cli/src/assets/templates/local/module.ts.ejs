@@ -5,10 +5,11 @@
       - config: the full entrypoint object 
 %>
 import { RouterInstance } from '@cloudnux/local-cloud-provider';
-import { httpHandler, scheduleHandler, eventBrokerHandler, websocketHandler } from "@cloudnux/cloud-sdk";
+import { httpHandler, scheduleHandler, eventBrokerHandler, invokeHandler, websocketHandler } from "@cloudnux/cloud-sdk";
 import "@cloudnux/local-cloud-provider/schedule-plugin";
 import "@cloudnux/local-cloud-provider/queue-plugin";
 import "@cloudnux/local-cloud-provider/websocket-plugin";
+import "@cloudnux/local-cloud-provider/invoke-plugin";
 
 import * as src from "<%= source %>";
 
@@ -38,6 +39,11 @@ async function entries(app: RouterInstance) {
           (msg) => eventBrokerHandler(src["<%= entry.handler %>"], msg),
           "<%=module%>"
           );
+    <%_ } _%>
+    <%_ if(entry.trigger.type === "invoke") { _%>
+        app.invokes.register("<%=module%>","<%= entry.trigger.options.name %>",
+            (envelop) => invokeHandler(envelop, Date.now())
+        );
     <%_ } _%>
     <%_ if(entry.trigger.type === "websocket") { _%>
         app.websockets.registerHandler({

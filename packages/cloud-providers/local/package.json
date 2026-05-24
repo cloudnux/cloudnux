@@ -26,6 +26,10 @@
     "./websocket-plugin": {
       "types": "./dist/websocket-plugin/index.d.ts",
       "import": "./dist/websocket-plugin/index.js"
+    },
+    "./invoke-plugin": {
+      "types": "./dist/invoke-plugin/index.d.ts",
+      "import": "./dist/invoke-plugin/index.js"
     }
   },
   "files": [

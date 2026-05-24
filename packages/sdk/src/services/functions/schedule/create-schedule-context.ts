@@ -19,6 +19,10 @@ export function createScheduleContext(request: ScheduleRequest): ScheduleFunctio
             response.status = "error";
             response.body = body;
         },
+        serverError(err: Error) {
+            response.status = "error";
+            response.body = err;
+        },
         notFound: (body?: any) => {
             response.status = "error";
             response.body = body;

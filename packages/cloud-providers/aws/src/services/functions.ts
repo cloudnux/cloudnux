@@ -7,6 +7,7 @@ import {
     EventRequest, EventFunctionContext, EventBatchItemResult,
     WebSocketRequest, WebSocketFunctionContext,
     WebSocketTrigger,
+    InvokeRequest, InvokeFunctionContext,
 } from "@cloudnux/core-cloud-provider";
 
 import { tokenUtils } from "@cloudnux/utils"
@@ -218,6 +219,16 @@ export function createFunctionsService(): FunctionsService {
                 };
             }
             return { statusCode: 200 };
-        }
+        },
+        createInvokeRequest: (event: { calledModule: string; invokeTriggerName: string; payload: any }, ctx: Context) => {
+            const invokeRequest: InvokeRequest = {
+                payload: event.payload,
+                requestId: ctx.awsRequestId,
+            };
+            return [invokeRequest];
+        },
+        buildInvokeResponse: (ctx: InvokeFunctionContext) => {
+            return ctx.response.body;
+        },
     }
 }

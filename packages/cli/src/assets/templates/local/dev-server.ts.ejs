@@ -5,6 +5,7 @@ import { queuesPlugin } from "@cloudnux/local-cloud-provider/queue-plugin";
 import { schedulerPlugin } from "@cloudnux/local-cloud-provider/schedule-plugin";
 import { devConsolePlugin } from "@cloudnux/local-cloud-provider/dev-console-plugin";
 import { websocketsPlugin } from "@cloudnux/local-cloud-provider/websocket-plugin";
+import { invokesPlugin } from "@cloudnux/local-cloud-provider/invoke-plugin";
 
 // __dirname is injected by the esbuild banner and resolves to the workingDir/env folder
 process.env.DEV_CLOUD_LOCATION_PATH ??= path.join(__dirname, '.local-location');
@@ -21,6 +22,7 @@ router.register(queuesPlugin, { prefix: "queues", config: { persistence: { direc
 router.register(schedulerPlugin, { prefix: "schedules", config: { persistence: { directory: path.join(__dirname, 'scheduler-data') } } });
 router.register(devConsolePlugin, {  prefix: 'console' });
 router.register(websocketsPlugin, { prefix: "websockets" });
+router.register(invokesPlugin);
 
 <%_ for(const module of moduleNames){ _%>
   router.register(<%=module%>Entries, { prefix: "api" });
