@@ -37,7 +37,7 @@ export const createPersistenceInitializer = (
             await loadAllQueueStates();
         }
 
-        if (config.persistence.saveInterval > 0) {
+        if (config.persistence.saveInterval && config.persistence.saveInterval > 0) {
             intervalIdHolder.id = setInterval(saveDirtyQueueStates, config.persistence.saveInterval);
         }
 
