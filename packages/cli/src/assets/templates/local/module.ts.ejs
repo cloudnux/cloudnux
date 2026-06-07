@@ -19,7 +19,6 @@ async function entries(app: RouterInstance) {
         app.route({
           method: "<%= entry.trigger.options.method %>" as any,
           url: `/http<%= $$convertRouteParamstoFastifyRouteTemplate(entry.trigger.options.route) %>`,
-          module : "<%=module%>",
           handler: async (request, reply) => {
               await httpHandler(src["<%= entry.handler %>"], request, reply); 
           }
@@ -42,14 +41,13 @@ async function entries(app: RouterInstance) {
     <%_ } _%>
     <%_ if(entry.trigger.type === "invoke") { _%>
         app.invokes.register("<%=module%>","<%= entry.trigger.options.name %>",
-            (envelop) => invokeHandler(envelop, Date.now())
+            (envelop) => invokeHandler(src["<%= entry.handler %>"], envelop)
         );
     <%_ } _%>
     <%_ if(entry.trigger.type === "websocket") { _%>
         app.websockets.registerHandler({
           path: "<%= $$convertRouteParamstoFastifyRouteTemplate(entry.trigger.options.path) %>",
           event: "<%= entry.trigger.options.event %>",
-          module: "<%=module%>",
           <%_ if(entry.trigger.options.route) { _%>
           route: "<%= entry.trigger.options.route %>",
           <%_ } _%>

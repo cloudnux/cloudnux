@@ -1,6 +1,12 @@
 import { InvokeService } from "@cloudnux/core-cloud-provider";
 
-import { getInvokeHandler } from "../invoke-plugin/registry";
+import { InvokeManager } from "../invoke-plugin/types";
+
+let _manager: InvokeManager | null = null;
+
+export function setInvokeManager(manager: InvokeManager) {
+    _manager = manager;
+}
 
 export function createLocalInvokeService(): InvokeService {
     return {
@@ -9,7 +15,7 @@ export function createLocalInvokeService(): InvokeService {
             triggerName: string,
             payload: TPayload
         ): Promise<TResponse> {
-            const handler = getInvokeHandler(moduleName, triggerName);
+            const handler = _manager!.get(moduleName, triggerName);
             if (!handler) {
                 throw new Error(`No local invoke handler registered for: ${moduleName}:${triggerName}`);
             }
