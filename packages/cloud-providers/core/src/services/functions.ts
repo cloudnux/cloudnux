@@ -16,26 +16,22 @@ export type FunctionContext = {
     success<T>(data: T): void;
 
     /**
+     * Creates a server error response. This should be called when the handler encounters an unexpected error.
+     * @param err - The error object.
+     */
+    serverError(err: Error): void;
+    /**
      * Creates an error response. This should be called when the handler is done with an error.
      * @param message - The response body.
      * 
      */
     error(message: string, code?: ErrorCode, details?: Record<string, any>, stack?: string): void;
+    /**
+     * Creates a not found response. This should be called when the requested resource is not found.
+     * @param resource - The name of the resource that was not found.
+     * @param id - The id of the resource that was not found (optional).
+     */
     notFound(resource: string, id?: string | number): void;
-
-
-
-    // success(body?: any): void;
-
-
-    // error(body?: any): void;
-
-    // /**
-    //  * Creates a not found response. This should be called when there is no matching handler.
-    //  * @param body - The response body.
-    //  * @returns A promise that resolves when the response is created, or void if not using a promise.
-    //  */
-    // notFound(body?: any): void;
 };
 
 /**
@@ -162,6 +158,7 @@ export type EventFunctionContext = FunctionContext & {
     type: "Event";
     timestamp: Date;
     attempts?: number;
+    request: EventRequest;
     response: EventResponse;
     message<T = Record<string, any>>(): T;
     attributes<T = Record<string, any>>(): T;
@@ -169,6 +166,28 @@ export type EventFunctionContext = FunctionContext & {
 }
 
 export type EventBatchItemResult = { failureId: string } | undefined;
+//#endregion
+
+//#region [Invoke]
+export type InvokeRequest = {
+    payload: any,
+    calledModule: string,
+    invokeTriggerName: string,
+    requestId?: string,
+}
+
+export type InvokeResponse = {
+    status: "success" | "error",
+    body?: any,
+    code?: ErrorCode,
+}
+
+export type InvokeFunctionContext = FunctionContext & {
+    type: "Invoke";
+    request: InvokeRequest;
+    response: InvokeResponse;
+    payload<T = Record<string, any>>(): T;
+}
 //#endregion
 
 //#region [WebSocket]
@@ -209,9 +228,11 @@ export interface FunctionsService {
     createScheduleRequest(...args: any[]): [ScheduleRequest];
     createEventRequest(...args: any[]): [EventRequest];
     createWebSocketRequest(...args: any[]): [WebSocketRequest];
+    createInvokeRequest(...args: any[]): [InvokeRequest];
 
     buildHttpResponse(httpFunctionContext: HttpFunctionContext, ...args: any[]): any
     buildScheduleResponse(scheduleFunctionContext: ScheduleFunctionContext, ...args: any[]): any;
     buildEventResponse(eventFunctionContext: EventFunctionContext, ...args: any[]): Promise<EventBatchItemResult>;
     buildWebSocketResponse(webSocketFunctionContext: WebSocketFunctionContext, ...args: any[]): any;
+    buildInvokeResponse(invokeFunctionContext: InvokeFunctionContext, ...args: any[]): any;
 }

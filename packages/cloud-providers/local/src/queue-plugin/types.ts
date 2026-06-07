@@ -34,11 +34,11 @@ export interface QueueConfig {
     maxConcurrent: number;
     retryBackoff: boolean;
     persistence: {
-        enabled: boolean;
+        enabled?: boolean;
         directory: string;
-        saveInterval: number;
-        saveOnShutdown: boolean;
-        loadOnStartup: boolean;
+        saveInterval?: number;
+        saveOnShutdown?: boolean;
+        loadOnStartup?: boolean;
     };
 }
 

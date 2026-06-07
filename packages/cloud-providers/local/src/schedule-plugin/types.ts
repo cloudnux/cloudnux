@@ -51,9 +51,9 @@ export interface JobDefinition {
 
 export interface SchedulerConfig {
     persistence: {
-        enabled: boolean;
+        enabled?: boolean;
         directory: string;
-        saveInterval: number;
+        saveInterval?: number;
     };
     execution: {
         maxConcurrent: number;

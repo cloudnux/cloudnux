@@ -3,6 +3,7 @@ import { awsCloudProvider } from "@cloudnux/aws-cloud-provider";
 import {
     httpHandler,
     eventBrokerHandler,
+    invokeHandler,
     scheduleHandler,
     websocketHandler,
     useCloudProvider,
@@ -48,6 +49,14 @@ router.websocket(
             (event, context) => {
                 return websocketHandler(src["<%= entry.handler %>"],event,context, <%- JSON.stringify(entry.trigger, null, 2) %> );
             }
+);
+    <%_ } _%>
+    <%_ if(entry.trigger.type.toLowerCase() === "invoke") { _%>
+router.invoke(
+        "<%= entry.trigger.options.name %>",
+        (event, context) => {
+            return invokeHandler(src["<%= entry.handler %>"], event, context);
+        }
 );
     <%_ } _%>
 <%_ } _%>

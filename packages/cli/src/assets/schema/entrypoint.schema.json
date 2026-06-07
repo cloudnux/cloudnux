@@ -308,6 +308,26 @@
                 "message"
             ]
         },
+        "InvokeTrigger": {
+            "type": "object",
+            "properties": {
+                "options": {
+                    "type": "object",
+                    "properties": {
+                        "name": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "name"
+                    ],
+                    "additionalProperties": false
+                }
+            },
+            "required": [
+                "options"
+            ]
+        },
         "WebSocketTrigger": {
             "type": "object",
             "properties": {
@@ -350,7 +370,8 @@
                         "http",
                         "schedule",
                         "event",
-                        "websocket"
+                        "websocket",
+                        "invoke"
                     ]
                 }
             },
@@ -401,6 +422,18 @@
                     },
                     "then": {
                         "$ref": "#/definitions/WebSocketTrigger"
+                    }
+                },
+                {
+                    "if": {
+                        "properties": {
+                            "type": {
+                                "const": "invoke"
+                            }
+                        }
+                    },
+                    "then": {
+                        "$ref": "#/definitions/InvokeTrigger"
                     }
                 }
             ],

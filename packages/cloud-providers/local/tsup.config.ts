@@ -61,6 +61,21 @@ export default defineConfig([
         outDir: 'dist/websocket-plugin',
         shims: false,
     },
+    // invoke plugin build
+    {
+        entry: ['src/invoke-plugin/index.ts'],
+        format: ['esm'],
+        platform: "node",
+        dts: true,
+        splitting: false,
+        sourcemap: true,
+        clean: false, // Don't clean since we're building multiple entries
+        minify: false,
+        target: 'es2024',
+        cjsInterop: true,
+        outDir: 'dist/invoke-plugin',
+        shims: false,
+    },
     //dev console plugin build
     {
         entry: ['src/dev-console-plugin/index.ts'],
