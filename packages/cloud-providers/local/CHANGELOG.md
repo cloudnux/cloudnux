@@ -1,5 +1,26 @@
 # @cloudnux/local-cloud-provider
 
+## 0.17.0
+
+### Minor Changes
+
+- [#17](https://github.com/cloudnux/cloudnux/pull/17) [`2add6db`](https://github.com/cloudnux/cloudnux/commit/2add6db77fb7773da7c3fc8e0c19cd5031971783) Thanks [@minawalphonce](https://github.com/minawalphonce)! - feat: implement invoke service for AWS and local providers
+
+  - Added AWS Lambda invoke service in `packages/cloud-providers/aws/src/services/invoke.ts`.
+  - Created core invoke entry and service interfaces in `packages/cloud-providers/core/src/entrypoint/invoke.ts` and `packages/cloud-providers/core/src/services/invoke.ts`.
+  - Developed local invoke plugin with registration and handler management in `packages/cloud-providers/local/src/invoke-plugin`.
+  - Introduced invoke context creation and handler execution in SDK services for function invocation in `packages/sdk/src/services/functions/invoke`.
+  - Implemented cloud invoke service initialization in `packages/sdk/src/services/invoke.ts`.
+
+- [#17](https://github.com/cloudnux/cloudnux/pull/17) [`f14655d`](https://github.com/cloudnux/cloudnux/commit/f14655d99b763f297bab69e21e56378add69e2f5) Thanks [@minawalphonce](https://github.com/minawalphonce)! - invoke handler
+  registry logic
+  enhancing type definitions
+
+### Patch Changes
+
+- Updated dependencies [[`2add6db`](https://github.com/cloudnux/cloudnux/commit/2add6db77fb7773da7c3fc8e0c19cd5031971783), [`f14655d`](https://github.com/cloudnux/cloudnux/commit/f14655d99b763f297bab69e21e56378add69e2f5)]:
+  - @cloudnux/core-cloud-provider@0.17.0
+
 ## 0.16.0
 
 ### Minor Changes

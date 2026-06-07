@@ -1,5 +1,13 @@
 # @cloudnux/dev-console
 
+## 0.17.0
+
+### Minor Changes
+
+- [#17](https://github.com/cloudnux/cloudnux/pull/17) [`f14655d`](https://github.com/cloudnux/cloudnux/commit/f14655d99b763f297bab69e21e56378add69e2f5) Thanks [@minawalphonce](https://github.com/minawalphonce)! - invoke handler
+  registry logic
+  enhancing type definitions
+
 ## 0.16.0
 
 ### Minor Changes
