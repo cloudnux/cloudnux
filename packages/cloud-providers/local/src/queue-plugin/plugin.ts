@@ -1,7 +1,7 @@
 import { FastifyInstance, FastifyPluginAsync } from "fastify";
 import fsPlugin from "fastify-plugin";
 
-import { QueuePluginOptions, QueueService } from "./types";
+import { QueuePluginOptions, QueueService, SchedulerRef } from "./types";
 
 import {
     DEFAULT_CONFIG,
@@ -56,13 +56,17 @@ export const queuesPlugin: FastifyPluginAsync<QueuePluginOptions> =
             ? createDirtyQueuesStateSaver(saveQueueState, dirtyQueues)(queues)
             : async () => { };
 
+        const schedulerRef: SchedulerRef = {};
+
         const processBatch = createBatchProcessor(
             processMessage,
             config,
-            config.persistence.enabled ? dirtyQueues : undefined
+            config.persistence.enabled ? dirtyQueues : undefined,
+            schedulerRef
         );
 
         const scheduleProcessing = createProcessingScheduler(processBatch, config);
+        schedulerRef.current = scheduleProcessing;
 
         const loadQueueState = config.persistence.enabled
             ? createQueueStateLoader(

@@ -7,6 +7,7 @@ const require = createRequire(import.meta.url);
 
 import { setWriter, getWriter } from "@cloudnux/utils";
 import type { LogEntry as UtilsLogEntry } from "@cloudnux/utils";
+import { WebSocketConnectionGoneError } from "@cloudnux/core-cloud-provider";
 
 import "../queue-plugin";
 import "../schedule-plugin";
@@ -557,6 +558,9 @@ async function devConsolePluginFunction(
       await wsManager.sendToClient(connectionId, request.body);
       return reply.status(200).send({ status: 'success', message: `Message sent to ${connectionId}` });
     } catch (error) {
+      if (error instanceof WebSocketConnectionGoneError) {
+        return reply.status(410).send({ error: error.message });
+      }
       return reply.status(404).send({ error: (error as Error).message });
     }
   });

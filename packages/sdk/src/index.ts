@@ -40,4 +40,4 @@ export type {
     InvokeResponse,
 } from "@cloudnux/core-cloud-provider";
 
-export { ErrorCode } from "@cloudnux/core-cloud-provider";
+export { ErrorCode, WebSocketConnectionGoneError } from "@cloudnux/core-cloud-provider";

@@ -25,7 +25,7 @@ class RouteRegistry {
       url: routeOptions.url,
       handler: routeOptions.handler?.name || 'anonymous',
       registeredAt: new Date(),
-      module: routeOptions.module
+      module: routeOptions.config?.module
     }
 
     this.routes.push(routeInfo)

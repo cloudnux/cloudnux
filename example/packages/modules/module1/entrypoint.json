@@ -19,6 +19,26 @@
                     "route": "/identity/revoke"
                 }
             }
+        },
+        "publishDelayed": {
+            "handler": "publishDelayed",
+            "trigger": {
+                "type": "http",
+                "options": {
+                    "method": "POST",
+                    "route": "/publish-delayed"
+                }
+            }
+        },
+        "handleDelayedMessage": {
+            "handler": "handleDelayedMessage",
+            "trigger": {
+                "type": "event",
+                "options": {
+                    "source": "delay-test",
+                    "sourceType": "sqs"
+                }
+            }
         }
     }
 }

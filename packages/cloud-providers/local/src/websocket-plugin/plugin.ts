@@ -5,6 +5,7 @@ import fsPlugin from "fastify-plugin";
 import websocketPlugin from "@fastify/websocket";
 
 import { logger } from "@cloudnux/utils";
+import { WebSocketConnectionGoneError } from "@cloudnux/core-cloud-provider";
 
 
 import {
@@ -145,7 +146,7 @@ export const websocketsPlugin: FastifyPluginAsync<WebSocketPluginOptions> =
             async sendToClient(connectionId: string, data: any): Promise<void> {
                 const connection = connections.get(connectionId);
                 if (!connection) {
-                    throw new Error(`WebSocket connection ${connectionId} not found`);
+                    throw new WebSocketConnectionGoneError(connectionId);
                 }
                 const payload = typeof data === "string" ? data : JSON.stringify(data);
                 connection.socket.send(payload);
@@ -153,7 +154,7 @@ export const websocketsPlugin: FastifyPluginAsync<WebSocketPluginOptions> =
             async disconnect(connectionId: string): Promise<void> {
                 const connection = connections.get(connectionId);
                 if (!connection) {
-                    throw new Error(`WebSocket connection ${connectionId} not found`);
+                    throw new WebSocketConnectionGoneError(connectionId);
                 }
                 connection.socket.close();
             },

@@ -19,8 +19,9 @@ async function entries(app: RouterInstance) {
         app.route({
           method: "<%= entry.trigger.options.method %>" as any,
           url: `/http<%= $$convertRouteParamstoFastifyRouteTemplate(entry.trigger.options.route) %>`,
+          config: { module: "<%=module%>" },
           handler: async (request, reply) => {
-              await httpHandler(src["<%= entry.handler %>"], request, reply); 
+              await httpHandler(src["<%= entry.handler %>"], request, reply);
           }
     });
     <%_ } _%>
