@@ -1,4 +1,5 @@
 export * from "./services/event-broker";
+export * from "./services/invoke";
 export * from "./services/storage";
 export * from "./services/locations";
 export * from "./services/functions";
@@ -33,6 +34,10 @@ export type {
     WebSocketFunctionContext,
     WebSocketRequest,
     WebSocketResponse,
+    InvokeService,
+    InvokeFunctionContext,
+    InvokeRequest,
+    InvokeResponse,
 } from "@cloudnux/core-cloud-provider";
 
-export { ErrorCode } from "@cloudnux/core-cloud-provider";
+export { ErrorCode, WebSocketConnectionGoneError } from "@cloudnux/core-cloud-provider";

@@ -1,4 +1,4 @@
-import { QueueConfig, QueueMessage, QueueService } from "./types";
+import { QueueConfig, QueueMessage, QueueService, SchedulerRef } from "./types";
 import {
     moveToProcessing,
     removeFromProcessing,
@@ -6,6 +6,7 @@ import {
     incrementAttempts,
     calculateBackoffDelay,
     setNextAttemptTime,
+    getNextReadyDelay,
     logSuccess,
     logError,
     logRetryScheduled
@@ -62,7 +63,8 @@ const handleProcessingError = async (
 export const createBatchProcessor = (
     processMessage: (queueName: string, message: QueueMessage, queueService: QueueService) => Promise<void>,
     config: QueueConfig,
-    dirtyQueues?: Set<string>
+    dirtyQueues?: Set<string>,
+    schedulerRef?: SchedulerRef
 ) => async (queueName: string, queueService: QueueService): Promise<void> => {
     // Clear timeout to prevent double processing
     if (queueService.timeoutId) {
@@ -80,23 +82,27 @@ export const createBatchProcessor = (
 
         const messagesToProcess = moveToProcessing(queueService, config.batchSize);
 
-        if (messagesToProcess.length === 0) {
-            return;
-        }
+        if (messagesToProcess.length > 0) {
+            queueService.processing.push(...messagesToProcess);
 
-        queueService.processing.push(...messagesToProcess);
+            // Process messages in parallel
+            await Promise.all(messagesToProcess.map(message => {
+                return processMessage(queueName, message, queueService);
+            }));
 
-        // Process messages in parallel
-        await Promise.all(messagesToProcess.map(message => {
-            return processMessage(queueName, message, queueService);
-        }));
-
-        // Mark queue as dirty for periodic persistence
-        if (config.persistence.enabled && dirtyQueues) {
-            dirtyQueues.add(queueName);
+            // Mark queue as dirty for periodic persistence
+            if (config.persistence.enabled && dirtyQueues) {
+                dirtyQueues.add(queueName);
+            }
         }
     } finally {
         queueService.processingBatch = false;
+
+        // If delayed messages remain, schedule a wake-up for when the earliest one becomes ready
+        const nextReadyDelay = getNextReadyDelay(queueService);
+        if (nextReadyDelay !== null) {
+            schedulerRef?.current?.(queueName, queueService, nextReadyDelay);
+        }
     }
 };
 

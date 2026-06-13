@@ -37,6 +37,9 @@ export function createWebSocketContext(request: WebSocketRequest): WebSocketFunc
         error(message: string, code?: ErrorCode, details?: Record<string, any>) {
             reject(500, { message, code, details });
         },
+        serverError(err: Error) {
+            reject(500, { message: err.message, code: ErrorCode.UNKNOWN_ERROR });
+        },
         notFound(resource: string, id?: string | number) {
             const message = id
                 ? `${resource} with ID ${id} was not found`

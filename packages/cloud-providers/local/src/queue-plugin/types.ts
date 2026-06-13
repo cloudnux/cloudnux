@@ -34,11 +34,11 @@ export interface QueueConfig {
     maxConcurrent: number;
     retryBackoff: boolean;
     persistence: {
-        enabled: boolean;
+        enabled?: boolean;
         directory: string;
-        saveInterval: number;
-        saveOnShutdown: boolean;
-        loadOnStartup: boolean;
+        saveInterval?: number;
+        saveOnShutdown?: boolean;
+        loadOnStartup?: boolean;
     };
 }
 
@@ -102,13 +102,19 @@ export interface QueueManager {
     } | null>;
 }
 
+export type ScheduleProcessingFn = (queueName: string, queueService: QueueService, overrideDelay?: number | null) => void;
+
+export interface SchedulerRef {
+    current?: ScheduleProcessingFn;
+}
+
 export interface QueueDecoratorOptions {
     config: QueueConfig;
     queues: Record<string, QueueService>;
     dirtyQueues: Set<string>;
     saveQueueState?: (queueName: string, queueService: QueueService) => Promise<void>;
     loadQueueState?: (queueName: string) => Promise<void>;
-    scheduleProcessing: (queueName: string, queueService: QueueService) => void,
+    scheduleProcessing: ScheduleProcessingFn,
     processBatch: (queueName: string, queueService: QueueService) => Promise<void>,
 }
 

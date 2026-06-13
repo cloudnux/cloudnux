@@ -157,7 +157,7 @@ export const initializeScheduler = async (
         }
 
         // Unified tick: handles both state persistence and cleanup
-        const tickInterval = state.config.persistence.saveInterval > 0
+        const tickInterval = (state.config.persistence.saveInterval || 0) > 0
             ? state.config.persistence.saveInterval
             : state.config.cleanup.cleanupInterval;
 

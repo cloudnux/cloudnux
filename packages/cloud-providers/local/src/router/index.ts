@@ -5,6 +5,8 @@ import fastifyPrintRoutes from 'fastify-print-routes';
 import { logger } from "@cloudnux/utils";
 
 import { setWebSocketManager } from "../services/websocket";
+import { setInvokeManager } from "../services/invoke";
+
 export type RouterInstance = FastifyInstance
 
 // Create a reusable router function
@@ -28,6 +30,7 @@ export function createRouter(options: { logger?: boolean } = {}): RouterInstance
 
   fastify.addHook('onReady', () => {
     setWebSocketManager(fastify.websockets);
+    setInvokeManager(fastify.invokes);
   });
 
   return fastify;

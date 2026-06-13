@@ -3,6 +3,7 @@ import { LocationService } from "./services/location";
 import { StorageService } from "./services/storage";
 import { FunctionsService } from "./services/functions";
 import { WebSocketService } from "./services/websocket";
+import { InvokeService } from "./services/invoke";
 
 export interface CloudProvider {
     name: string;
@@ -13,4 +14,5 @@ export interface CloudProvider {
     createEventBrokerService(): EventBrokerService;
     createFunctionsService(): FunctionsService;
     createWebSocketService(): WebSocketService;
+    createInvokeService(): InvokeService;
 }

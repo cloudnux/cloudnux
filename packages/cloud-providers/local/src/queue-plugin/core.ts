@@ -43,18 +43,54 @@ export const createQueueService = (handler: EventHandler, module?: string): Queu
 // Pure function to create a queue message
 export const createQueueMessage = (body: any, headers: Record<string, any>): QueueMessage => {
     const id = Date.now().toString() + Math.random().toString(36).substring(2, 7);
-    return {
+    const message: QueueMessage = {
         id,
         timestamp: new Date(),
         attempts: 0,
         payload: body,
         attributes: headers,
     };
+
+    const delaySeconds = Number(headers?.['x-delay-seconds']);
+    if (delaySeconds > 0) {
+        message.nextAttempt = new Date(Date.now() + delaySeconds * 1000);
+    }
+
+    return message;
 };
 
-// Pure function to move messages from incoming to processing
+// Pure function to check whether a message is ready to be processed
+export const isMessageReady = (message: QueueMessage, now: number = Date.now()): boolean => {
+    return !message.nextAttempt || message.nextAttempt.getTime() <= now;
+};
+
+// Pure function to move ready messages from incoming to processing, leaving delayed messages in place
 export const moveToProcessing = (queueService: QueueService, batchSize: number): QueueMessage[] => {
-    return queueService.incoming.splice(0, batchSize);
+    const now = Date.now();
+    const ready: QueueMessage[] = [];
+    const remaining: QueueMessage[] = [];
+
+    for (const message of queueService.incoming) {
+        if (ready.length < batchSize && isMessageReady(message, now)) {
+            ready.push(message);
+        } else {
+            remaining.push(message);
+        }
+    }
+
+    queueService.incoming = remaining;
+    return ready;
+};
+
+// Pure function to compute the delay until the next delayed message in incoming becomes ready
+export const getNextReadyDelay = (queueService: QueueService): number | null => {
+    const nextAttempts = queueService.incoming
+        .filter(message => message.nextAttempt)
+        .map(message => message.nextAttempt!.getTime());
+
+    if (nextAttempts.length === 0) return null;
+
+    return Math.max(0, Math.min(...nextAttempts) - Date.now());
 };
 
 // Pure function to remove message from processing queue

@@ -5,10 +5,11 @@
       - config: the full entrypoint object 
 %>
 import { RouterInstance } from '@cloudnux/local-cloud-provider';
-import { httpHandler, scheduleHandler, eventBrokerHandler, websocketHandler } from "@cloudnux/cloud-sdk";
+import { httpHandler, scheduleHandler, eventBrokerHandler, invokeHandler, websocketHandler } from "@cloudnux/cloud-sdk";
 import "@cloudnux/local-cloud-provider/schedule-plugin";
 import "@cloudnux/local-cloud-provider/queue-plugin";
 import "@cloudnux/local-cloud-provider/websocket-plugin";
+import "@cloudnux/local-cloud-provider/invoke-plugin";
 
 import * as src from "<%= source %>";
 
@@ -18,9 +19,9 @@ async function entries(app: RouterInstance) {
         app.route({
           method: "<%= entry.trigger.options.method %>" as any,
           url: `/http<%= $$convertRouteParamstoFastifyRouteTemplate(entry.trigger.options.route) %>`,
-          module : "<%=module%>",
+          config: { module: "<%=module%>" },
           handler: async (request, reply) => {
-              await httpHandler(src["<%= entry.handler %>"], request, reply); 
+              await httpHandler(src["<%= entry.handler %>"], request, reply);
           }
     });
     <%_ } _%>
@@ -39,11 +40,15 @@ async function entries(app: RouterInstance) {
           "<%=module%>"
           );
     <%_ } _%>
+    <%_ if(entry.trigger.type === "invoke") { _%>
+        app.invokes.register("<%=module%>","<%= entry.trigger.options.name %>",
+            (envelop) => invokeHandler(src["<%= entry.handler %>"], envelop)
+        );
+    <%_ } _%>
     <%_ if(entry.trigger.type === "websocket") { _%>
         app.websockets.registerHandler({
           path: "<%= $$convertRouteParamstoFastifyRouteTemplate(entry.trigger.options.path) %>",
           event: "<%= entry.trigger.options.event %>",
-          module: "<%=module%>",
           <%_ if(entry.trigger.options.route) { _%>
           route: "<%= entry.trigger.options.route %>",
           <%_ } _%>
