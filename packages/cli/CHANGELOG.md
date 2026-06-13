@@ -1,5 +1,11 @@
 # @cloudnux/cli
 
+## 0.18.0
+
+### Minor Changes
+
+- [#19](https://github.com/cloudnux/cloudnux/pull/19) [`d1c8105`](https://github.com/cloudnux/cloudnux/commit/d1c8105c170662a91082653454b2a22975000f35) Thanks [@minawalphonce](https://github.com/minawalphonce)! - add delayed message handling and enhance websocket error management
+
 ## 0.17.0
 
 ### Minor Changes
