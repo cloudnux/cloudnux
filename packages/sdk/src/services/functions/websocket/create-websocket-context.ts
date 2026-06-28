@@ -1,6 +1,6 @@
-import { ErrorCode, WebSocketFunctionContext, WebSocketRequest, WebSocketResponse } from "@cloudnux/core-cloud-provider";
+import { ErrorCode, WebSocketFunctionContext, WebSocketRequest, WebSocketResponse, LoggerService } from "@cloudnux/core-cloud-provider";
 
-export function createWebSocketContext(request: WebSocketRequest): WebSocketFunctionContext {
+export function createWebSocketContext(request: WebSocketRequest, logger: LoggerService): WebSocketFunctionContext {
     const response: WebSocketResponse = {
         status: "success",
         body: {} as any,
@@ -19,6 +19,7 @@ export function createWebSocketContext(request: WebSocketRequest): WebSocketFunc
         event: request.event,
         request,
         response,
+        logger,
         message<T = Record<string, any>>() {
             if (typeof request.body === "string")
                 return JSON.parse(request.body || "{}") as T;

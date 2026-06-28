@@ -1,7 +1,7 @@
 import * as fs from "fs/promises";
 import { FastifyInstance } from "fastify";
 
-import { logger } from "@cloudnux/utils";
+import { logger, moduleLogger } from "../logging";
 
 
 import { SchedulerConfig, SchedulerState, SchedulerService } from "./types";
@@ -81,11 +81,11 @@ export const createSchedulerFunctions = (
 
         if (!canExecute) {
             if (reason === 'Maximum concurrent executions reached') {
-                logger.warn(`Delaying job ${scheduler.job.name} - ${reason}`);
+                moduleLogger(scheduler.job.module).warn(`Delaying job ${scheduler.job.name} - ${reason}`);
                 scheduler.job.nextRun = new Date(Date.now() + 30000);
                 scheduleJobFn(scheduler);
             } else if (reason === 'Job reached maximum runs') {
-                logger.info(`Job ${scheduler.job.name} reached max runs (${scheduler.job.maxRuns})`);
+                moduleLogger(scheduler.job.module).info(`Job ${scheduler.job.name} reached max runs (${scheduler.job.maxRuns})`);
             }
             return;
         }
@@ -97,7 +97,7 @@ export const createSchedulerFunctions = (
         scheduler.isRunning = true;
         state.runningExecutions++;
 
-        logger.info(`Executing job ${scheduler.job.name} (${execution.id})`);
+        moduleLogger(scheduler.job.module).info(`Executing job ${scheduler.job.name} (${execution.id})`);
 
         try {
             const result = await executeJobWithTimeout(

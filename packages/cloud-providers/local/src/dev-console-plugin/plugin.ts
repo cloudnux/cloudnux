@@ -5,9 +5,9 @@ import fsPlugin from "fastify-plugin";
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 
-import { setWriter, getWriter } from "@cloudnux/utils";
-import type { LogEntry as UtilsLogEntry } from "@cloudnux/utils";
 import { WebSocketConnectionGoneError } from "@cloudnux/core-cloud-provider";
+
+import { subscribeToLogs } from "../logging";
 
 import "../queue-plugin";
 import "../schedule-plugin";
@@ -67,10 +67,9 @@ async function devConsolePluginFunction(
 ) {
   const { prefix = 'console', enableUI = true } = options;
 
-  // Chain into the utils logging pipeline — only when the plugin is actually registered.
-  // pretty-writer.ts is already set (guaranteed by index.ts import order), so getWriter() returns it.
-  const upstream = getWriter();
-  setWriter((entry: UtilsLogEntry) => {
+  // Subscribe directly to the local provider's own logger instances — same package,
+  // same bundle copy, so there's no cross-module writer desync to worry about.
+  const unsubscribe = subscribeToLogs((entry) => {
     logStore.addLog({
       id: Date.now().toString() + Math.random().toString(36).slice(2, 9),
       timestamp: new Date(entry.time),
@@ -80,12 +79,11 @@ async function devConsolePluginFunction(
       module: entry.module,
       reqId: entry.reqId,
     });
-    upstream(entry);
   });
 
-  // Restore upstream writer and clear log store on plugin teardown
+  // Unsubscribe and clear log store on plugin teardown
   fastify.addHook('onClose', (_instance, done) => {
-    setWriter(upstream);
+    unsubscribe();
     logStore.clear();
     done();
   });

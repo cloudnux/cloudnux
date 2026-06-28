@@ -11,7 +11,7 @@ import {
     MessageAttributeValue
 } from '@aws-sdk/client-sns';
 
-import { logger } from "@cloudnux/utils";
+import { logger } from "../logging";
 
 /**
  * Check if a string is an SNS topic ARN

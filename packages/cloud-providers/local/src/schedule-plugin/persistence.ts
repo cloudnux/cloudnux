@@ -1,7 +1,7 @@
 import * as fs from "fs/promises";
 import * as path from "path";
 
-import { logger } from "@cloudnux/utils";
+import { logger, moduleLogger } from "../logging";
 
 import { SchedulerState, SchedulerService, JobExecution, ScheduledJob, SchedulerConfig } from "./types";
 import { hasJobDefinitionChanged, calculateNextRunFromLastRun } from "./utils";
@@ -80,7 +80,7 @@ export const validateAndAdjustNextRun = (
     }
 
     if (savedNextRun <= now) {
-        logger.debug(`Saved next run is in the past for ${job.name} - recalculating`);
+        moduleLogger(job.module).debug(`Saved next run is in the past for ${job.name} - recalculating`);
         return calculateNextRunFromLastRun(job, job.lastRun, config);
     }
 
@@ -88,7 +88,7 @@ export const validateAndAdjustNextRun = (
     const isRapidRestart = timeSinceRestart < config.restartBehavior.rapidRestartThreshold;
 
     if (isRapidRestart) {
-        logger.debug(`Rapid restart detected for ${job.name} - preserving saved timing`);
+        moduleLogger(job.module).debug(`Rapid restart detected for ${job.name} - preserving saved timing`);
         return savedNextRun;
     }
 
@@ -97,7 +97,7 @@ export const validateAndAdjustNextRun = (
         const timeDiff = Math.abs(savedNextRun.getTime() - expectedNextRun.getTime());
 
         if (timeDiff > config.restartBehavior.maxTimingDrift) {
-            logger.debug(`Adjusting timing for ${job.name} - drift of ${Math.round(timeDiff / 1000)}s detected`);
+            moduleLogger(job.module).debug(`Adjusting timing for ${job.name} - drift of ${Math.round(timeDiff / 1000)}s detected`);
             return expectedNextRun;
         }
     }
@@ -120,7 +120,7 @@ export const restoreJobFromSavedData = (
     };
 
     if (definitionChanged) {
-        logger.debug(`Job definition changed: ${savedJob.name} - recalculating schedule`);
+        moduleLogger(scheduler.job.module).debug(`Job definition changed: ${savedJob.name} - recalculating schedule`);
         updatedJob.nextRun = calculateNextRunFromLastRun(updatedJob, updatedJob.lastRun, config);
     } else {
         const savedNextRun = savedJob.nextRun ? new Date(savedJob.nextRun) : undefined;
@@ -131,7 +131,7 @@ export const restoreJobFromSavedData = (
         const result = parseCronExpression(updatedJob.cronExpression, updatedJob.lastRun, {
             timezone: updatedJob.timezone
         });
-        logger.debug(`Job restored: ${savedJob.name} - ${result.description} - next: ${updatedJob.nextRun.toLocaleString()}`);
+        moduleLogger(scheduler.job.module).debug(`Job restored: ${savedJob.name} - ${result.description} - next: ${updatedJob.nextRun.toLocaleString()}`);
     }
 
     return { ...scheduler, job: updatedJob };

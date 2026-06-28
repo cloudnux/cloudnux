@@ -1,6 +1,6 @@
 import { parseExpression } from 'cron-parser';
 
-import { logger } from "@cloudnux/utils"
+import { logger } from "../logging"
 
 /**
  * Professional cron parser using cron-parser library

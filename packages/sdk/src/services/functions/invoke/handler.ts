@@ -1,23 +1,25 @@
 import { InvokeFunctionContext } from "@cloudnux/core-cloud-provider";
-import { logger } from "@cloudnux/utils";
 
 import { cloudFunctions } from "../cloud-functions";
+import { cloudLogger } from "../../logger";
 import { createInvokeContext } from "./create-invoke-context";
 
 type InvokeHandler = (context: InvokeFunctionContext) => Promise<void> | void;
 
 export async function invokeHandler(handler: InvokeHandler, ...args: any[]): Promise<any> {
+    const log = cloudLogger();
     try {
-        logger.debug({ args }, "Executing Invoke handler with args");
+        log.debug({ args }, "Executing Invoke handler with args");
         const [invokeRequest] = cloudFunctions().createInvokeRequest(...args);
-        logger.debug({ request: invokeRequest }, "Created Invoke request");
-        const context = createInvokeContext(invokeRequest);
+        log.setBindings({ reqId: invokeRequest.requestId ?? "", module: invokeRequest.calledModule ?? "" });
+        log.debug({ request: invokeRequest }, "Created Invoke request");
+        const context = createInvokeContext(invokeRequest, log);
         await handler(context);
-        logger.debug({ response: context.response }, "Invoke Handler executed successfully, building response");
+        log.debug({ response: context.response }, "Invoke Handler executed successfully, building response");
         return cloudFunctions().buildInvokeResponse(context, ...args);
     }
     catch (error) {
-        logger.error({ error }, "Error in Invoke handler");
+        log.error({ error }, "Error in Invoke handler");
         throw error;
     }
 }

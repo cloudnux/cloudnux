@@ -1,4 +1,4 @@
-import { logger } from "@cloudnux/utils";
+import { logger } from "../logging";
 
 import { EventHandler, QueueConfig, QueueMessage, QueueService, QueueSummary } from "./types";
 

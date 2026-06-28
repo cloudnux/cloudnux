@@ -1,6 +1,6 @@
-import { EventResponse, EventFunctionContext, EventRequest } from "@cloudnux/core-cloud-provider";
+import { EventResponse, EventFunctionContext, EventRequest, LoggerService } from "@cloudnux/core-cloud-provider";
 
-export function createEventContext(request: EventRequest): EventFunctionContext {
+export function createEventContext(request: EventRequest, logger: LoggerService): EventFunctionContext {
     const response: EventResponse = {
         status: "success" as "success" | "error",
         body: {} as Record<string, any>
@@ -11,6 +11,7 @@ export function createEventContext(request: EventRequest): EventFunctionContext 
         type: "Event" as const,
         response,
         request,
+        logger,
         message<T = Record<string, any>>() {
             if (typeof request.body === "string")
                 return JSON.parse(request.body || "{}") as T

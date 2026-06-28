@@ -13,19 +13,7 @@ import {
 } from 'aws-lambda';
 
 import { HttpMethod, MessageFilter } from "@cloudnux/core-cloud-provider"
-import { logger, initializeLogger, setWriter } from '@cloudnux/utils';
-import { EOL } from "os";
-
-setWriter((entry) => {
-    process.stdout.write(JSON.stringify({
-        level: entry.levelName,
-        time: entry.time,
-        module: entry.module,
-        reqId: entry.reqId || undefined,
-        msg: entry.msg,
-        ...entry.meta,
-    }) + EOL);
-});
+import { createLoggerService } from '../services/logger';
 
 export type EventType = APIGatewayProxyEventV2 | SNSEvent | SQSEvent | ScheduledEvent | S3Event;
 
@@ -167,7 +155,6 @@ export function createRouter() {
         //remove the "HTTP" prefix from the routeKey
         const routeKey = event.routeKey.split(" ")[1].toLowerCase();
         for (const route of routes) {
-            logger.debug({ method, routeKey, route }, "[http] method");
             if (route.type === 'http' &&
                 route.method === method &&
                 route.routeKey === routeKey) {
@@ -327,9 +314,12 @@ export function createRouter() {
         },
 
         async run(event: EventType, context: Context): Promise<any> {
-            initializeLogger(context.functionName.split("_")[0], context.awsRequestId);
-            logger.info({ requestId: context.awsRequestId }, "request started");
-            logger.debug({ event, requestId: context.awsRequestId }, "Received event");
+            const requestLogger = createLoggerService({
+                module: context.functionName.split("_")[0],
+                reqId: context.awsRequestId,
+            });
+            requestLogger.info({ requestId: context.awsRequestId }, "request started");
+            requestLogger.debug({ event, requestId: context.awsRequestId }, "Received event");
             let response;
             try {
                 const eventType = detectEventType(event);
@@ -349,11 +339,11 @@ export function createRouter() {
                 }
             }
             catch (error) {
-                logger.error({ error, requestId: context.awsRequestId }, "Error occurred");
+                requestLogger.error({ error, requestId: context.awsRequestId }, "Error occurred");
                 throw error;
             }
             finally {
-                logger.info({ response, requestId: context.awsRequestId }, "request finished");
+                requestLogger.info({ response, requestId: context.awsRequestId }, "request finished");
             }
         }
     }

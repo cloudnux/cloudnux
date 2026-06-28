@@ -5,4 +5,5 @@ export * from "./services/location";
 export * from "./services/storage";
 export * from "./services/functions";
 export * from "./services/websocket";
+export * from "./services/logger";
 export * from "./cloud-provider";

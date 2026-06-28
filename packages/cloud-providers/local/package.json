@@ -56,6 +56,7 @@
   },
   "dependencies": {
     "@cloudnux/core-cloud-provider": "0.13.0",
+    "@cloudnux/utils": "0.0.2",
     "@fastify/cors": "^11.1.0",
     "@fastify/static": "^8.0.0",
     "@fastify/websocket": "^11.0.1",

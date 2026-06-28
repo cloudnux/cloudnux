@@ -1,7 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-import { env, logger } from "@cloudnux/utils";
+import { env } from "@cloudnux/utils";
+import { logger } from "../logging";
 
 import { StorageService, StorageWriteOptions, StorageWriteResult } from "@cloudnux/core-cloud-provider";
 

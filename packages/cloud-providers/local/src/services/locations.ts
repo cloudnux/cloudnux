@@ -11,7 +11,8 @@ import {
     RouteResult,
     RoutePoint
 } from "@cloudnux/core-cloud-provider";
-import { env, logger } from "@cloudnux/utils";
+import { env } from "@cloudnux/utils";
+import { logger } from "../logging";
 
 // Use fs.promises for async file operations
 const { readFile, writeFile, access, mkdir } = fs.promises;

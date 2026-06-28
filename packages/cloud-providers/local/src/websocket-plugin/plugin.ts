@@ -4,7 +4,7 @@ import { FastifyInstance, FastifyPluginAsync } from "fastify";
 import fsPlugin from "fastify-plugin";
 import websocketPlugin from "@fastify/websocket";
 
-import { logger } from "@cloudnux/utils";
+import { moduleLogger } from "../logging";
 import { WebSocketConnectionGoneError } from "@cloudnux/core-cloud-provider";
 
 
@@ -94,7 +94,7 @@ export const websocketsPlugin: FastifyPluginAsync<WebSocketPluginOptions> =
                         );
                         for (const h of routeHandlers) {
                             matched = true;
-                            h.handler(connectionId, "message", data, request).catch((e) => { logger.error(e) });
+                            h.handler(connectionId, "message", data, request).catch((e) => { moduleLogger(h.module).error(e) });
                         }
                     }
 
@@ -104,7 +104,7 @@ export const websocketsPlugin: FastifyPluginAsync<WebSocketPluginOptions> =
                             h => h.event === "message" && !h.route
                         );
                         for (const h of defaultHandlers) {
-                            h.handler(connectionId, "message", data, request).catch((e) => { logger.error(e) });
+                            h.handler(connectionId, "message", data, request).catch((e) => { moduleLogger(h.module).error(e) });
                         }
                     }
                 });
@@ -113,7 +113,7 @@ export const websocketsPlugin: FastifyPluginAsync<WebSocketPluginOptions> =
                 socket.on("close", () => {
                     const disconnectHandlers = pathHandlers().filter(h => h.event === "disconnect");
                     for (const h of disconnectHandlers) {
-                        h.handler(connectionId, "disconnect", null, request).catch((e) => { logger.error(e) });
+                        h.handler(connectionId, "disconnect", null, request).catch((e) => { moduleLogger(h.module).error(e) });
                     }
                     connections.delete(connectionId);
                 });

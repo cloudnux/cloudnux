@@ -1,6 +1,6 @@
 import { FastifyInstance } from "fastify";
 
-import { logger } from "@cloudnux/utils";
+import { moduleLogger } from "../logging";
 
 import { QueueService, QueueManager, QueueDecoratorOptions, EventHandler } from "./types";
 import {
@@ -55,7 +55,7 @@ export const createQueueManager = ({
 
             //TODO: add queue filtering logic
             if (queues[queueName]) {
-                logger.warn(`Queue already exists: ${queueName}.`);
+                moduleLogger(module).warn(`Queue already exists: ${queueName}.`);
                 return;
             }
 
@@ -67,9 +67,9 @@ export const createQueueManager = ({
                 await loadQueueState(queueName);
             }
 
-            logger.info(`Queue added: ${queueName}`);
+            moduleLogger(module).info(`Queue added: ${queueName}`);
         } catch (error: any) {
-            logger.error(`Failed to add queue ${queueName}: ${error.message}`);
+            moduleLogger(module).error(`Failed to add queue ${queueName}: ${error.message}`);
             throw error;
         }
     };
@@ -86,7 +86,7 @@ export const createQueueManager = ({
             // Check if queue has pending messages
             const totalMessages = queueService.incoming.length + queueService.processing.length;
             if (totalMessages > 0) {
-                logger.warn(`Removing queue with ${totalMessages} pending messages: ${queueName}`);
+                moduleLogger(queueService.module).warn(`Removing queue with ${totalMessages} pending messages: ${queueName}`);
             }
 
             // Clear any scheduled processing
@@ -102,9 +102,9 @@ export const createQueueManager = ({
             // Remove from queues map
             delete queues[queueName];
 
-            logger.info(`Queue removed: ${queueName}`);
+            moduleLogger(queueService.module).info(`Queue removed: ${queueName}`);
         } catch (error: any) {
-            logger.error(`Failed to remove queue ${queueName}: ${error.message}`);
+            moduleLogger(queues[queueName]?.module).error(`Failed to remove queue ${queueName}: ${error.message}`);
             throw error;
         }
     };

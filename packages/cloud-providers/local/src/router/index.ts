@@ -2,7 +2,6 @@ import Fastify, { FastifyInstance } from "fastify";
 import fastifyRawBody from "fastify-raw-body";
 import cors from '@fastify/cors';
 import fastifyPrintRoutes from 'fastify-print-routes';
-import { logger } from "@cloudnux/utils";
 
 import { setWebSocketManager } from "../services/websocket";
 import { setInvokeManager } from "../services/invoke";
@@ -13,7 +12,7 @@ export type RouterInstance = FastifyInstance
 export function createRouter(options: { logger?: boolean } = {}): RouterInstance {
   const fastify = Fastify({
     maxParamLength: 1000,
-    ...(options.logger ? { loggerInstance: logger as any } : {}),
+    ...(options.logger ? { logger: true } : {}),
   });
 
   fastify.register(fastifyRawBody, {

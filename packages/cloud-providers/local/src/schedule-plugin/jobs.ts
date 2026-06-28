@@ -1,4 +1,4 @@
-import { logger } from "@cloudnux/utils";
+import { moduleLogger } from "../logging";
 
 import { JobDefinition, ScheduledJob, SchedulerService, SchedulerConfig } from "./types";
 import { detectExpressionType, convertRateToCron, parseCronExpression, getNextExecutions } from "./cron-utils";
@@ -9,7 +9,7 @@ export const validateJobDefinition = (
 ): void => {
     const expressionType = detectExpressionType(jobDef.cronExpression);
     if (expressionType === "unknown") {
-        logger.error(`Invalid cron expression for job: ${jobDef.name}`);
+        moduleLogger(jobDef.module).error(`Invalid cron expression for job: ${jobDef.name}`);
         throw new Error(`Invalid cron expression for job: ${jobDef.name}`);
     }
 };
@@ -31,12 +31,12 @@ export const createJobFromDefinition = (
             timezone: jobDef.timezone ?? config.cron.defaultTimezone
         });
 
-        logger.debug(`Job ${jobDef.name}: ${result.description} - Next: ${result.nextRun.toLocaleString()}`);
+        moduleLogger(jobDef.module).debug(`Job ${jobDef.name}: ${result.description} - Next: ${result.nextRun.toLocaleString()}`);
 
         const upcoming = getNextExecutions(cronExpression, 3, {
             timezone: jobDef.timezone ?? config.cron.defaultTimezone
         });
-        logger.debug(`Upcoming: ${upcoming.map(d => d.toLocaleTimeString()).join(', ')}`);
+        moduleLogger(jobDef.module).debug(`Upcoming: ${upcoming.map(d => d.toLocaleTimeString()).join(', ')}`);
     }
 
     const job: ScheduledJob = {

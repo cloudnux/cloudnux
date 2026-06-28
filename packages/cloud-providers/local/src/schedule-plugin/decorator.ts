@@ -1,6 +1,6 @@
 import { FastifyInstance } from "fastify";
 
-import { logger } from "@cloudnux/utils";
+import { moduleLogger } from "../logging";
 
 import { SchedulerManager, SchedulerDecoratorOptions, JobDefinition, JobHandler } from "./types";
 import { validateJobDefinition, createJobFromDefinition, createSchedulerService } from "./jobs";
@@ -46,7 +46,7 @@ export const createSchedulerManager = ({
             // Check if job already exists
             const existingJob = Object.values(state.schedulers).find(s => s.job.name === jobDefinition.name);
             if (existingJob) {
-                logger.warn(`Job already exists: ${jobDefinition.name}.`);
+                moduleLogger(jobDefinition.module).warn(`Job already exists: ${jobDefinition.name}.`);
                 return existingJob.job.id;
             }
 
@@ -62,11 +62,11 @@ export const createSchedulerManager = ({
                 scheduleJobFn(scheduler);
             }
 
-            logger.info(`Job added: ${jobDefinition.name} (${job.id})`);
+            moduleLogger(jobDefinition.module).info(`Job added: ${jobDefinition.name} (${job.id})`);
 
             return job.id;
         } catch (error: any) {
-            logger.error(`Failed to add job ${jobDefinition.name}: ${error.message}`);
+            moduleLogger(jobDefinition.module).error(`Failed to add job ${jobDefinition.name}: ${error.message}`);
             throw error;
         }
     };
@@ -82,7 +82,7 @@ export const createSchedulerManager = ({
 
             // Check if job is currently running
             if (scheduler.isRunning) {
-                logger.warn(`Removing job that is currently running: ${jobName}`);
+                moduleLogger(scheduler.job.module).warn(`Removing job that is currently running: ${jobName}`);
             }
 
             // Clear any scheduled timeout
@@ -93,9 +93,9 @@ export const createSchedulerManager = ({
             // Remove from state
             delete state.schedulers[scheduler.job.id];
 
-            logger.info(`Job removed: ${jobName}`);
+            moduleLogger(scheduler.job.module).info(`Job removed: ${jobName}`);
         } catch (error: any) {
-            logger.error(`Failed to remove job ${jobName}: ${error.message}`);
+            moduleLogger(Object.values(state.schedulers).find(s => s.job.name === jobName)?.job.module).error(`Failed to remove job ${jobName}: ${error.message}`);
             throw error;
         }
     };
@@ -136,7 +136,7 @@ export const createSchedulerManager = ({
             }
 
             if (scheduler.job.enabled) {
-                logger.debug(`Job is already enabled: ${jobName}`);
+                moduleLogger(scheduler.job.module).debug(`Job is already enabled: ${jobName}`);
                 return;
             }
 
@@ -146,9 +146,9 @@ export const createSchedulerManager = ({
             // Schedule it
             scheduleJobFn(scheduler);
 
-            logger.info(`Job enabled: ${jobName}`);
+            moduleLogger(scheduler.job.module).info(`Job enabled: ${jobName}`);
         } catch (error: any) {
-            logger.error(`Failed to enable job ${jobName}: ${error.message}`);
+            moduleLogger(Object.values(state.schedulers).find(s => s.job.name === jobName)?.job.module).error(`Failed to enable job ${jobName}: ${error.message}`);
             throw error;
         }
     };
@@ -163,7 +163,7 @@ export const createSchedulerManager = ({
             }
 
             if (!scheduler.job.enabled) {
-                logger.debug(`Job is already disabled: ${jobName}`);
+                moduleLogger(scheduler.job.module).debug(`Job is already disabled: ${jobName}`);
                 return;
             }
 
@@ -176,9 +176,9 @@ export const createSchedulerManager = ({
                 scheduler.timerId = undefined;
             }
 
-            logger.info(`Job disabled: ${jobName}`);
+            moduleLogger(scheduler.job.module).info(`Job disabled: ${jobName}`);
         } catch (error: any) {
-            logger.error(`Failed to disable job ${jobName}: ${error.message}`);
+            moduleLogger(Object.values(state.schedulers).find(s => s.job.name === jobName)?.job.module).error(`Failed to disable job ${jobName}: ${error.message}`);
             throw error;
         }
     };
@@ -199,9 +199,9 @@ export const createSchedulerManager = ({
             // Trigger immediately
             setImmediate(() => executeJob(scheduler));
 
-            logger.info(`Job triggered: ${jobName}`);
+            moduleLogger(scheduler.job.module).info(`Job triggered: ${jobName}`);
         } catch (error: any) {
-            logger.error(`Failed to trigger job ${jobName}: ${error.message}`);
+            moduleLogger(Object.values(state.schedulers).find(s => s.job.name === jobName)?.job.module).error(`Failed to trigger job ${jobName}: ${error.message}`);
             throw error;
         }
     };

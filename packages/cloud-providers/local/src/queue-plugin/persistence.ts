@@ -1,7 +1,7 @@
 import * as fs from "fs/promises";
 import * as path from "path";
 
-import { logger } from "@cloudnux/utils";
+import { logger } from "../logging";
 
 import { QueueConfig, QueueService } from "./types";
 

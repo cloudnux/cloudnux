@@ -1,4 +1,4 @@
-import { logger } from "@cloudnux/utils";
+import { logger } from "../logging";
 
 import { JobExecution, ScheduledJob, SchedulerConfig, SchedulerService, SchedulerState, JobHandler } from "./types";
 import { generateExecutionId, calculateNextRunFromLastRun, shouldSkipJob, getTimeUntilNextRun } from "./utils";
