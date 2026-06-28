@@ -16,5 +16,5 @@ export interface CloudProvider {
     createFunctionsService(): FunctionsService;
     createWebSocketService(): WebSocketService;
     createInvokeService(): InvokeService;
-    createLoggerService(bindings?: Record<string, string>): LoggerService;
+    createLoggerService(): LoggerService;
 }
