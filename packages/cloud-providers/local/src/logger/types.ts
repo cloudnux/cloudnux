@@ -10,8 +10,9 @@ export type LogListener = (entry: LogEntry) => void;
 export type RunWithLogContext = <T>(context: LogContext, fn: () => T) => T;
 export type SubscribeToLogs = (listener: LogListener) => () => void;
 
-export type LoggingContext = {
-    logger: LoggerService;
+// Flattened onto LoggerService (rather than nesting it under a `logger` key)
+// so every call site reads `logging.info(...)`, not `logging.logger.info(...)`.
+export type LoggingContext = LoggerService & {
     runWithLogContext: RunWithLogContext;
     subscribeToLogs: SubscribeToLogs;
 };

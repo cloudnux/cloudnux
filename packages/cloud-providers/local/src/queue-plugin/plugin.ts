@@ -1,108 +1,34 @@
 import { FastifyInstance, FastifyPluginAsync } from "fastify";
 import fsPlugin from "fastify-plugin";
 
-import { QueuePluginOptions, QueueService, SchedulerRef } from "./types";
-
-import {
-    DEFAULT_CONFIG,
-    mergeConfig
-} from "./core";
-
-import {
-    createProcessMessageHandler,
-    createBatchProcessor,
-    createProcessingScheduler
-} from "./processing";
-
-import {
-    createPersistenceInitializer,
-    createQueueStateSaver,
-    createAllQueuesStateSaver,
-    createDirtyQueuesStateSaver,
-    createQueueStateLoader,
-    createAllQueuesStateLoader
-} from "./persistence";
-
+import { QueuePluginOptions, QueueRuntime } from "./types";
+import { DEFAULT_CONFIG, mergeConfig } from "./core";
+import { tick } from "./processing";
+import { initializePersistence } from "./persistence";
+import { createQueueManager } from "./decorator";
 import { registerQueueRoutes } from "./routes";
-import { createQueueManager, createQueueDecorator } from "./decorator";
 
 export const queuesPlugin: FastifyPluginAsync<QueuePluginOptions> =
     fsPlugin(async (
         app: FastifyInstance,
         options: QueuePluginOptions
     ) => {
-        // Configuration setup
-        const config = mergeConfig(DEFAULT_CONFIG, options.config);
+        const runtime: QueueRuntime = {
+            config: mergeConfig(DEFAULT_CONFIG, options.config),
+            queues: {},
+            dirtyQueues: new Set<string>(),
+            lastSavedAt: Date.now(),
+            logging: app.logging,
+        };
 
-        // Initialize empty queues map
-        const queues: Record<string, QueueService> = {};
+        // One timer for the entire plugin: every tickIntervalMs, check every
+        // queue for batches/retries that are due, and save persistence if
+        // its interval has elapsed. See processing.ts:tick.
+        const tickIntervalId = setInterval(() => tick(runtime), runtime.config.tickIntervalMs);
+        app.addHook('onClose', async () => clearInterval(tickIntervalId));
 
-        // Dirty tracking for debounced persistence
-        const dirtyQueues = new Set<string>();
-        const intervalIdHolder: { id?: NodeJS.Timeout } = {};
+        app.decorate('queues', createQueueManager(runtime));
+        registerQueueRoutes(app, options.prefix);
 
-        // Create specialized functions using higher-order functions
-        const processMessage = createProcessMessageHandler(config);
-
-        const saveQueueState = config.persistence.enabled
-            ? createQueueStateSaver(config)
-            : undefined;
-
-        const saveAllQueueStates = config.persistence.enabled && saveQueueState
-            ? createAllQueuesStateSaver(config, saveQueueState)(queues)
-            : async () => { };
-
-        const saveDirtyQueueStates = config.persistence.enabled && saveQueueState
-            ? createDirtyQueuesStateSaver(saveQueueState, dirtyQueues)(queues)
-            : async () => { };
-
-        const schedulerRef: SchedulerRef = {};
-
-        const processBatch = createBatchProcessor(
-            processMessage,
-            config,
-            config.persistence.enabled ? dirtyQueues : undefined,
-            schedulerRef
-        );
-
-        const scheduleProcessing = createProcessingScheduler(processBatch, config);
-        schedulerRef.current = scheduleProcessing;
-
-        const loadQueueState = config.persistence.enabled
-            ? createQueueStateLoader(
-                config,
-                scheduleProcessing,
-                processMessage
-            )(queues)
-            : async () => { };
-
-        const loadAllQueueStates = config.persistence.enabled
-            ? createAllQueuesStateLoader(config, loadQueueState)
-            : async () => { };
-
-        const initializePersistence = config.persistence.enabled
-            ? createPersistenceInitializer(config, loadAllQueueStates, saveDirtyQueueStates, saveAllQueueStates, intervalIdHolder)
-            : async () => { };
-
-        // Create and register queue manager decorator
-        const queueManager = createQueueManager({
-            config,
-            queues,
-            dirtyQueues,
-            saveQueueState: saveQueueState ? (queueName: string) => saveQueueState(queueName, queues[queueName]) : undefined,
-            loadQueueState,
-            scheduleProcessing,
-            processBatch,
-        });
-        const decorateQueues = createQueueDecorator(queueManager);
-        decorateQueues(app);
-
-        // Register all routes
-        registerQueueRoutes(
-            app,
-            options.prefix
-        );
-
-        // Initialize persistence if enabled
-        await initializePersistence();
+        await initializePersistence(runtime);
     });

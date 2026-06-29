@@ -7,7 +7,7 @@ const require = createRequire(import.meta.url);
 
 import { WebSocketConnectionGoneError } from "@cloudnux/core-cloud-provider";
 
-import { subscribeToLogs } from "../logging";
+import "../logger/types";
 
 import "../queue-plugin";
 import "../schedule-plugin";
@@ -67,9 +67,12 @@ async function devConsolePluginFunction(
 ) {
   const { prefix = 'console', enableUI = true } = options;
 
-  // Subscribe directly to the local provider's own logger instances — same package,
-  // same bundle copy, so there's no cross-module writer desync to worry about.
-  const unsubscribe = subscribeToLogs((entry) => {
+  // Read off `fastify.logging` (decorated once by router/index.ts on the shared
+  // FastifyInstance), not a direct `../logger` import - dev-console-plugin is its
+  // own separately-bundled tsup entry, so a direct import would get its own
+  // disconnected copy of the logger's listeners Set and never see logs published
+  // from queue-plugin/schedule-plugin/websocket-plugin's bundles.
+  const unsubscribe = fastify.logging.subscribeToLogs((entry) => {
     logStore.addLog({
       id: Date.now().toString() + Math.random().toString(36).slice(2, 9),
       timestamp: new Date(entry.time),

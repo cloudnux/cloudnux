@@ -17,7 +17,7 @@ export function createRouter(): RouterInstance {
     logger: false
   });
 
-  fastify.decorate('logging', { logger, runWithLogContext, subscribeToLogs });
+  fastify.decorate('logging', { ...logger, runWithLogContext, subscribeToLogs });
 
   fastify.register(fastifyRawBody, {
     field: 'rawBody',

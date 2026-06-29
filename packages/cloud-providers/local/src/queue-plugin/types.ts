@@ -1,6 +1,8 @@
 import { FastifyPluginOptions } from "fastify";
 import { EventBatchItemResult } from "@cloudnux/core-cloud-provider";
 
+import type { LoggingContext } from "../logger/types";
+
 export interface QueueMessage {
     id: string;
     timestamp: Date;
@@ -21,7 +23,6 @@ export interface QueueService {
     incoming: QueueMessage[];
     processing: QueueMessage[];
     dlq: QueueMessage[];
-    timeoutId: NodeJS.Timeout | null;
     processingBatch: boolean;
     module?: string;
 }
@@ -33,12 +34,12 @@ export interface QueueConfig {
     parallel: boolean;
     maxConcurrent: number;
     retryBackoff: boolean;
+    tickIntervalMs: number;
     persistence: {
         enabled?: boolean;
         directory: string;
         saveInterval?: number;
         saveOnShutdown?: boolean;
-        loadOnStartup?: boolean;
     };
 }
 
@@ -63,10 +64,6 @@ export interface QueueRegistryItem {
 export interface QueuePluginOptions extends FastifyPluginOptions {
     prefix?: string;
     config?: Partial<QueueConfig>;
-    //queueRegistry?: QueueRegistryItem[];
-    //functionContextFactory: (message: QueueMessage) => EventFunctionContext;
-    //logEntryURL?: (method: string, path: string) => void;
-
 }
 
 export interface QueueManager {
@@ -102,20 +99,18 @@ export interface QueueManager {
     } | null>;
 }
 
-export type ScheduleProcessingFn = (queueName: string, queueService: QueueService, overrideDelay?: number | null) => void;
-
-export interface SchedulerRef {
-    current?: ScheduleProcessingFn;
-}
-
-export interface QueueDecoratorOptions {
+// Everything every queue-plugin function needs, bundled once in plugin.ts and
+// passed explicitly to every call - no closures, no factories.
+export interface QueueRuntime {
     config: QueueConfig;
     queues: Record<string, QueueService>;
     dirtyQueues: Set<string>;
-    saveQueueState?: (queueName: string, queueService: QueueService) => Promise<void>;
-    loadQueueState?: (queueName: string) => Promise<void>;
-    scheduleProcessing: ScheduleProcessingFn,
-    processBatch: (queueName: string, queueService: QueueService) => Promise<void>,
+    lastSavedAt: number;
+    // Read off `app.logging`, decorated once by router/index.ts (the index
+    // bundle). Reaching it this way - never by importing `../logger`
+    // directly - is what keeps queue-plugin's separately-bundled output
+    // from inlining its own disconnected copy of the logger singleton.
+    logging: LoggingContext;
 }
 
 

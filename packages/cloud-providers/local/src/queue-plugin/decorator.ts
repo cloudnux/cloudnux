@@ -1,8 +1,4 @@
-import { FastifyInstance } from "fastify";
-
-import { moduleLogger } from "../logging";
-
-import { QueueService, QueueManager, QueueDecoratorOptions, EventHandler } from "./types";
+import { QueueService, QueueManager, QueueRuntime, EventHandler } from "./types";
 import {
     createQueueService,
     createQueueMessage,
@@ -10,253 +6,216 @@ import {
     createQueueSummary,
     moveDLQToIncoming,
     purgeDLQ,
-    logDLQOperation
 } from "./core";
-
-import { handleImmediateProcessing } from "./processing";
+import { loadQueueState, saveQueueState } from "./persistence";
 
 const isValidQueueName = (queueName: string): boolean => {
     return typeof queueName === 'string' && queueName.length > 0 && /^[a-zA-Z0-9_-]+$/.test(queueName);
 };
 
-// Higher-order function to create the queue manager
-export const createQueueManager = ({
-    config,
-    queues,
-    dirtyQueues,
-    saveQueueState,
-    loadQueueState,
-    scheduleProcessing,
-    processBatch
-}: QueueDecoratorOptions): QueueManager => {
-
-    // Pure function to validate queue name
-    const validateQueueName = (queueName: string): void => {
-        if (!queueName || typeof queueName !== 'string') {
-            throw new Error('Queue name must be a non-empty string');
-        }
-
-        if (!isValidQueueName(queueName)) {
-            throw new Error('Queue name must contain only alphanumeric characters, hyphens, and underscores');
-        }
-    };
-
-    // Pure function to validate handler
-    const validateHandler = (handler: any): void => {
-        if (typeof handler !== 'function') {
-            throw new Error('Handler must be a function');
-        }
-    };
-
-    const addQueue = async (queueName: string, handler: EventHandler, module?: string): Promise<void> => {
-        try {
-            validateQueueName(queueName);
-            validateHandler(handler);
-
-            //TODO: add queue filtering logic
-            if (queues[queueName]) {
-                moduleLogger(module).warn(`Queue already exists: ${queueName}.`);
-                return;
-            }
-
-            // Create new queue service
-            queues[queueName] = createQueueService(handler, module);
-
-            // Load existing state if persistence is enabled
-            if (config.persistence.enabled && loadQueueState) {
-                await loadQueueState(queueName);
-            }
-
-            moduleLogger(module).info(`Queue added: ${queueName}`);
-        } catch (error: any) {
-            moduleLogger(module).error(`Failed to add queue ${queueName}: ${error.message}`);
-            throw error;
-        }
-    };
-    const removeQueue = async (queueName: string): Promise<void> => {
-        try {
-            validateQueueName(queueName);
-
-            if (!queues[queueName]) {
-                throw new Error(`Queue '${queueName}' does not exist`);
-            }
-
-            const queueService = queues[queueName];
-
-            // Check if queue has pending messages
-            const totalMessages = queueService.incoming.length + queueService.processing.length;
-            if (totalMessages > 0) {
-                moduleLogger(queueService.module).warn(`Removing queue with ${totalMessages} pending messages: ${queueName}`);
-            }
-
-            // Clear any scheduled processing
-            if (queueService.timeoutId) {
-                clearTimeout(queueService.timeoutId);
-            }
-
-            // Save final state if persistence is enabled
-            if (config.persistence.enabled && saveQueueState) {
-                await saveQueueState(queueName, queueService);
-            }
-
-            // Remove from queues map
-            delete queues[queueName];
-
-            moduleLogger(queueService.module).info(`Queue removed: ${queueName}`);
-        } catch (error: any) {
-            moduleLogger(queues[queueName]?.module).error(`Failed to remove queue ${queueName}: ${error.message}`);
-            throw error;
-        }
-    };
-    const hasQueue = (queueName: string): boolean => {
-        try {
-            validateQueueName(queueName);
-            return queueName in queues;
-        } catch {
-            return false;
-        }
-    };
-    const listQueues = (module?: string): string[] => {
-        return Object.keys(queues).filter(queueName => {
-            const queueService = queues[queueName];
-            return !module || queueService.module === module;
-        }).sort();
-    };
-    const getQueueStats = (queueName: string): QueueService | null => {
-        try {
-            validateQueueName(queueName);
-            return queues[queueName] || null;
-        } catch {
-            return null;
-        }
-    };
-    const getQueuesMap = (): Record<string, QueueService> => {
-        // Return a copy to prevent external modification
-        return { ...queues };
-    };
-    const getConfig = () => config;
-    //==========================================================
-    const getDashboardSummary = () => createDashboardSummary(queues, config);
-    const getQueueSummary = (queueName: string) => {
-        if (!queues[queueName]) {
-            return null;
-        }
-
-        const queue = queues[queueName];
-        const stats = createQueueSummary(queue, config);
-
-        return {
-            stats,
-            messages: {
-                incoming: queue.incoming,
-                processing: queue.processing,
-                dlq: queue.dlq
-            }
-        };
+const validateQueueName = (queueName: string): void => {
+    if (!queueName || typeof queueName !== 'string') {
+        throw new Error('Queue name must be a non-empty string');
     }
-    const enqueueMessage = async (queueName: string, body: any, attributes: any) => {
-        if (!queues[queueName]) {
-            return null;
-        }
 
-        const message = createQueueMessage(body, attributes);
-        queues[queueName].incoming.push(message);
-
-        // Schedule processing if not already scheduled
-        scheduleProcessing(queueName, queues[queueName]);
-
-        // Handle immediate processing if batch size is reached
-        handleImmediateProcessing(queues[queueName], config, processBatch, queueName);
-
-        // Mark queue as dirty for periodic persistence
-        if (config.persistence.enabled) {
-            dirtyQueues.add(queueName);
-        }
-
-        return {
-            id: message.id,
-            queueName
-        }
+    if (!isValidQueueName(queueName)) {
+        throw new Error('Queue name must contain only alphanumeric characters, hyphens, and underscores');
     }
-    const processDlq = async (queueName: string) => {
-        if (!queues[queueName]) {
-            return null;
-        }
+};
 
-        const processedCount = moveDLQToIncoming(queues[queueName]);
-
-        if (processedCount === 0) {
-            return {
-                status: "success",
-                message: "No messages in DLQ to process",
-                processed: 0
-            };
-        }
-
-        logDLQOperation('Moving', processedCount, queueName);
-
-        // Schedule processing if not already scheduled
-        scheduleProcessing(queueName, queues[queueName]);
-
-        // Mark queue as dirty for periodic persistence
-        if (config.persistence.enabled) {
-            dirtyQueues.add(queueName);
-        }
-
-        return {
-            status: "success",
-            message: `Moved ${processedCount} messages from DLQ to processing queue`,
-            processed: processedCount
-        }
+const validateHandler = (handler: any): void => {
+    if (typeof handler !== 'function') {
+        throw new Error('Handler must be a function');
     }
-    const purgeDlq = async (queueName: string) => {
-        if (!queues[queueName]) {
-            return null;
+};
+
+export const addQueue = async (runtime: QueueRuntime, queueName: string, handler: EventHandler, module?: string): Promise<void> => {
+    try {
+        validateQueueName(queueName);
+        validateHandler(handler);
+
+        if (runtime.queues[queueName]) {
+            runtime.logging.warn({ module }, `Queue already exists: ${queueName}.`);
+            return;
         }
 
-        const purgedCount = purgeDLQ(queues[queueName]);
+        runtime.queues[queueName] = createQueueService(handler, module);
 
-        if (purgedCount === 0) {
-            return {
-                status: "success",
-                message: "No messages in DLQ to purge",
-                purged: 0
-            };
+        if (runtime.config.persistence.enabled) {
+            await loadQueueState(runtime, queueName);
         }
 
-        logDLQOperation('Purging', purgedCount, queueName);
+        runtime.logging.info({ module }, `Queue added: ${queueName}`);
+    } catch (error: any) {
+        runtime.logging.error({ module, error: error.message }, `Failed to add queue ${queueName}`);
+        throw error;
+    }
+};
 
-        // Mark queue as dirty for periodic persistence
-        if (config.persistence.enabled) {
-            dirtyQueues.add(queueName);
+export const removeQueue = async (runtime: QueueRuntime, queueName: string): Promise<void> => {
+    try {
+        validateQueueName(queueName);
+
+        const queueService = runtime.queues[queueName];
+        if (!queueService) {
+            throw new Error(`Queue '${queueName}' does not exist`);
         }
 
-        return {
-            status: "success",
-            message: `Purged ${purgedCount} messages from DLQ`,
-            purged: purgedCount
-        };
+        const totalMessages = queueService.incoming.length + queueService.processing.length;
+        if (totalMessages > 0) {
+            runtime.logging.warn(
+                { module: queueService.module },
+                `Removing queue with ${totalMessages} pending messages: ${queueName}`
+            );
+        }
+
+        if (runtime.config.persistence.enabled) {
+            await saveQueueState(runtime, queueName, queueService);
+        }
+
+        delete runtime.queues[queueName];
+
+        runtime.logging.info({ module: queueService.module }, `Queue removed: ${queueName}`);
+    } catch (error: any) {
+        runtime.logging.error({ error: error.message }, `Failed to remove queue ${queueName}`);
+        throw error;
+    }
+};
+
+export const hasQueue = (runtime: QueueRuntime, queueName: string): boolean => {
+    try {
+        validateQueueName(queueName);
+        return queueName in runtime.queues;
+    } catch {
+        return false;
+    }
+};
+
+export const listQueues = (runtime: QueueRuntime, module?: string): string[] => {
+    return Object.keys(runtime.queues)
+        .filter(queueName => !module || runtime.queues[queueName].module === module)
+        .sort();
+};
+
+export const getQueueStats = (runtime: QueueRuntime, queueName: string): QueueService | null => {
+    try {
+        validateQueueName(queueName);
+        return runtime.queues[queueName] || null;
+    } catch {
+        return null;
+    }
+};
+
+export const getQueuesMap = (runtime: QueueRuntime): Record<string, QueueService> => {
+    // Return a copy to prevent external modification
+    return { ...runtime.queues };
+};
+
+export const getDashboardSummary = (runtime: QueueRuntime) =>
+    createDashboardSummary(runtime.queues, runtime.config);
+
+export const getQueueSummary = (runtime: QueueRuntime, queueName: string) => {
+    const queue = runtime.queues[queueName];
+    if (!queue) {
+        return null;
     }
 
     return {
-        addQueue,
-        removeQueue,
-        hasQueue,
-        listQueues,
-        getQueueStats,
-        getQueuesMap,
-        getConfig,
-
-        getDashboardSummary,
-        getQueueSummary,
-        enqueueMessage,
-        processDlq,
-        purgeDlq
+        stats: createQueueSummary(queue, runtime.config),
+        messages: {
+            incoming: queue.incoming,
+            processing: queue.processing,
+            dlq: queue.dlq
+        }
     };
 };
 
-// Higher-order function to create decorator registration function
-export const createQueueDecorator = (queueManager: QueueManager) =>
-    (app: FastifyInstance): void => {
-        app.decorate('queues', queueManager);
+export const enqueueMessage = async (runtime: QueueRuntime, queueName: string, body: any, attributes: any) => {
+    const queueService = runtime.queues[queueName];
+    if (!queueService) {
+        return null;
+    }
+
+    const message = createQueueMessage(body, attributes);
+    queueService.incoming.push(message);
+
+    if (runtime.config.persistence.enabled) {
+        runtime.dirtyQueues.add(queueName);
+    }
+
+    return { id: message.id, queueName };
+};
+
+export const processDlq = async (runtime: QueueRuntime, queueName: string) => {
+    const queueService = runtime.queues[queueName];
+    if (!queueService) {
+        return null;
+    }
+
+    const processedCount = moveDLQToIncoming(queueService);
+    if (processedCount === 0) {
+        return { status: "success", message: "No messages in DLQ to process", processed: 0 };
+    }
+
+    runtime.logging.warn(
+        { module: queueService.module },
+        `Moving ${processedCount} messages from DLQ for ${queueName}`
+    );
+
+    if (runtime.config.persistence.enabled) {
+        runtime.dirtyQueues.add(queueName);
+    }
+
+    return {
+        status: "success",
+        message: `Moved ${processedCount} messages from DLQ to processing queue`,
+        processed: processedCount
     };
+};
+
+export const purgeDlq = async (runtime: QueueRuntime, queueName: string) => {
+    const queueService = runtime.queues[queueName];
+    if (!queueService) {
+        return null;
+    }
+
+    const purgedCount = purgeDLQ(queueService);
+    if (purgedCount === 0) {
+        return { status: "success", message: "No messages in DLQ to purge", purged: 0 };
+    }
+
+    runtime.logging.warn(
+        { module: queueService.module },
+        `Purging ${purgedCount} messages from DLQ for ${queueName}`
+    );
+
+    if (runtime.config.persistence.enabled) {
+        runtime.dirtyQueues.add(queueName);
+    }
+
+    return {
+        status: "success",
+        message: `Purged ${purgedCount} messages from DLQ`,
+        purged: purgedCount
+    };
+};
+
+// The one place runtime gets bound into the public app.queues shape -
+// Fastify needs a plain object of methods with no runtime param, so this
+// wraps each plain function above with `runtime` pre-applied. Everything
+// above this line is a normal function you can call directly with an
+// explicit runtime, e.g. in tests.
+export const createQueueManager = (runtime: QueueRuntime): QueueManager => ({
+    addQueue: (queueName, handler, module) => addQueue(runtime, queueName, handler, module),
+    removeQueue: (queueName) => removeQueue(runtime, queueName),
+    hasQueue: (queueName) => hasQueue(runtime, queueName),
+    listQueues: (module) => listQueues(runtime, module),
+    getQueueStats: (queueName) => getQueueStats(runtime, queueName),
+    getQueuesMap: () => getQueuesMap(runtime),
+    getConfig: () => runtime.config,
+    getDashboardSummary: () => getDashboardSummary(runtime),
+    getQueueSummary: (queueName) => getQueueSummary(runtime, queueName),
+    enqueueMessage: (queueName, body, attributes) => enqueueMessage(runtime, queueName, body, attributes),
+    processDlq: (queueName) => processDlq(runtime, queueName),
+    purgeDlq: (queueName) => purgeDlq(runtime, queueName),
+});
