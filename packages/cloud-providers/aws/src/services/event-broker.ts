@@ -11,8 +11,6 @@ import {
     MessageAttributeValue
 } from '@aws-sdk/client-sns';
 
-import { logger } from "../logging";
-
 /**
  * Check if a string is an SNS topic ARN
  * @param target Target string
