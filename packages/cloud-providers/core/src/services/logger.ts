@@ -1,4 +1,6 @@
-export interface LoggerService {
+import { IService } from "../cloud-container";
+
+export interface LoggerService extends IService {
     level: string;
     setBindings(bindings: Record<string, string>): void;
     fatal(mergeObject: Record<string, any> | string, msg?: string): void;

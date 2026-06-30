@@ -6,11 +6,14 @@ import { schedulerPlugin } from "@cloudnux/local-cloud-provider/schedule-plugin"
 import { devConsolePlugin } from "@cloudnux/local-cloud-provider/dev-console-plugin";
 import { websocketsPlugin } from "@cloudnux/local-cloud-provider/websocket-plugin";
 import { invokesPlugin } from "@cloudnux/local-cloud-provider/invoke-plugin";
+<%_ for(const svc of serviceOverrides){ _%>
+import <%=svc.varName%> from "<%-svc.path%>";
+<%_ } _%>
 
 // __dirname is injected by the esbuild banner and resolves to the workingDir/env folder
 process.env.DEV_CLOUD_LOCATION_PATH ??= path.join(__dirname, '.local-location');
 
-useCloudProvider(localCloudProvider);
+useCloudProvider(localCloudProvider<% if (serviceOverrides.length) { %>, { serviceFactories: { <%- serviceOverrides.map(svc => `"${svc.kind}": ${svc.varName}`).join(', ') %> } }<% } %>);
 
 <%_ for(const module of moduleNames){ _%>
 import <%=module%>Entries from "./<%=module%>"

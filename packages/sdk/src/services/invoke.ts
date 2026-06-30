@@ -11,3 +11,7 @@ export const cloudInvoke = () => {
     _cloudInvoke = getCloudProvider().createInvokeService();
     return _cloudInvoke;
 }
+
+export const resetCloudInvoke = () => {
+    _cloudInvoke = null;
+}

@@ -1,5 +1,5 @@
 import fs from 'node:fs';
-//import path from "node:path";
+import path from "node:path";
 import rechoir from 'rechoir';
 import { extensions } from 'interpret';
 import findUp from "findup-sync";
@@ -94,6 +94,19 @@ export async function loadConfig(
                 ...(rawConfig.environments || {}),
             },
         };
+
+        // Resolve service override paths relative to the directory the cli was invoked from
+        if (mergedConfig.services) {
+            mergedConfig.services = Object.fromEntries(
+                Object.entries(mergedConfig.services).map(([kind, modulePath]) => {
+                    const resolvedPath = path.resolve(process.cwd(), modulePath as string);
+                    if (!fs.existsSync(resolvedPath)) {
+                        throw new Error(`Config.services.${kind} points to a module that does not exist: ${resolvedPath}`);
+                    }
+                    return [kind, resolvedPath];
+                })
+            );
+        }
 
         if (validateConfig(mergedConfig))
             return mergedConfig;

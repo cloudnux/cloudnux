@@ -1,4 +1,6 @@
-export interface InvokeService {
+import { IService } from "../cloud-container";
+
+export interface InvokeService extends IService {
     /**
      * Invoke a function directly.
      * @param moduleName - The name of the module containing the function to invoke.

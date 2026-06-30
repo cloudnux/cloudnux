@@ -12,8 +12,7 @@ import {
     SQSBatchResponse,
 } from 'aws-lambda';
 
-import { HttpMethod, MessageFilter } from "@cloudnux/core-cloud-provider"
-import { createLoggerService } from '../services/logger';
+import { getService, HttpMethod, LoggerService, MessageFilter } from "@cloudnux/core-cloud-provider"
 
 export type EventType = APIGatewayProxyEventV2 | SNSEvent | SQSEvent | ScheduledEvent | S3Event;
 
@@ -314,12 +313,13 @@ export function createRouter() {
         },
 
         async run(event: EventType, context: Context): Promise<any> {
-            const requestLogger = createLoggerService({
+            const logger = getService<LoggerService>("logger");
+            logger.setBindings({
                 module: context.functionName.split("_")[0],
                 reqId: context.awsRequestId,
-            });
-            requestLogger.info({ requestId: context.awsRequestId }, "request started");
-            requestLogger.debug({ event, requestId: context.awsRequestId }, "Received event");
+            })
+            logger.info({ requestId: context.awsRequestId }, "request started");
+            logger.debug({ event, requestId: context.awsRequestId }, "Received event");
             let response;
             try {
                 const eventType = detectEventType(event);
@@ -339,11 +339,11 @@ export function createRouter() {
                 }
             }
             catch (error) {
-                requestLogger.error({ error, requestId: context.awsRequestId }, "Error occurred");
+                logger.error({ error, requestId: context.awsRequestId }, "Error occurred");
                 throw error;
             }
             finally {
-                requestLogger.info({ response, requestId: context.awsRequestId }, "request finished");
+                logger.info({ response, requestId: context.awsRequestId }, "request finished");
             }
         }
     }

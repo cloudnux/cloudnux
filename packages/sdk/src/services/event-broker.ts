@@ -11,3 +11,7 @@ export const cloudEventBroker = () => {
     _cloudEventBroker = getCloudProvider().createEventBrokerService();
     return _cloudEventBroker;
 }
+
+export const resetCloudEventBroker = () => {
+    _cloudEventBroker = null;
+}

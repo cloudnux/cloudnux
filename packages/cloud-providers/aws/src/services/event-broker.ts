@@ -11,6 +11,8 @@ import {
     MessageAttributeValue
 } from '@aws-sdk/client-sns';
 
+import { getService, LoggerService } from "@cloudnux/core-cloud-provider";
+
 /**
  * Check if a string is an SNS topic ARN
  * @param target Target string
@@ -67,6 +69,9 @@ export function createEventBrokerService() {
     // Create SQS and SNS clients
     const sqsClient = new SQSClient();
     const snsClient = new SNSClient();
+
+    // Get logger service
+    const logger = getService<LoggerService>("logger");
 
     return {
         /**
@@ -144,7 +149,7 @@ export function createEventBrokerService() {
                                     logger.warn({ err }, 'Failed to reset message visibility:');
                                 });
                         } catch (err) {
-                            logger.warn(`Error changing message visibility:${err}`);
+                            logger.warn({ err }, `Error changing message visibility:`);
                         }
                     }
                 }

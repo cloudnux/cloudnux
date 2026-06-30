@@ -83,5 +83,18 @@ export function validateConfig<TTaskParams extends TaskParamBase>(config: unknow
         }
     }
 
+    // Validate services overrides, if present
+    if (typedConfig.services !== undefined) {
+        if (typeof typedConfig.services !== 'object' || typedConfig.services === null || Array.isArray(typedConfig.services)) {
+            throw new Error('Config.services must be an object mapping a service kind to a module path');
+        }
+
+        for (const [kind, modulePath] of Object.entries(typedConfig.services)) {
+            if (!isString(modulePath)) {
+                throw new Error(`Config.services.${kind} must be a string path to a module`);
+            }
+        }
+    }
+
     return true;
 }

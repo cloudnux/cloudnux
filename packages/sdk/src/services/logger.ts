@@ -11,3 +11,7 @@ export const cloudLogger = () => {
     _loggingService = getCloudProvider().createLoggerService();
     return _loggingService;
 }
+
+export const resetCloudLogger = () => {
+    _loggingService = null;
+}

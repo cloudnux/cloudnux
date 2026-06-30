@@ -11,3 +11,7 @@ export const cloudFunctions = () => {
     _cloudFunctionsService = getCloudProvider().createFunctionsService();
     return _cloudFunctionsService;
 }
+
+export const resetCloudFunctions = () => {
+    _cloudFunctionsService = null;
+}

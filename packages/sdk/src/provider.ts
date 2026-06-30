@@ -1,4 +1,15 @@
-import { CloudProvider } from "@cloudnux/core-cloud-provider";
+import { CloudProvider, ServiceKind, IService, registerServices, LoggerService, EventBrokerService, StorageService, LocationService, FunctionsService, WebSocketService, InvokeService } from "@cloudnux/core-cloud-provider";
+import { cloudLogger, resetCloudLogger } from "./services/logger";
+import { cloudEventBroker, resetCloudEventBroker } from "./services/event-broker";
+import { cloudStorage, resetCloudStorage } from "./services/storage";
+import { cloudLocations, resetCloudLocations } from "./services/locations";
+import { cloudFunctions, resetCloudFunctions } from "./services/functions/cloud-functions";
+import { cloudWebSocket, resetCloudWebSocket } from "./services/websocket";
+import { cloudInvoke, resetCloudInvoke } from "./services/invoke";
+
+export type CloudProviderOptions = {
+    serviceFactories?: Partial<Record<ServiceKind, () => IService>>;
+}
 
 let provider: CloudProvider | null = null;
 
@@ -19,9 +30,38 @@ export function getCloudProvider() {
  * @param cloudProvider - The cloud provider instance to set.
  * @throws Will throw an error if the cloud provider is not provided
  **/
-export function useCloudProvider(cloudProvider: CloudProvider) {
+export function useCloudProvider(cloudProvider: CloudProvider, options?: CloudProviderOptions) {
     if (!cloudProvider) {
         throw new Error("Cloud provider is not defined. Please set a valid cloud provider using useProvider.");
     }
-    provider = cloudProvider;
+    const services = {
+        "logger": cloudLogger,
+        "event-broker": cloudEventBroker,
+        "storage": cloudStorage,
+        "location": cloudLocations,
+        "functions": cloudFunctions,
+        "websocket": cloudWebSocket,
+        "invoke": cloudInvoke
+    }
+    registerServices(services);
+
+    //==================================
+    provider = {
+        ...cloudProvider,
+        createLoggerService: (options?.serviceFactories?.logger || cloudProvider.createLoggerService) as () => LoggerService,
+        createEventBrokerService: (options?.serviceFactories?.["event-broker"] || cloudProvider.createEventBrokerService) as () => EventBrokerService,
+        createStorageService: (options?.serviceFactories?.storage || cloudProvider.createStorageService) as () => StorageService,
+        createLocationService: (options?.serviceFactories?.location || cloudProvider.createLocationService) as () => LocationService,
+        createFunctionsService: (options?.serviceFactories?.functions || cloudProvider.createFunctionsService) as () => FunctionsService,
+        createWebSocketService: (options?.serviceFactories?.websocket || cloudProvider.createWebSocketService) as () => WebSocketService,
+        createInvokeService: (options?.serviceFactories?.invoke || cloudProvider.createInvokeService) as () => InvokeService,
+    };
+
+    resetCloudLogger();
+    resetCloudEventBroker();
+    resetCloudStorage();
+    resetCloudLocations();
+    resetCloudFunctions();
+    resetCloudWebSocket();
+    resetCloudInvoke();
 }

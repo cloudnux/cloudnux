@@ -18,7 +18,10 @@
         "noImplicitReturns": true,
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true,
-        "resolveJsonModule": true
+        "resolveJsonModule": true,
+        "types": [
+            "node"
+        ]
     },
     "include": [
         "src/**/*"

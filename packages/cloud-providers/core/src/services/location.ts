@@ -1,3 +1,5 @@
+import { IService } from "../cloud-container";
+
 export interface LocationProviderConfig {
     // Authentication
     apiKey?: string;
@@ -122,7 +124,7 @@ export interface RouteResult {
 }
 
 
-export interface LocationService {
+export interface LocationService extends IService {
     /**
    * Get autocomplete suggestions for search box
    * Use case: User types "Stock..." → Show ["Stockholm", "Stockton", ...]

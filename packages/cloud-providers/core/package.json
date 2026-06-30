@@ -40,7 +40,9 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {},
-  "devDependencies": {},
+  "devDependencies": {
+    "@types/node": "^24.10.1"
+  },
   "publishConfig": {
     "access": "public"
   }

@@ -1,15 +1,14 @@
-export * from "./services/event-broker";
-export * from "./services/invoke";
-export * from "./services/storage";
-export * from "./services/locations";
-export * from "./services/functions";
-export * from "./services/websocket";
-export * from "./services/logger";
+export { cloudEventBroker } from "./services/event-broker";
+export { cloudInvoke } from "./services/invoke";
+export { cloudStorage } from "./services/storage";
+export { cloudLocations } from "./services/locations";
+export { cloudFunctions } from "./services/functions/cloud-functions";
+export { cloudWebSocket } from "./services/websocket";
+export { cloudLogger } from "./services/logger";
 export * from "./provider";
 
 //export http api types and interfaces
 export type * from "./services/functions/http/types";
-
 // Exporting types and interfaces from the core-cloud-provider package
 export type {
     CloudProvider,

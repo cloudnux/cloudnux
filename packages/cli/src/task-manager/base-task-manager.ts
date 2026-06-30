@@ -65,6 +65,7 @@ export abstract class BaseTaskManager {
             cloudProvider: this.config.cloudProvider,
             workingDir: path.resolve(this.config.workingDir, this.environment),
             externalPackages: this.config.externalPackages,
+            services: this.config.services ?? {},
             ...this.taskResults,
         };
         delete taskParams.tasks;

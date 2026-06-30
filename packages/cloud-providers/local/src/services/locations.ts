@@ -9,7 +9,9 @@ import {
     ReverseGeocodeParams,
     Coordinates,
     RouteResult,
-    RoutePoint
+    RoutePoint,
+    getService,
+    LoggerService
 } from "@cloudnux/core-cloud-provider";
 import { env } from "@cloudnux/utils";
 
@@ -305,6 +307,7 @@ export function createLocalLocationService(): LocationService {
     const baseDir = env("DEV_CLOUD_LOCATION_PATH", path.join(process.cwd(), '.develop', '.local-location'))!;
     const placesFilePath = path.join(baseDir, 'places.json');
 
+    const logger = getService<LoggerService>("logger");
     /**
      * Load places data from file or use default mock data
      * @returns Places data

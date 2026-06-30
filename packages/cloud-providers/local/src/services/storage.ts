@@ -3,7 +3,7 @@ import * as path from 'path';
 
 import { env } from "@cloudnux/utils";
 
-import { StorageService, StorageWriteOptions, StorageWriteResult } from "@cloudnux/core-cloud-provider";
+import { getService, LoggerService, StorageService, StorageWriteOptions, StorageWriteResult } from "@cloudnux/core-cloud-provider";
 
 // Use fs.promises for async file operations
 const { mkdir, writeFile, readFile, unlink, access } = fs.promises;
@@ -15,7 +15,7 @@ const { mkdir, writeFile, readFile, unlink, access } = fs.promises;
 export function createLocalStorageService(): StorageService {
     // Get base directory from environment variables or use default
     const baseDir = env("DEV_CLOUD_STORAGE_BUCKET", path.join(process.cwd(), '.local-storage'))!;
-
+    const logger = getService<LoggerService>("logger");
     // Create base directory if it doesn't exist
     if (!fs.existsSync(baseDir)) {
         fs.mkdirSync(baseDir, { recursive: true });

@@ -1,3 +1,4 @@
+import { IService } from "../cloud-container";
 import { HandlerType, HttpMethod, WebSocketEvent } from "../entrypoint";
 import { LoggerService } from "./logger";
 
@@ -233,7 +234,7 @@ export type WebSocketFunctionContext = FunctionContext & {
 }
 //#endregion
 
-export interface FunctionsService {
+export interface FunctionsService extends IService {
     createHttRequest(...args: any[]): [HTTPRequest, HTTPAuth?];
     createScheduleRequest(...args: any[]): [ScheduleRequest];
     createEventRequest(...args: any[]): [EventRequest];

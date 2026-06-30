@@ -10,8 +10,11 @@ import {
   } from "@cloudnux/cloud-sdk";
 
 import * as src from "../../../packages/modules/<%=module%>/src";
+<%_ for(const svc of serviceOverrides){ _%>
+import <%=svc.varName%> from "<%-svc.path%>";
+<%_ } _%>
 
-useCloudProvider(awsCloudProvider);
+useCloudProvider(awsCloudProvider<% if (serviceOverrides.length) { %>, { serviceFactories: { <%- serviceOverrides.map(svc => `"${svc.kind}": ${svc.varName}`).join(', ') %> } }<% } %>);
 
 const router = createRouter();
 <%_ for(var [key,entry] of Object.entries(entries)) { _%>
