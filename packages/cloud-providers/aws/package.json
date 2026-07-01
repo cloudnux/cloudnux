@@ -54,7 +54,6 @@
     "@aws-sdk/client-sns": "^3.817.0",
     "@aws-sdk/client-sqs": "^3.817.0",
     "@cloudnux/core-cloud-provider": "0.13.0",
-    "@cloudnux/utils": "0.0.2",
     "aws-lambda": "^1.0.7"
   },
   "devDependencies": {

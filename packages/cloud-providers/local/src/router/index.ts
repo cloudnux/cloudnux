@@ -31,20 +31,23 @@ export function createRouter(): RouterInstance {
 
   fastify.register(fastifyPrintRoutes);
 
-  fastify.addHook('onRequest', (request) => {
+  fastify.addHook('onRequest', (request, _reply, done) => {
     const module = (request.routeOptions.config as { module?: string } | undefined)?.module;
     enterLogContext({ module, reqId: request.id });
+    done();
   });
 
-  fastify.addHook('onResponse', (request, reply) => {
+  fastify.addHook('onResponse', (request, reply, done) => {
     logger.info(
       { method: request.method, url: request.url, statusCode: reply.statusCode, responseTime: reply.elapsedTime },
       `${request.method} ${request.url} ${reply.statusCode}`
     );
+    done();
   });
 
-  fastify.addHook('onError', (_request, _reply, error) => {
+  fastify.addHook('onError', (_request, _reply, error, done) => {
     logger.error(error);
+    done();
   });
 
   fastify.addHook('onReady', () => {

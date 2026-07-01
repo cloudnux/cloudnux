@@ -19,7 +19,7 @@ useCloudProvider(localCloudProvider<% if (serviceOverrides.length) { %>, { servi
 import <%=module%>Entries from "./<%=module%>"
 <%_ } _%>
 
-const router = createRouter({logger : true});
+const router = createRouter();
 
 router.register(queuesPlugin, { prefix: "queues", config: { persistence: { directory: path.join(__dirname, 'queue-data') } } });
 router.register(schedulerPlugin, { prefix: "schedules", config: { persistence: { directory: path.join(__dirname, 'scheduler-data') } } });
