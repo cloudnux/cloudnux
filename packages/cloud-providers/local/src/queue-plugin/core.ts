@@ -1,4 +1,6 @@
-import { EventHandler, QueueConfig, QueueMessage, QueueService, QueueSummary } from "./types";
+import { EventHandler, QueueConfig, QueueMessage, QueueMessageHistoryEntry, QueueService, QueueSummary } from "./types";
+
+const MAX_MESSAGE_HISTORY = 500;
 
 // default config
 export const DEFAULT_CONFIG: QueueConfig = {
@@ -160,4 +162,36 @@ export const purgeDLQ = (queueService: QueueService): number => {
     const dlqCount = queueService.dlq.length;
     queueService.dlq = [];
     return dlqCount;
+};
+
+// Pure function to build a message-history record for a completed or
+// terminally-failed message. This is what powers the dev console's
+// per-queue history view for messages that already left incoming/processing/dlq.
+export const createHistoryEntry = (
+    queueName: string,
+    message: QueueMessage,
+    status: 'completed' | 'failed',
+    error?: string
+): QueueMessageHistoryEntry => ({
+    id: message.id,
+    queueName,
+    status,
+    timestamp: message.timestamp,
+    completedAt: new Date(),
+    attempts: message.attempts,
+    payload: message.payload,
+    attributes: message.attributes,
+    error,
+});
+
+// Appends to the bounded history log in place, mirroring schedule-plugin's
+// executionHistory cap so long-running processes don't grow this unbounded.
+export const recordMessageHistory = (
+    history: QueueMessageHistoryEntry[],
+    entry: QueueMessageHistoryEntry
+): void => {
+    history.push(entry);
+    if (history.length > MAX_MESSAGE_HISTORY) {
+        history.splice(0, history.length - MAX_MESSAGE_HISTORY);
+    }
 };

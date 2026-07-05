@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { RoutesResponse, RegistryStats } from '../types/api'
+import { RoutesResponse, RegistryStats, HttpHistoryResponse } from '../types/api'
 
 const API_BASE = ''
 
@@ -29,6 +29,22 @@ export const useRoutesByMethod = (method: string) => {
     },
     enabled: !!method,
     refetchInterval: 5000,
+  })
+}
+
+export const useRouteHistory = (method: string, routeUrl: string) => {
+  return useQuery<HttpHistoryResponse>({
+    queryKey: ['route-history', method, routeUrl],
+    queryFn: async () => {
+      const params = new URLSearchParams({ method, url: routeUrl })
+      const response = await fetch(`${API_BASE}/console/routes/history?${params}`)
+      if (!response.ok) {
+        throw new Error(`Failed to fetch history for ${method} ${routeUrl}`)
+      }
+      return response.json()
+    },
+    enabled: !!method && !!routeUrl,
+    refetchInterval: 3000,
   })
 }
 

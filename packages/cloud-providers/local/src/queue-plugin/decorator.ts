@@ -200,6 +200,13 @@ export const purgeDlq = async (runtime: QueueRuntime, queueName: string) => {
     };
 };
 
+export const getMessageHistory = (runtime: QueueRuntime, queueName: string, limit = 50) => {
+    return runtime.messageHistory
+        .filter(entry => entry.queueName === queueName)
+        .slice(-limit)
+        .reverse();
+};
+
 // The one place runtime gets bound into the public app.queues shape -
 // Fastify needs a plain object of methods with no runtime param, so this
 // wraps each plain function above with `runtime` pre-applied. Everything
@@ -218,4 +225,5 @@ export const createQueueManager = (runtime: QueueRuntime): QueueManager => ({
     enqueueMessage: (queueName, body, attributes) => enqueueMessage(runtime, queueName, body, attributes),
     processDlq: (queueName) => processDlq(runtime, queueName),
     purgeDlq: (queueName) => purgeDlq(runtime, queueName),
+    getMessageHistory: (queueName, limit) => getMessageHistory(runtime, queueName, limit),
 });

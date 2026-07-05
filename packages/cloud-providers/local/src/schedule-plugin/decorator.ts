@@ -201,6 +201,21 @@ export const getDashboardSummary = (runtime: SchedulerRuntime) => createDashboar
 
 export const getExecutionsSummary = (runtime: SchedulerRuntime) => createExecutionsSummary(runtime);
 
+// Unlike getExecutionsSummary (last 50 across every job), this filters the
+// full executionHistory down to one job first - so a busy job elsewhere
+// can't push a quieter job's own runs out of view.
+export const getJobExecutionHistory = (runtime: SchedulerRuntime, jobName: string, limit = 50) => {
+    const scheduler = findSchedulerByName(runtime, jobName);
+    if (!scheduler) {
+        return [];
+    }
+
+    return runtime.executionHistory
+        .filter(execution => execution.jobId === scheduler.job.id)
+        .slice(-limit)
+        .reverse();
+};
+
 // The one place runtime gets bound into the public app.scheduler shape -
 // Fastify needs a plain object of methods with no runtime param, so this
 // wraps each plain function above with `runtime` pre-applied. Everything
@@ -219,4 +234,5 @@ export const createSchedulerManager = (runtime: SchedulerRuntime): SchedulerMana
     triggerJob: (jobName) => triggerJob(runtime, jobName),
     getDashboardSummary: () => getDashboardSummary(runtime),
     getExecutionsSummary: () => getExecutionsSummary(runtime),
+    getJobExecutionHistory: (jobName, limit) => getJobExecutionHistory(runtime, jobName, limit),
 });

@@ -61,6 +61,18 @@ export interface QueueRegistryItem {
     handler: EventHandler;
 }
 
+export interface QueueMessageHistoryEntry {
+    id: string;
+    queueName: string;
+    status: 'completed' | 'failed';
+    timestamp: Date;
+    completedAt: Date;
+    attempts: number;
+    payload: any;
+    attributes: Record<string, any>;
+    error?: string;
+}
+
 export interface QueuePluginOptions extends FastifyPluginOptions {
     prefix?: string;
     config?: Partial<QueueConfig>;
@@ -97,6 +109,7 @@ export interface QueueManager {
         message: string;
         purged: number;
     } | null>;
+    getMessageHistory: (queueName: string, limit?: number) => QueueMessageHistoryEntry[];
 }
 
 // Everything every queue-plugin function needs, bundled once in plugin.ts and
@@ -106,6 +119,7 @@ export interface QueueRuntime {
     queues: Record<string, QueueService>;
     dirtyQueues: Set<string>;
     lastSavedAt: number;
+    messageHistory: QueueMessageHistoryEntry[];
     // Read off `app.logging`, decorated once by router/index.ts (the index
     // bundle). Reaching it this way - never by importing `../logger`
     // directly - is what keeps queue-plugin's separately-bundled output

@@ -103,6 +103,7 @@ export interface SchedulerManager {
     triggerJob: (jobName: string) => Promise<void>;
     getDashboardSummary: () => { jobs: SchedulerDashboardJob[]; runningExecutions: number };
     getExecutionsSummary: () => { executions: JobExecution[]; running: JobExecution[] };
+    getJobExecutionHistory: (jobName: string, limit?: number) => JobExecution[];
 }
 
 // Everything every schedule-plugin function needs, bundled once in plugin.ts

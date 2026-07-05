@@ -1,5 +1,5 @@
 import React from 'react'
-import { useScheduleDetails } from '../../hooks'
+import { useScheduleDetails, useScheduleExecutions } from '../../hooks'
 import TerminalLogs from '../modules/TerminalLogs'
 import { getBaseUrl } from '../../utils'
 
@@ -9,8 +9,19 @@ interface ScheduleDetailViewProps {
   onBack: () => void
 }
 
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'completed': return 'text-green-600'
+    case 'failed': return 'text-red-600'
+    case 'running': return 'text-blue-600'
+    default: return 'text-gray-500'
+  }
+}
+
 const ScheduleDetailView: React.FC<ScheduleDetailViewProps> = ({ moduleName, scheduleName, onBack }) => {
   const { data: scheduleData, isLoading, error } = useScheduleDetails(scheduleName)
+  const { data: executionsData } = useScheduleExecutions(scheduleName)
+  const executions = executionsData?.executions ?? []
 
   if (isLoading) {
     return (
@@ -270,6 +281,47 @@ const ScheduleDetailView: React.FC<ScheduleDetailViewProps> = ({ moduleName, sch
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Execution History */}
+      <div className="bg-white rounded-lg shadow-sm border">
+        <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+          <h3 className="text-lg font-medium text-gray-900">Execution History</h3>
+          <span className="text-xs text-gray-500">
+            {executions.length} execution{executions.length !== 1 ? 's' : ''} (tick-triggered and manual)
+          </span>
+        </div>
+
+        {executions.length === 0 ? (
+          <div className="p-8 text-center text-gray-500 text-sm">No executions recorded yet</div>
+        ) : (
+          <div className="divide-y divide-gray-100">
+            {executions.map((execution) => {
+              const duration = execution.endTime
+                ? new Date(execution.endTime).getTime() - new Date(execution.startTime).getTime()
+                : undefined
+
+              return (
+                <div key={execution.id} className="p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className={`text-xs font-medium capitalize ${getStatusColor(execution.status)}`}>
+                      {execution.status}
+                    </span>
+                    {execution.error && (
+                      <span className="text-xs text-red-600 font-mono truncate max-w-md">{execution.error}</span>
+                    )}
+                    {duration !== undefined && (
+                      <span className="text-xs text-gray-400">{duration}ms</span>
+                    )}
+                  </div>
+                  <span className="text-xs text-gray-400">
+                    {new Date(execution.startTime).toLocaleString()}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       {/* Schedule Logs */}

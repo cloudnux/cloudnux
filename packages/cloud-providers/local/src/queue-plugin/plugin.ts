@@ -18,6 +18,7 @@ export const queuesPlugin: FastifyPluginAsync<QueuePluginOptions> =
             queues: {},
             dirtyQueues: new Set<string>(),
             lastSavedAt: Date.now(),
+            messageHistory: [],
             logging: app.logging,
         };
 

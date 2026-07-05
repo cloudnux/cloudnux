@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { SchedulesResponse, ScheduleDetails } from '../types/api'
+import { SchedulesResponse, ScheduleDetails, ScheduleExecutionsResponse } from '../types/api'
 
 const API_BASE = ''
 
@@ -24,6 +24,21 @@ export const useScheduleDetails = (jobName: string) => {
       const response = await fetch(`${API_BASE}/console/schedules/${jobName}`)
       if (!response.ok) {
         throw new Error(`Failed to fetch schedule ${jobName}`)
+      }
+      return response.json()
+    },
+    enabled: !!jobName,
+    refetchInterval: 3000,
+  })
+}
+
+export const useScheduleExecutions = (jobName: string) => {
+  return useQuery<ScheduleExecutionsResponse>({
+    queryKey: ['schedule-executions', jobName],
+    queryFn: async () => {
+      const response = await fetch(`${API_BASE}/console/schedules/${jobName}/executions`)
+      if (!response.ok) {
+        throw new Error(`Failed to fetch executions for ${jobName}`)
       }
       return response.json()
     },

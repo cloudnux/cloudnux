@@ -6,6 +6,8 @@ import {
     moveToDLQ,
     scheduleRetry,
     calculateBackoffDelay,
+    createHistoryEntry,
+    recordMessageHistory,
 } from "./core";
 import { saveDirtyQueueStates } from "./persistence";
 
@@ -27,6 +29,7 @@ const processMessage = async (
             handleFailure(runtime, queueName, message, queueService);
         } else {
             removeFromProcessing(queueService, message.id);
+            recordMessageHistory(runtime.messageHistory, createHistoryEntry(queueName, message, 'completed'));
             runtime.logging.debug(`Successfully processed message ${message.id} in queue ${queueName}`);
         }
     } catch {
@@ -44,6 +47,7 @@ const handleFailure = (
 
     if (message.attempts >= runtime.config.maxRetries) {
         moveToDLQ(queueService, message, 'max retries exceeded');
+        recordMessageHistory(runtime.messageHistory, createHistoryEntry(queueName, message, 'failed', 'max retries exceeded'));
         return;
     }
 

@@ -65,10 +65,20 @@ function resolveLevel(): Level {
     return (levels as readonly string[]).includes(configured) ? (configured as Level) : "info";
 }
 
-const threshold = levels.indexOf(resolveLevel());
+// Resolved lazily (on first log write) rather than at module load, so that
+// LOG_LEVEL is read only after dotenv/dotenvx has had a chance to populate
+// process.env — module-load time can run before env injection completes.
+let cachedLevel: Level | undefined;
+
+function currentLevel(): Level {
+    if (cachedLevel === undefined) {
+        cachedLevel = resolveLevel();
+    }
+    return cachedLevel;
+}
 
 function isEnabled(level: Level): boolean {
-    return levels.indexOf(level) <= threshold;
+    return levels.indexOf(level) <= levels.indexOf(currentLevel());
 }
 
 // ---------------------------------------------------------------------------
@@ -150,8 +160,10 @@ function write(level: Level, mergeObject: Record<string, any> | string, msg?: st
 }
 
 export const logger: LoggerService = {
-    level: resolveLevel(),
-    setBindings: () => {},
+    get level() {
+        return currentLevel();
+    },
+    setBindings: () => { },
     fatal: (mergeObject, msg) => write("fatal", mergeObject, msg),
     error: (mergeObject, msg) => write("error", mergeObject, msg),
     warn: (mergeObject, msg) => write("warn", mergeObject, msg),
