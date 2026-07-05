@@ -1,6 +1,6 @@
-import { ScheduleFunctionContext, ScheduleRequest, ScheduleResponse } from "@cloudnux/core-cloud-provider";
+import { ScheduleFunctionContext, ScheduleRequest, ScheduleResponse, LoggerService } from "@cloudnux/core-cloud-provider";
 
-export function createScheduleContext(request: ScheduleRequest): ScheduleFunctionContext {
+export function createScheduleContext(request: ScheduleRequest, logger: LoggerService): ScheduleFunctionContext {
     const response: ScheduleResponse = {
         status: "error",
         body: null as any
@@ -10,6 +10,7 @@ export function createScheduleContext(request: ScheduleRequest): ScheduleFunctio
         type: "Schedule",
         request,
         response,
+        logger,
         success: (body?: any) => {
             response.status = "success";
             response.body = body;

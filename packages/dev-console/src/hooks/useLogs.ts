@@ -53,7 +53,12 @@ export const useLogs = (filters: LogFilters = {}) => {
       eventSourceRef.current.close()
     }
 
-    const eventSource = new EventSource(`${API_BASE}/console/logs/stream`)
+    const streamParams = new URLSearchParams()
+    if (level) streamParams.append('level', level)
+    if (module) streamParams.append('module', module)
+    if (reqId) streamParams.append('reqId', reqId)
+
+    const eventSource = new EventSource(`${API_BASE}/console/logs/stream?${streamParams}`)
     eventSourceRef.current = eventSource
 
     eventSource.onmessage = (event) => {

@@ -10,7 +10,7 @@ import { EventBrokerService, EventMessage, PeekOptions, PublishOptions, ReadOpti
  */
 export function createLocalEventBrokerService(): EventBrokerService {
     // Get base URL from environment variables or use default
-    const baseURL = env("DEV_CLOUD_EVENT_BROKER_URL", 'http://localhost:3000');
+    const baseURL = env("DEV_CLOUD_EVENT_BROKER_URL");
 
     /**
      * Get the full URL for a queue

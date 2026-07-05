@@ -15,6 +15,23 @@ export interface RegistryStats {
   registeredAt: string
 }
 
+export interface HttpHistoryEntry {
+  id: string
+  method: string
+  routeUrl: string
+  url: string
+  statusCode: number
+  duration: number
+  reqId: string
+  requestHeaders: Record<string, unknown>
+  requestBody?: unknown
+  timestamp: string
+}
+
+export interface HttpHistoryResponse {
+  history: HttpHistoryEntry[]
+}
+
 export interface QueueStats {
   incoming: number
   processing: number
@@ -53,6 +70,22 @@ export interface QueuesResponse {
   queues: QueueInfo[]
 }
 
+export interface QueueMessageHistoryEntry {
+  id: string
+  queueName: string
+  status: 'completed' | 'failed'
+  timestamp: string
+  completedAt: string
+  attempts: number
+  payload: any
+  attributes: Record<string, any>
+  error?: string
+}
+
+export interface QueueHistoryResponse {
+  history: QueueMessageHistoryEntry[]
+}
+
 export interface ScheduleInfo {
   name: string
   enabled: boolean
@@ -68,6 +101,20 @@ export interface ScheduleDetails extends ScheduleInfo {
 
 export interface SchedulesResponse {
   schedules: ScheduleInfo[]
+}
+
+export interface ScheduleExecution {
+  id: string
+  jobId: string
+  startTime: string
+  endTime?: string
+  status: 'running' | 'completed' | 'failed'
+  error?: string
+  result?: any
+}
+
+export interface ScheduleExecutionsResponse {
+  executions: ScheduleExecution[]
 }
 
 export interface WebSocketConnection {

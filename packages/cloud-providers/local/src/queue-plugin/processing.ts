@@ -1,78 +1,69 @@
-import { QueueConfig, QueueMessage, QueueService, SchedulerRef } from "./types";
+import { QueueMessage, QueueService, QueueRuntime } from "./types";
 import {
+    isMessageReady,
     moveToProcessing,
     removeFromProcessing,
     moveToDLQ,
-    incrementAttempts,
+    scheduleRetry,
     calculateBackoffDelay,
-    setNextAttemptTime,
-    getNextReadyDelay,
-    logSuccess,
-    logError,
-    logRetryScheduled
+    createHistoryEntry,
+    recordMessageHistory,
 } from "./core";
+import { saveDirtyQueueStates } from "./persistence";
 
-// Higher-order function for creating processing context
-export const createProcessMessageHandler = (
-    config: QueueConfig
-) => async (queueName: string, message: QueueMessage, queueService: QueueService): Promise<void> => {
+// Sends one message through the user's handler. Success removes it from
+// `processing`; failure either schedules a retry or moves it to the DLQ.
+// Used for both freshly-batched messages and individually-retried ones.
+// Wrapped in runWithLogContext by processBatch, so every log call below
+// (and anything the user's handler itself logs) carries this message's
+// module/reqId without having to pass them through explicitly.
+const processMessage = async (
+    runtime: QueueRuntime,
+    queueName: string,
+    message: QueueMessage,
+    queueService: QueueService
+): Promise<void> => {
     try {
         const result = await queueService.handler(message);
-
         if (result?.failureId) {
-            await handleProcessingError(queueName, message, queueService, config);
+            handleFailure(runtime, queueName, message, queueService);
         } else {
             removeFromProcessing(queueService, message.id);
-            logSuccess('Successfully processed message', message.id, queueName);
+            recordMessageHistory(runtime.messageHistory, createHistoryEntry(queueName, message, 'completed'));
+            runtime.logging.debug(`Successfully processed message ${message.id} in queue ${queueName}`);
         }
     } catch {
-        await handleProcessingError(queueName, message, queueService, config);
+        handleFailure(runtime, queueName, message, queueService);
     }
 };
 
-// Higher-order function for handling processing errors
-const handleProcessingError = async (
+const handleFailure = (
+    runtime: QueueRuntime,
     queueName: string,
     message: QueueMessage,
-    queueService: QueueService,
-    config: QueueConfig,
-): Promise<void> => {
-    logError('Error processing message', message.id, queueName, 'handler returned failure');
+    queueService: QueueService
+): void => {
+    runtime.logging.error(`Error processing message ${message.id} in queue ${queueName}: handler returned failure`);
 
-    if (message.attempts >= config.maxRetries) {
+    if (message.attempts >= runtime.config.maxRetries) {
         moveToDLQ(queueService, message, 'max retries exceeded');
+        recordMessageHistory(runtime.messageHistory, createHistoryEntry(queueName, message, 'failed', 'max retries exceeded'));
         return;
     }
 
-    const updatedMessage = incrementAttempts(queueService, message.id);
-    if (!updatedMessage) return;
-
-    if (config.retryBackoff) {
-        const delayMs = calculateBackoffDelay(updatedMessage.attempts);
-        const messageWithNextAttempt = setNextAttemptTime(updatedMessage, delayMs);
-
-        logRetryScheduled(message.id, delayMs);
-
-        setTimeout(() => {
-            createProcessMessageHandler(config)(queueName, messageWithNextAttempt, queueService);
-        }, delayMs);
-    }
+    const delayMs = runtime.config.retryBackoff ? calculateBackoffDelay(message.attempts + 1) : 0;
+    scheduleRetry(queueService, message, delayMs);
+    runtime.logging.debug(`Scheduling retry for message ${message.id} in ${delayMs}ms`);
 };
 
-// Higher-order function for batch processing
-export const createBatchProcessor = (
-    processMessage: (queueName: string, message: QueueMessage, queueService: QueueService) => Promise<void>,
-    config: QueueConfig,
-    dirtyQueues?: Set<string>,
-    schedulerRef?: SchedulerRef
-) => async (queueName: string, queueService: QueueService): Promise<void> => {
-    // Clear timeout to prevent double processing
-    if (queueService.timeoutId) {
-        clearTimeout(queueService.timeoutId);
-        queueService.timeoutId = null;
-    }
-
-    // If already processing, return early
+// Pulls up to batchSize ready messages out of `incoming` and runs them
+// through processMessage concurrently. Guarded by `processingBatch` so the
+// tick never starts a second batch for a queue while one is still running.
+const processBatch = async (
+    runtime: QueueRuntime,
+    queueName: string,
+    queueService: QueueService
+): Promise<void> => {
     if (queueService.processingBatch) {
         return;
     }
@@ -80,57 +71,72 @@ export const createBatchProcessor = (
     try {
         queueService.processingBatch = true;
 
-        const messagesToProcess = moveToProcessing(queueService, config.batchSize);
+        const messagesToProcess = moveToProcessing(queueService, runtime.config.batchSize);
+        if (messagesToProcess.length === 0) {
+            return;
+        }
 
-        if (messagesToProcess.length > 0) {
-            queueService.processing.push(...messagesToProcess);
+        queueService.processing.push(...messagesToProcess);
 
-            // Process messages in parallel
-            await Promise.all(messagesToProcess.map(message => {
-                return processMessage(queueName, message, queueService);
-            }));
+        await Promise.all(
+            messagesToProcess.map(message => runtime.logging.runWithLogContext(
+                { module: queueService.module, reqId: message.id },
+                () => processMessage(runtime, queueName, message, queueService)
+            ))
+        );
 
-            // Mark queue as dirty for periodic persistence
-            if (config.persistence.enabled && dirtyQueues) {
-                dirtyQueues.add(queueName);
-            }
+        if (runtime.config.persistence.enabled) {
+            runtime.dirtyQueues.add(queueName);
         }
     } finally {
         queueService.processingBatch = false;
-
-        // If delayed messages remain, schedule a wake-up for when the earliest one becomes ready
-        const nextReadyDelay = getNextReadyDelay(queueService);
-        if (nextReadyDelay !== null) {
-            schedulerRef?.current?.(queueName, queueService, nextReadyDelay);
-        }
     }
 };
 
-// Higher-order function for scheduling processing
-export const createProcessingScheduler = (
-    processBatch: (queueName: string, queueService: QueueService) => Promise<void>,
-    config: QueueConfig
-) => (queueName: string, queueService: QueueService, overrideDelay: number | null = null): void => {
-    if (!queueService.timeoutId) {
-        const delay = overrideDelay ?? config.batchWindowMs;
-        queueService.timeoutId = setTimeout(() => {
-            processBatch(queueName, queueService);
-        }, delay);
-    }
-};
-
-// Function to handle immediate processing when batch size is reached
-export const handleImmediateProcessing = (
+const dispatchBatchIfDue = (
+    runtime: QueueRuntime,
+    queueName: string,
     queueService: QueueService,
-    config: QueueConfig,
-    processBatch: (queueName: string, queueService: QueueService) => Promise<void>,
-    queueName: string
+    now: number
 ): void => {
-    if (queueService.incoming.length >= config.batchSize) {
-        if (queueService.timeoutId) {
-            clearTimeout(queueService.timeoutId);
-            queueService.timeoutId = null;
-        }
-        setImmediate(() => processBatch(queueName, queueService));
+    if (queueService.processingBatch) {
+        return;
     }
+    const ready = queueService.incoming.filter(message => isMessageReady(message, now));
+    if (ready.length === 0) {
+        return;
+    }
+
+    const dueBySize = ready.length >= runtime.config.batchSize;
+    const oldestReadyAge = now - Math.min(...ready.map(message => message.timestamp.getTime()));
+    const dueByWindow = oldestReadyAge >= runtime.config.batchWindowMs;
+
+    if (dueBySize || dueByWindow) {
+        processBatch(runtime, queueName, queueService);
+    }
+};
+
+const maybeSavePersistence = (runtime: QueueRuntime, now: number): void => {
+    if (!runtime.config.persistence.enabled) {
+        return;
+    }
+
+    const saveInterval = runtime.config.persistence.saveInterval ?? 0;
+    if (saveInterval > 0 && now - runtime.lastSavedAt >= saveInterval) {
+        runtime.lastSavedAt = now;
+        saveDirtyQueueStates(runtime);
+    }
+};
+
+
+// The one timer for the whole plugin. Every tickIntervalMs: for every queue,
+// dispatch a batch if one is due (this is also how retried messages get
+// picked up - they wait in `incoming` like any delayed message); then save
+// persistence if its interval has elapsed.
+export const tick = (runtime: QueueRuntime): void => {
+    const now = Date.now();
+    for (const [queueName, queueService] of Object.entries(runtime.queues)) {
+        dispatchBatchIfDue(runtime, queueName, queueService, now);
+    }
+    maybeSavePersistence(runtime, now);
 };

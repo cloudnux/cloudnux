@@ -1,4 +1,6 @@
-export interface StorageService {
+import { IService } from "../cloud-container";
+
+export interface StorageService extends IService {
     /**
      * Read data from storage
      * @param path Path to the file/object

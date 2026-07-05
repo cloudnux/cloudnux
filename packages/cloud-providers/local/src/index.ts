@@ -1,5 +1,4 @@
 import { CloudProvider } from "@cloudnux/core-cloud-provider";
-import "./logging/pretty-writer";
 
 import { createLocalEventBrokerService } from "./services/event-broker";
 import { createLocalStorageService } from "./services/storage";
@@ -7,6 +6,7 @@ import { createLocalLocationService } from "./services/locations";
 import { createLocalFunctionsService } from "./services/functions";
 import { createLocalWebSocketService } from "./services/websocket";
 import { createLocalInvokeService } from "./services/invoke";
+import { createLocalLoggerService } from "./services/logger";
 
 export const localCloudProvider: CloudProvider = {
     name: "local-cloud-provider",
@@ -17,6 +17,7 @@ export const localCloudProvider: CloudProvider = {
     createFunctionsService: createLocalFunctionsService,
     createWebSocketService: createLocalWebSocketService,
     createInvokeService: createLocalInvokeService,
+    createLoggerService: createLocalLoggerService,
 };
 
 export * from "./router";

@@ -70,6 +70,7 @@ export function createFunctionsService(): FunctionsService {
                 rawQueryString: event.rawQueryString,
                 requestId: ctx.awsRequestId,
                 host: event.requestContext.domainName,
+                moduleName: ctx.functionName.split("_")[0],
             };
             let httpAuth: HTTPAuth | undefined = undefined;
             if (event.headers.Authorization || event.headers.authorization) {
@@ -93,6 +94,7 @@ export function createFunctionsService(): FunctionsService {
             const scheduleRequest: ScheduleRequest = {
                 name,
                 requestId: ctx.awsRequestId,
+                moduleName: ctx.functionName.split("_")[0],
             };
             return [scheduleRequest]
         },
@@ -114,6 +116,7 @@ export function createFunctionsService(): FunctionsService {
                     //SQS timestamps are in milliseconds
                     timestamp: new Date(parseInt(event.attributes.ApproximateFirstReceiveTimestamp)),
                     attempts: parseInt(event.attributes.ApproximateReceiveCount),
+                    moduleName: ctx.functionName.split("_")[0],
                 };
                 return [eventRequest];
             } else if (isSNSRecord(event)) {
@@ -130,10 +133,11 @@ export function createFunctionsService(): FunctionsService {
                         subject: sns.Subject ?? '',
                     },
                     requestId: ctx.awsRequestId,
-                    // SNS timestamps are in ISO 8601 format 
+                    // SNS timestamps are in ISO 8601 format
                     timestamp: new Date(sns.Timestamp),
                     // SNS doesn't have attempts concept like SQS, but we can set it to 1
                     attempts: 1,
+                    moduleName: ctx.functionName.split("_")[0],
                 };
 
                 return [eventRequest];
@@ -170,6 +174,7 @@ export function createFunctionsService(): FunctionsService {
                 body: event.body || undefined,
                 headers: event.headers,
                 requestId: ctx.awsRequestId,
+                moduleName: ctx.functionName.split("_")[0],
             };
             return [wsRequest];
         },

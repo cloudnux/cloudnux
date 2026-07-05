@@ -1,6 +1,6 @@
-import { InvokeRequest, InvokeResponse, InvokeFunctionContext, ErrorCode } from "@cloudnux/core-cloud-provider";
+import { InvokeRequest, InvokeResponse, InvokeFunctionContext, ErrorCode, LoggerService } from "@cloudnux/core-cloud-provider";
 
-export function createInvokeContext(request: InvokeRequest): InvokeFunctionContext {
+export function createInvokeContext(request: InvokeRequest, logger: LoggerService): InvokeFunctionContext {
     const response: InvokeResponse = {
         status: "success",
     };
@@ -8,6 +8,7 @@ export function createInvokeContext(request: InvokeRequest): InvokeFunctionConte
         type: "Invoke" as const,
         request,
         response,
+        logger,
         payload<T = Record<string, any>>() {
             return request.payload as T;
         },

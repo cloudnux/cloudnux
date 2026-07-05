@@ -1,7 +1,5 @@
 import { parseExpression } from 'cron-parser';
 
-import { logger } from "@cloudnux/utils"
-
 /**
  * Professional cron parser using cron-parser library
  * 
@@ -74,10 +72,9 @@ export function parseCronExpression(
         };
 
     } catch (error: any) {
-        //BREAKPOINT: LOGGING
-        logger.error(`Invalid cron expression: ${cronExpression} - ${error.message}`);
-
-        // Fallback to a safe default (every hour)
+        // Fallback to a safe default (every hour) - the caller gets the
+        // failure via `isValid`/`error` on the returned result, so it can
+        // log with whatever module context it has; this module has none.
         const fallbackTime = new Date();
         fallbackTime.setHours(fallbackTime.getHours() + 1);
         fallbackTime.setMinutes(0);
@@ -117,9 +114,7 @@ export function getNextExecutions(
         }
 
         return executions;
-    } catch (error: any) {
-        //BREAKPOINT: LOGGING
-        logger.error(`Error getting next executions: ${error.message}`);
+    } catch {
         return [];
     }
 }

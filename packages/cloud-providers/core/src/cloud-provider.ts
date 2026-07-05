@@ -4,6 +4,7 @@ import { StorageService } from "./services/storage";
 import { FunctionsService } from "./services/functions";
 import { WebSocketService } from "./services/websocket";
 import { InvokeService } from "./services/invoke";
+import { LoggerService } from "./services/logger";
 
 export interface CloudProvider {
     name: string;
@@ -15,4 +16,5 @@ export interface CloudProvider {
     createFunctionsService(): FunctionsService;
     createWebSocketService(): WebSocketService;
     createInvokeService(): InvokeService;
+    createLoggerService(): LoggerService;
 }

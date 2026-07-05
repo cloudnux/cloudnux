@@ -11,3 +11,7 @@ export const cloudLocations = () => {
     _cloudLocationService = getCloudProvider().createLocationService();
     return _cloudLocationService;
 }
+
+export const resetCloudLocations = () => {
+    _cloudLocationService = null;
+}

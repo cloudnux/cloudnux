@@ -1,4 +1,6 @@
+import { IService } from "../cloud-container";
 import { HandlerType, HttpMethod, WebSocketEvent } from "../entrypoint";
+import { LoggerService } from "./logger";
 
 /**
  * Represents the context object for a function handler.
@@ -8,6 +10,11 @@ export type FunctionContext = {
      * The underlying context handler type.
      */
     type: HandlerType;
+
+    /**
+     * Logger bound to this invocation's module name and request id.
+     */
+    logger: LoggerService;
 
     /**
      * Creates a success response. This should be called when the handler is done successfully.
@@ -77,7 +84,8 @@ export type HTTPRequest = {
     matchingKey?: string;
     rawQueryString?: string,
     requestId?: string,
-    host?: string
+    host?: string,
+    moduleName?: string,
 };
 
 export type HTTPResponse = {
@@ -127,7 +135,8 @@ export type ScheduleResponse = {
 
 export type ScheduleRequest = {
     name: string,
-    requestId?: string
+    requestId?: string,
+    moduleName?: string,
 };
 
 export type ScheduleFunctionContext = FunctionContext & {
@@ -144,6 +153,7 @@ export type EventRequest = {
     requestId?: string,
     timestamp: Date,
     attempts?: number;
+    moduleName?: string,
 }
 
 export type EventResponse = {
@@ -201,6 +211,7 @@ export type WebSocketRequest = {
     headers?: Record<string, string | string[] | undefined>,
     queryString: Record<string, string | undefined> | null,
     requestId?: string,
+    moduleName?: string,
 }
 
 export type WebSocketResponse = {
@@ -223,7 +234,7 @@ export type WebSocketFunctionContext = FunctionContext & {
 }
 //#endregion
 
-export interface FunctionsService {
+export interface FunctionsService extends IService {
     createHttRequest(...args: any[]): [HTTPRequest, HTTPAuth?];
     createScheduleRequest(...args: any[]): [ScheduleRequest];
     createEventRequest(...args: any[]): [EventRequest];

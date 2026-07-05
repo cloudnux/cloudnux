@@ -5,9 +5,9 @@ import fsPlugin from "fastify-plugin";
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 
-import { setWriter, getWriter } from "@cloudnux/utils";
-import type { LogEntry as UtilsLogEntry } from "@cloudnux/utils";
 import { WebSocketConnectionGoneError } from "@cloudnux/core-cloud-provider";
+
+import "../logger/types";
 
 import "../queue-plugin";
 import "../schedule-plugin";
@@ -56,6 +56,49 @@ class LogStore {
 
 const logStore = new LogStore();
 
+interface HttpHistoryEntry {
+  id: string;
+  method: string;
+  routeUrl: string;
+  url: string;
+  statusCode: number;
+  duration: number;
+  reqId: string;
+  requestHeaders: Record<string, unknown>;
+  requestBody?: unknown;
+  timestamp: Date;
+}
+
+// Records every real request that hits a module route (matched by url
+// prefix, same "/api" convention routeRegistry uses), not just the ones
+// fired from the console's own "Test Route" panel - so RouteDetailView can
+// show traffic that actually happened, keyed by the route's method+template
+// since that's all the frontend has to ask for.
+class HttpHistoryStore {
+  private entries: Map<string, HttpHistoryEntry[]> = new Map();
+  private readonly maxPerRoute = 50;
+
+  add(entry: HttpHistoryEntry) {
+    const key = `${entry.method} ${entry.routeUrl}`;
+    const existing = this.entries.get(key) ?? [];
+    existing.unshift(entry);
+    if (existing.length > this.maxPerRoute) {
+      existing.length = this.maxPerRoute;
+    }
+    this.entries.set(key, existing);
+  }
+
+  get(method: string, routeUrl: string) {
+    return this.entries.get(`${method.toUpperCase()} ${routeUrl}`) ?? [];
+  }
+
+  clear() {
+    this.entries.clear();
+  }
+}
+
+const httpHistoryStore = new HttpHistoryStore();
+
 export interface DevConsolePluginOptions {
   prefix?: string;
   enableUI?: boolean;
@@ -67,10 +110,12 @@ async function devConsolePluginFunction(
 ) {
   const { prefix = 'console', enableUI = true } = options;
 
-  // Chain into the utils logging pipeline — only when the plugin is actually registered.
-  // pretty-writer.ts is already set (guaranteed by index.ts import order), so getWriter() returns it.
-  const upstream = getWriter();
-  setWriter((entry: UtilsLogEntry) => {
+  // Read off `fastify.logging` (decorated once by router/index.ts on the shared
+  // FastifyInstance), not a direct `../logger` import - dev-console-plugin is its
+  // own separately-bundled tsup entry, so a direct import would get its own
+  // disconnected copy of the logger's listeners Set and never see logs published
+  // from queue-plugin/schedule-plugin/websocket-plugin's bundles.
+  const unsubscribe = fastify.logging.subscribeToLogs((entry) => {
     logStore.addLog({
       id: Date.now().toString() + Math.random().toString(36).slice(2, 9),
       timestamp: new Date(entry.time),
@@ -80,13 +125,13 @@ async function devConsolePluginFunction(
       module: entry.module,
       reqId: entry.reqId,
     });
-    upstream(entry);
   });
 
-  // Restore upstream writer and clear log store on plugin teardown
+  // Unsubscribe and clear log store on plugin teardown
   fastify.addHook('onClose', (_instance, done) => {
-    setWriter(upstream);
+    unsubscribe();
     logStore.clear();
+    httpHistoryStore.clear();
     done();
   });
 
@@ -97,6 +142,34 @@ async function devConsolePluginFunction(
     }
   });
 
+  // Stamp a start time on every request so onResponse below can compute
+  // duration - registered fastify-plugin-wide (like onRoute above), so it
+  // sees traffic regardless of whether it was triggered from the console UI.
+  fastify.addHook('onRequest', (request, _reply, done) => {
+    (request as any)._historyStart = Date.now();
+    done();
+  });
+
+  fastify.addHook('onResponse', (request, reply, done) => {
+    const routeUrl = request.routeOptions.url;
+    if (routeUrl?.startsWith('/api')) {
+      const start = (request as any)._historyStart as number | undefined;
+      httpHistoryStore.add({
+        id: Date.now().toString() + Math.random().toString(36).slice(2, 9),
+        method: request.method,
+        routeUrl,
+        url: request.url,
+        statusCode: reply.statusCode,
+        duration: start ? Date.now() - start : 0,
+        reqId: request.id,
+        requestHeaders: request.headers,
+        requestBody: request.body,
+        timestamp: new Date(),
+      });
+    }
+    done();
+  });
+
   // API endpoints
   fastify.get(`/${prefix}/routes`, async () => {
     return { routes: routeRegistry.getAll() };
@@ -105,6 +178,18 @@ async function devConsolePluginFunction(
   fastify.get(`/${prefix}/routes/:method`, async (request) => {
     const { method } = request.params as { method: string };
     return { routes: routeRegistry.getByMethod(method) };
+  });
+
+  // Real requests that hit a given route (method + url template), captured
+  // by the onResponse hook above - not just clicks from "Test Route".
+  fastify.get(`/${prefix}/routes/history`, async (request, reply) => {
+    const { method, url } = request.query as { method?: string; url?: string };
+
+    if (!method || !url) {
+      return reply.status(400).send({ error: 'method and url query params are required' });
+    }
+
+    return { history: httpHistoryStore.get(method, url) };
   });
 
   fastify.get(`/${prefix}/registry/stats`, async () => {
@@ -256,6 +341,24 @@ async function devConsolePluginFunction(
         dlq: queueStats.dlq
       }
     };
+  });
+
+  // Messages that already finished processing (completed or DLQ'd) -
+  // covers listener invocations triggered by real traffic, not just
+  // messages enqueued from the console's own form.
+  fastify.get(`/${prefix}/queues/:queueName/history`, async (request, reply) => {
+    const { queueName } = request.params as { queueName: string };
+    const queueManager = fastify.queues;
+
+    if (!queueManager) {
+      return reply.status(503).send({ error: 'Queue service not available' });
+    }
+
+    if (!queueManager.getQueueStats(queueName)) {
+      return reply.status(404).send({ error: 'Queue not found' });
+    }
+
+    return { history: queueManager.getMessageHistory(queueName) };
   });
 
   // Queue action endpoints
@@ -414,6 +517,23 @@ async function devConsolePluginFunction(
     };
   });
 
+  // Every real execution of this job - tick-triggered or manually triggered,
+  // from the console or otherwise - not just runs kicked off from this UI.
+  fastify.get(`/${prefix}/schedules/:jobName/executions`, async (request, reply) => {
+    const { jobName } = request.params as { jobName: string };
+    const schedulerManager = fastify.scheduler;
+
+    if (!schedulerManager) {
+      return reply.status(503).send({ error: 'Scheduler service not available' });
+    }
+
+    if (!schedulerManager.getJobStats(jobName)) {
+      return reply.status(404).send({ error: 'Job not found' });
+    }
+
+    return { executions: schedulerManager.getJobExecutionHistory(jobName) };
+  });
+
   // Schedule action endpoints - use decorators
   fastify.post(`/${prefix}/schedules/:jobName/trigger`, async (request, reply) => {
     const { jobName } = request.params as { jobName: string };
@@ -567,18 +687,37 @@ async function devConsolePluginFunction(
 
   // Server-Sent Events for real-time logs
   fastify.get(`/${prefix}/logs/stream`, async (request, reply) => {
+    const { level, module, reqId } = request.query as {
+      level?: string;
+      module?: string;
+      reqId?: string;
+    };
+
+    // Mirror the same filters the REST /logs endpoint applies - otherwise a
+    // client viewing a filtered (e.g. module-scoped) log list gets every
+    // other module's activity pushed into it live, which looks exactly like
+    // cleared logs reappearing.
+    const matchesFilters = (log: LogEntry) => {
+      if (level && log.levelName !== level) return false;
+      if (module && log.module !== module) return false;
+      if (reqId && log.reqId !== reqId) return false;
+      return true;
+    };
+
     reply.type('text/event-stream');
     reply.header('Cache-Control', 'no-cache');
     reply.header('Connection', 'keep-alive');
     reply.header('Access-Control-Allow-Origin', '*');
 
     // Send initial logs
-    const initialLogs = logStore.getLogs(50);
+    const initialLogs = logStore.getLogs(50).filter(matchesFilters);
     reply.raw.write(`data: ${JSON.stringify({ type: 'initial', logs: initialLogs })}\n\n`);
 
     // Subscribe to new logs
     const unsubscribe = logStore.subscribe((log) => {
-      reply.raw.write(`data: ${JSON.stringify({ type: 'log', log })}\n\n`);
+      if (matchesFilters(log)) {
+        reply.raw.write(`data: ${JSON.stringify({ type: 'log', log })}\n\n`);
+      }
     });
 
     // Cleanup on client disconnect

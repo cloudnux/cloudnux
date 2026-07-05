@@ -6,6 +6,7 @@ import { createLocationService } from "./services/locations";
 import { createFunctionsService } from "./services/functions";
 import { createWebSocketService } from "./services/websocket";
 import { createInvokeService } from "./services/invoke";
+import { createLoggerService } from "./services/logger";
 
 export const awsCloudProvider: CloudProvider = {
     name: "aws-cloud-provider",
@@ -16,4 +17,5 @@ export const awsCloudProvider: CloudProvider = {
     createFunctionsService,
     createWebSocketService,
     createInvokeService,
+    createLoggerService,
 };

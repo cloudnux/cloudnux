@@ -3,7 +3,7 @@ import * as querystring from "querystring"
 import "fastify-raw-body";
 import { FastifyRequest, FastifyReply } from "fastify";
 
-import { env, logger, tokenUtils } from "@cloudnux/utils";
+import { env, tokenUtils } from "@cloudnux/utils";
 import { EventBatchItemResult, EventFunctionContext, EventRequest, FunctionsService, HTTPAuth, HttpFunctionContext, HttpMethod, HTTPRequest, InvokeFunctionContext, InvokeRequest, ScheduleFunctionContext, ScheduleRequest, WebSocketFunctionContext, WebSocketRequest } from "@cloudnux/core-cloud-provider";
 
 import { QueueMessage } from "../queue-plugin/types";
@@ -58,6 +58,7 @@ export function createLocalFunctionsService(): FunctionsService {
                 rawQueryString: querystring.stringify(request.query as any),
                 host: request.hostname,
                 requestId: request.id,
+                moduleName: (request.routeOptions.config as { module?: string } | undefined)?.module,
             };
 
             const jwtClaims = token && tokenUtils.decodeAccessToken(token) as Record<string, string>;
@@ -88,7 +89,8 @@ export function createLocalFunctionsService(): FunctionsService {
             const scheduleName = job.name
             const scheduleRequest: ScheduleRequest = {
                 name: scheduleName,
-                requestId: execution.id
+                requestId: execution.id,
+                moduleName: job.module,
             }
             return [scheduleRequest]
         },
@@ -106,7 +108,6 @@ export function createLocalFunctionsService(): FunctionsService {
             return [eventRequest];
         },
         createWebSocketRequest: (connectionId: string, event: WebSocketEvent, data: any, request: FastifyRequest) => {
-            logger.info(request.params as any);
             const wsRequest: WebSocketRequest = {
                 connectionId,
                 event,

@@ -1,4 +1,6 @@
-export interface EventBrokerService {
+import { IService } from "../cloud-container";
+
+export interface EventBrokerService extends IService {
     /**
      * Publish a message to a topic/queue
      * @param target Target topic/queue name

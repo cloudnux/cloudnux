@@ -1,6 +1,6 @@
-import { logger } from "@cloudnux/utils";
+import { EventHandler, QueueConfig, QueueMessage, QueueMessageHistoryEntry, QueueService, QueueSummary } from "./types";
 
-import { EventHandler, QueueConfig, QueueMessage, QueueService, QueueSummary } from "./types";
+const MAX_MESSAGE_HISTORY = 500;
 
 // default config
 export const DEFAULT_CONFIG: QueueConfig = {
@@ -10,12 +10,12 @@ export const DEFAULT_CONFIG: QueueConfig = {
     parallel: true,
     maxConcurrent: 5,
     retryBackoff: true,
+    tickIntervalMs: 50,
     persistence: {
         enabled: true,
         directory: './.develop/queue-data',
         saveInterval: 60000,
-        saveOnShutdown: false,
-        loadOnStartup: true
+        saveOnShutdown: false
     }
 };
 
@@ -35,7 +35,6 @@ export const createQueueService = (handler: EventHandler, module?: string): Queu
     incoming: [],
     processing: [],
     dlq: [],
-    timeoutId: null,
     processingBatch: false,
     module
 });
@@ -58,6 +57,18 @@ export const createQueueMessage = (body: any, headers: Record<string, any>): Que
 
     return message;
 };
+
+// Pure function to schedule a retry for a message
+// Puts a failed message back into `incoming` to wait out its backoff delay,
+// same as any delayed message - so the next batch dispatch picks it up
+// mixed in with whatever else is ready, instead of retrying it alone.
+export const scheduleRetry = (queueService: QueueService, message: QueueMessage, delayMs: number): void => {
+    removeFromProcessing(queueService, message.id);
+    message.attempts += 1;
+    message.nextAttempt = new Date(Date.now() + delayMs);
+    queueService.incoming.push(message);
+};
+
 
 // Pure function to check whether a message is ready to be processed
 export const isMessageReady = (message: QueueMessage, now: number = Date.now()): boolean => {
@@ -82,17 +93,6 @@ export const moveToProcessing = (queueService: QueueService, batchSize: number):
     return ready;
 };
 
-// Pure function to compute the delay until the next delayed message in incoming becomes ready
-export const getNextReadyDelay = (queueService: QueueService): number | null => {
-    const nextAttempts = queueService.incoming
-        .filter(message => message.nextAttempt)
-        .map(message => message.nextAttempt!.getTime());
-
-    if (nextAttempts.length === 0) return null;
-
-    return Math.max(0, Math.min(...nextAttempts) - Date.now());
-};
-
 // Pure function to remove message from processing queue
 export const removeFromProcessing = (queueService: QueueService, messageId: string): void => {
     queueService.processing = queueService.processing.filter(msg => msg.id !== messageId);
@@ -108,26 +108,10 @@ export const moveToDLQ = (queueService: QueueService, message: QueueMessage, err
     removeFromProcessing(queueService, message.id);
 };
 
-// Pure function to increment message attempts
-export const incrementAttempts = (queueService: QueueService, messageId: string): QueueMessage | null => {
-    const index = queueService.processing.findIndex(m => m.id === messageId);
-    if (index >= 0) {
-        queueService.processing[index].attempts += 1;
-        return queueService.processing[index];
-    }
-    return null;
-};
-
 // Pure function to calculate backoff delay
 export const calculateBackoffDelay = (attempts: number): number => {
     return Math.pow(2, attempts) * 100;
 };
-
-// Pure function to set next attempt time
-export const setNextAttemptTime = (message: QueueMessage, delayMs: number): QueueMessage => ({
-    ...message,
-    nextAttempt: new Date(Date.now() + delayMs)
-});
 
 // Pure function to create queue summary
 export const createQueueSummary = (queueService: QueueService, config: QueueConfig): QueueSummary => ({
@@ -180,19 +164,34 @@ export const purgeDLQ = (queueService: QueueService): number => {
     return dlqCount;
 };
 
-// Logging functions (side effects isolated)
-export const logSuccess = (message: string, messageId: string, queueName: string): void => {
-    logger.debug(`Success: ${message} ${messageId} in queue ${queueName}`);
-};
+// Pure function to build a message-history record for a completed or
+// terminally-failed message. This is what powers the dev console's
+// per-queue history view for messages that already left incoming/processing/dlq.
+export const createHistoryEntry = (
+    queueName: string,
+    message: QueueMessage,
+    status: 'completed' | 'failed',
+    error?: string
+): QueueMessageHistoryEntry => ({
+    id: message.id,
+    queueName,
+    status,
+    timestamp: message.timestamp,
+    completedAt: new Date(),
+    attempts: message.attempts,
+    payload: message.payload,
+    attributes: message.attributes,
+    error,
+});
 
-export const logError = (message: string, messageId: string, queueName: string, error: string): void => {
-    logger.error(`Error: ${message} ${messageId} in queue ${queueName}: ${error}`);
-};
-
-export const logRetryScheduled = (messageId: string, delayMs: number): void => {
-    logger.debug(`Scheduling retry for message ${messageId} in ${delayMs}ms`);
-};
-
-export const logDLQOperation = (operation: string, count: number, queueName: string): void => {
-    logger.warn(`${operation} ${count} messages from DLQ for ${queueName}`);
+// Appends to the bounded history log in place, mirroring schedule-plugin's
+// executionHistory cap so long-running processes don't grow this unbounded.
+export const recordMessageHistory = (
+    history: QueueMessageHistoryEntry[],
+    entry: QueueMessageHistoryEntry
+): void => {
+    history.push(entry);
+    if (history.length > MAX_MESSAGE_HISTORY) {
+        history.splice(0, history.length - MAX_MESSAGE_HISTORY);
+    }
 };

@@ -11,3 +11,7 @@ export const cloudWebSocket = () => {
     _cloudWebSocket = getCloudProvider().createWebSocketService();
     return _cloudWebSocket;
 }
+
+export const resetCloudWebSocket = () => {
+    _cloudWebSocket = null;
+}

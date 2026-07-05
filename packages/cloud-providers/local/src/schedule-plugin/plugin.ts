@@ -1,48 +1,45 @@
 import { FastifyInstance, FastifyPluginAsync } from "fastify";
 import fsPlugin from "fastify-plugin";
 
-import { SchedulerPluginOptions } from "./types";
-import {
-    DEFAULT_CONFIG,
-    mergeConfig,
-    createInitialState,
-    createSchedulerFunctions,
-    initializeScheduler
-    //setupSchedulerLifecycle
-} from "./core";
-import { registerAllRoutes } from "./routes";
-import { createSchedulerDecorator, createSchedulerManager } from "./decorator";
-
+import { SchedulerPluginOptions, SchedulerRuntime } from "./types";
+import { DEFAULT_CONFIG, mergeConfig } from "./core";
+import { tick } from "./processing";
+import { initializePersistence } from "./persistence";
+import { createSchedulerManager } from "./decorator";
+import { registerSchedulerRoutes } from "./routes";
 
 export const schedulerPlugin: FastifyPluginAsync<SchedulerPluginOptions> =
     fsPlugin(async (
         app: FastifyInstance,
         options: SchedulerPluginOptions
     ) => {
-        const config = mergeConfig(DEFAULT_CONFIG, options.config);
+        const runtime: SchedulerRuntime = {
+            config: mergeConfig(DEFAULT_CONFIG, options.config),
+            schedulers: {},
+            executions: {},
+            executionHistory: [],
+            isShuttingDown: false,
+            runningExecutions: 0,
+            isDirty: false,
+            lastCleanupTime: Date.now(),
+            lastSavedAt: Date.now(),
+            lastRestartTime: new Date(),
+            logging: app.logging,
+        };
 
-        // Initialize scheduler state
-        const state = createInitialState(config);
-
-        // Create both functions together to avoid circular dependency
-        const { executeJob, scheduleJobFn } = createSchedulerFunctions(state);
-
-        // Initialize the scheduler
-        await initializeScheduler(state, scheduleJobFn);
-
-        // Setup lifecycle management
-        //setupSchedulerLifecycle(state, app);
-
-        // Create and register scheduler manager decorator
-        const schedulerManager = createSchedulerManager({
-            state,
-            config,
-            scheduleJobFn,
-            executeJob
+        // One timer for the entire plugin: every tickIntervalMs, run any job
+        // that's due, then clean up old execution history / save persistence
+        // once their own intervals have elapsed. See processing.ts:tick.
+        const tickIntervalId = setInterval(() => tick(runtime), runtime.config.tickIntervalMs);
+        app.addHook('onClose', async () => {
+            runtime.isShuttingDown = true;
+            clearInterval(tickIntervalId);
         });
-        const decorateScheduler = createSchedulerDecorator(schedulerManager);
-        decorateScheduler(app);
 
-        // Register API routes
-        registerAllRoutes(app, state, executeJob, scheduleJobFn);
+        app.decorate('scheduler', createSchedulerManager(runtime));
+        registerSchedulerRoutes(app, options.prefix);
+
+        if (runtime.config.persistence.enabled) {
+            await initializePersistence(runtime);
+        }
     });

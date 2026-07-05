@@ -104,6 +104,14 @@ export type Config<TTaskParams extends TaskParamBase = any> = {
      * @default: ["aws-sdk", "@aws-sdk/*"]
      */
     externalPackages: string[],
+
+    /**
+     * Service overrides: maps a service kind (e.g. "logger", "storage", "event-broker")
+     * to the path of a module whose default export is a factory function for that service.
+     * Paths are resolved relative to the directory the cli is invoked from.
+     * @default undefined
+     */
+    services?: Record<string, string>,
 }
 
 export type Args = {

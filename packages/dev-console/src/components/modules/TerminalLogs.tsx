@@ -6,12 +6,32 @@ interface TerminalLogsProps {
   title?: string
 }
 
+const formatTimestamp = (timestamp: string) => {
+  const date = new Date(timestamp)
+  const time = date.toLocaleTimeString('en-US', { hour12: false })
+  const ms = date.getMilliseconds().toString().padStart(3, '0')
+  return `${time}.${ms}`
+}
+
 const TerminalLogs: React.FC<TerminalLogsProps> = ({ moduleName, title }) => {
   const [isAutoScroll, setIsAutoScroll] = useState(true)
   const [filter, setFilter] = useState('')
   const [levelFilter, setLevelFilter] = useState('')
+  const [expandedMeta, setExpandedMeta] = useState<Set<string>>(new Set())
   const logsEndRef = useRef<HTMLDivElement>(null)
   const logsContainerRef = useRef<HTMLDivElement>(null)
+
+  const toggleMeta = (id: string) => {
+    setExpandedMeta(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+  }
 
   const { data: logsData, isLoading } = useLogs({
     limit: 200,
@@ -153,34 +173,53 @@ const TerminalLogs: React.FC<TerminalLogsProps> = ({ moduleName, title }) => {
         ) : (
           <div className="space-y-0.5">
             {filteredLogs.map((log) => (
-              <div key={log.id} className="flex items-start gap-2 hover:bg-gray-800 px-2 py-0.5 rounded group">
-                {/* Timestamp */}
-                <span className="text-gray-600 shrink-0 tabular-nums">
-                  {new Date(log.timestamp).toLocaleTimeString('en-US', { hour12: false })}
-                </span>
-
-                {/* Level badge */}
-                <span className={`shrink-0 uppercase font-bold px-1 rounded leading-4 ${getLevelBadgeColor(log.levelName)}`}>
-                  {log.levelName.slice(0, 4)}
-                </span>
-
-                {/* Module tag */}
-                {log.module && (
-                  <span className="text-purple-400 shrink-0 font-medium">
-                    [{log.module}]
+              <div key={log.id} className="hover:bg-gray-800 px-2 py-0.5 rounded group">
+                <div className="flex items-start gap-2">
+                  {/* Timestamp */}
+                  <span className="text-gray-600 shrink-0 tabular-nums">
+                    {formatTimestamp(log.timestamp)}
                   </span>
-                )}
 
-                {/* Message */}
-                <span className={`break-all flex-1 ${getLevelColor(log.levelName)}`}>
-                  {log.message}
-                </span>
-
-                {/* reqId (shown on hover) */}
-                {log.reqId && (
-                  <span className="text-gray-700 group-hover:text-gray-500 shrink-0 transition-colors">
-                    {log.reqId}
+                  {/* Level badge */}
+                  <span className={`shrink-0 uppercase font-bold px-1 rounded leading-4 ${getLevelBadgeColor(log.levelName)}`}>
+                    {log.levelName.slice(0, 4)}
                   </span>
+
+                  {/* Module tag */}
+                  {log.module && (
+                    <span className="text-purple-400 shrink-0 font-medium">
+                      [{log.module}]
+                    </span>
+                  )}
+
+                  {/* Message */}
+                  <span className={`break-all flex-1 ${getLevelColor(log.levelName)}`}>
+                    {log.message}
+                  </span>
+
+                  {/* reqId (shown on hover) */}
+                  {log.reqId && (
+                    <span className="text-gray-700 group-hover:text-gray-500 shrink-0 transition-colors">
+                      {log.reqId}
+                    </span>
+                  )}
+                </div>
+
+                {/* Meta (JSON object attached to the log call) */}
+                {log.meta && Object.keys(log.meta).length > 0 && (
+                  <div className="ml-6 mt-0.5 mb-1">
+                    <button
+                      onClick={() => toggleMeta(log.id)}
+                      className="text-gray-600 hover:text-gray-400 select-none"
+                    >
+                      {expandedMeta.has(log.id) ? '▼' : '▶'} meta ({Object.keys(log.meta).length})
+                    </button>
+                    {expandedMeta.has(log.id) && (
+                      <pre className="text-gray-500 whitespace-pre-wrap break-all">
+                        {JSON.stringify(log.meta, null, 2)}
+                      </pre>
+                    )}
+                  </div>
                 )}
               </div>
             ))}

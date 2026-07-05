@@ -4,6 +4,7 @@ import {
   HTTPAuth,
   HTTPRequest,
   HTTPResponse,
+  LoggerService,
 } from "@cloudnux/core-cloud-provider";
 
 import {
@@ -18,7 +19,8 @@ import {
 
 export function createHttpContext(
   request: HTTPRequest,
-  auth?: HTTPAuth
+  auth: HTTPAuth | undefined,
+  logger: LoggerService
 ): HttpFunctionContext {
   const response: HTTPResponse = {
     body: undefined,
@@ -67,6 +69,7 @@ export function createHttpContext(
     request: request,
     auth: auth,
     response: response,
+    logger,
     model<T = Record<string, any>>() {
       return JSON.parse(request.body || "{}") as T
     },

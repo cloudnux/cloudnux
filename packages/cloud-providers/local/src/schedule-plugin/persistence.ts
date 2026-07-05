@@ -1,9 +1,7 @@
 import * as fs from "fs/promises";
 import * as path from "path";
 
-import { logger } from "@cloudnux/utils";
-
-import { SchedulerState, SchedulerService, JobExecution, ScheduledJob, SchedulerConfig } from "./types";
+import { JobExecution, ScheduledJob, SchedulerRuntime, SchedulerService } from "./types";
 import { hasJobDefinitionChanged, calculateNextRunFromLastRun } from "./utils";
 import { parseCronExpression } from "./cron-utils";
 
@@ -14,90 +12,72 @@ interface SchedulerStateData {
     version: string;
 }
 
-export const createStateFilePath = (
-    directory: string
-): string => path.join(directory, 'scheduler-state.json');
+const stateFilePath = (directory: string): string => path.join(directory, 'scheduler-state.json');
 
-export const createTempFilePath = (
-    directory: string
-): string => path.join(directory, `scheduler-state.${Date.now()}.temp.json`);
+const tempFilePath = (directory: string): string => path.join(directory, `scheduler-state.${Date.now()}.temp.json`);
 
-export const serializeSchedulerState = (
-    schedulers: Record<string, SchedulerService>,
-    executionHistory: JobExecution[]
-): SchedulerStateData => ({
-    jobs: Object.values(schedulers).map(s => s.job),
-    executions: executionHistory.slice(-100),
-    savedAt: new Date(),
-    version: '1.0'
-});
+const restoreExecutionHistory = (savedExecutions: JobExecution[]): JobExecution[] =>
+    savedExecutions.map((exec) => ({
+        ...exec,
+        startTime: new Date(exec.startTime),
+        endTime: exec.endTime ? new Date(exec.endTime) : undefined,
+    }));
 
-export const saveSchedulerState = async (
-    state: SchedulerState
-): Promise<void> => {
+const readStateData = async (directory: string): Promise<SchedulerStateData | null> => {
+    const data = await fs.readFile(stateFilePath(directory), 'utf8');
+    return JSON.parse(data);
+};
 
+export const saveSchedulerState = async (runtime: SchedulerRuntime): Promise<void> => {
     try {
-        const serializedState = serializeSchedulerState(state.schedulers, state.executionHistory);
-        const stateFile = createStateFilePath(state.config.persistence.directory);
-        const tempFile = createTempFilePath(state.config.persistence.directory);
+        const stateData: SchedulerStateData = {
+            jobs: Object.values(runtime.schedulers).map(s => s.job),
+            executions: runtime.executionHistory.slice(-100),
+            savedAt: new Date(),
+            version: '1.0',
+        };
 
-        await fs.writeFile(tempFile, JSON.stringify(serializedState, null, 2), 'utf8');
-        await fs.rename(tempFile, stateFile);
+        const file = stateFilePath(runtime.config.persistence.directory);
+        const temp = tempFilePath(runtime.config.persistence.directory);
 
-        logger.debug('Enhanced scheduler state saved');
+        // Write to a temp file first, then rename - rename is atomic, so a
+        // reader never sees a half-written file.
+        await fs.writeFile(temp, JSON.stringify(stateData, null, 2), 'utf8');
+        await fs.rename(temp, file);
+
+        runtime.logging.debug('Scheduler state saved');
     } catch (error: any) {
-        logger.error('Failed to save scheduler state:', error);
+        runtime.logging.error({ error: error?.message }, 'Failed to save scheduler state');
     }
 };
 
-export const loadSchedulerStateData = async (
-    directory: string
-): Promise<SchedulerStateData | null> => {
-    try {
-        const stateFile = createStateFilePath(directory);
-        const data = await fs.readFile(stateFile, 'utf8');
-        return JSON.parse(data);
-    } catch (error: any) {
-        if (error.code === 'ENOENT') {
-            logger.debug('No previous scheduler state found - starting fresh');
-        } else {
-            logger.error('Failed to load scheduler state:', error);
-        }
-        return null;
-    }
-};
-
-export const validateAndAdjustNextRun = (
+// Recalculates - or preserves - a restored job's nextRun depending on how
+// long ago the process restarted, so a quick redeploy doesn't lose timing
+// but a long outage doesn't fire a pile of catch-up runs.
+const validateAndAdjustNextRun = (
     job: ScheduledJob,
     savedNextRun: Date | undefined,
-    lastRestartTime: Date,
-    config: SchedulerConfig
+    runtime: SchedulerRuntime
 ): Date => {
+    const { config, lastRestartTime, logging } = runtime;
     const now = new Date();
 
-    if (!savedNextRun) {
+    if (!savedNextRun || savedNextRun <= now) {
+        logging.debug({ module: job.module }, `Saved next run is in the past for ${job.name} - recalculating`);
         return calculateNextRunFromLastRun(job, job.lastRun, config);
     }
 
-    if (savedNextRun <= now) {
-        logger.debug(`Saved next run is in the past for ${job.name} - recalculating`);
-        return calculateNextRunFromLastRun(job, job.lastRun, config);
-    }
-
-    const timeSinceRestart = now.getTime() - lastRestartTime.getTime();
-    const isRapidRestart = timeSinceRestart < config.restartBehavior.rapidRestartThreshold;
-
+    const isRapidRestart = now.getTime() - lastRestartTime.getTime() < config.restartBehavior.rapidRestartThreshold;
     if (isRapidRestart) {
-        logger.debug(`Rapid restart detected for ${job.name} - preserving saved timing`);
+        logging.debug({ module: job.module }, `Rapid restart detected for ${job.name} - preserving saved timing`);
         return savedNextRun;
     }
 
     if (job.cronExpression || job.intervalMs) {
         const expectedNextRun = calculateNextRunFromLastRun(job, job.lastRun, config);
-        const timeDiff = Math.abs(savedNextRun.getTime() - expectedNextRun.getTime());
-
-        if (timeDiff > config.restartBehavior.maxTimingDrift) {
-            logger.debug(`Adjusting timing for ${job.name} - drift of ${Math.round(timeDiff / 1000)}s detected`);
+        const drift = Math.abs(savedNextRun.getTime() - expectedNextRun.getTime());
+        if (drift > config.restartBehavior.maxTimingDrift) {
+            logging.debug({ module: job.module }, `Adjusting timing for ${job.name} - drift of ${Math.round(drift / 1000)}s detected`);
             return expectedNextRun;
         }
     }
@@ -105,81 +85,94 @@ export const validateAndAdjustNextRun = (
     return savedNextRun;
 };
 
-export const restoreJobFromSavedData = (
-    scheduler: SchedulerService,
-    savedJob: ScheduledJob,
-    config: SchedulerConfig,
-    lastRestartTime: Date
-): SchedulerService => {
-    const definitionChanged = hasJobDefinitionChanged(scheduler.job, savedJob);
+// Restores this job's saved run history (count, lastRun) and next-run
+// timing from the persisted state file. Mirrors queue-plugin's per-queue
+// loadQueueState: called from addJob right after the scheduler is
+// registered, not at plugin init - the saved file has nothing to match
+// against that early, since no jobs have been added yet.
+export const loadJobState = async (runtime: SchedulerRuntime, scheduler: SchedulerService): Promise<SchedulerService> => {
+    try {
+        const stateData = await readStateData(runtime.config.persistence.directory);
+        if (!stateData) {
+            return scheduler;
+        }
 
-    const updatedJob = {
-        ...scheduler.job,
-        runCount: savedJob.runCount,
-        lastRun: savedJob.lastRun ? new Date(savedJob.lastRun) : undefined,
-    };
+        const savedJob = stateData.jobs.find(job => job.name === scheduler.job.name);
+        if (!savedJob) {
+            return scheduler;
+        }
 
-    if (definitionChanged) {
-        logger.debug(`Job definition changed: ${savedJob.name} - recalculating schedule`);
-        updatedJob.nextRun = calculateNextRunFromLastRun(updatedJob, updatedJob.lastRun, config);
-    } else {
-        const savedNextRun = savedJob.nextRun ? new Date(savedJob.nextRun) : undefined;
-        updatedJob.nextRun = validateAndAdjustNextRun(updatedJob, savedNextRun, lastRestartTime, config);
-    }
+        const definitionChanged = hasJobDefinitionChanged(scheduler.job, savedJob);
+        const lastRun = savedJob.lastRun ? new Date(savedJob.lastRun) : undefined;
 
-    if (config.cron.logCronDetails && updatedJob.cronExpression) {
-        const result = parseCronExpression(updatedJob.cronExpression, updatedJob.lastRun, {
-            timezone: updatedJob.timezone
-        });
-        logger.debug(`Job restored: ${savedJob.name} - ${result.description} - next: ${updatedJob.nextRun.toLocaleString()}`);
-    }
+        const updatedJob: ScheduledJob = {
+            ...scheduler.job,
+            runCount: savedJob.runCount,
+            lastRun,
+        };
 
-    return { ...scheduler, job: updatedJob };
-};
+        if (definitionChanged) {
+            runtime.logging.debug({ module: scheduler.job.module }, `Job definition changed: ${savedJob.name} - recalculating schedule`);
+            updatedJob.nextRun = calculateNextRunFromLastRun(updatedJob, lastRun, runtime.config);
+        } else {
+            updatedJob.nextRun = validateAndAdjustNextRun(updatedJob, savedJob.nextRun ? new Date(savedJob.nextRun) : undefined, runtime);
+        }
 
-export const restoreExecutionHistory = (
-    savedExecutions: any[]
-): JobExecution[] => {
-    return savedExecutions.map((exec: any) => ({
-        ...exec,
-        startTime: new Date(exec.startTime),
-        endTime: exec.endTime ? new Date(exec.endTime) : undefined,
-    }));
-};
-
-export const loadSchedulerState = async (
-    schedulers: Record<string, SchedulerService>,
-    config: SchedulerConfig,
-    lastRestartTime: Date
-): Promise<{
-    schedulers: Record<string, SchedulerService>;
-    executionHistory: JobExecution[];
-}> => {
-    const stateData = await loadSchedulerStateData(config.persistence.directory);
-
-    if (!stateData) {
-        return { schedulers, executionHistory: [] };
-    }
-
-    const restoredSchedulers = { ...schedulers };
-
-    for (const savedJob of stateData.jobs) {
-        const existingScheduler = Object.values(schedulers).find(s => s.job.name === savedJob.name);
-
-        if (existingScheduler) {
-            const restoredScheduler = restoreJobFromSavedData(
-                existingScheduler,
-                savedJob,
-                config,
-                lastRestartTime
+        if (runtime.config.cron.logCronDetails && updatedJob.cronExpression) {
+            const result = parseCronExpression(updatedJob.cronExpression, updatedJob.lastRun, { timezone: updatedJob.timezone });
+            runtime.logging.debug(
+                { module: scheduler.job.module },
+                `Job restored: ${savedJob.name} - ${result.description} - next: ${updatedJob.nextRun.toLocaleString()}`
             );
-            restoredSchedulers[restoredScheduler.job.id] = restoredScheduler;
+        } else {
+            runtime.logging.debug({ module: scheduler.job.module }, `Job state restored: ${savedJob.name}`);
+        }
+
+        return { ...scheduler, job: updatedJob };
+    } catch (error: any) {
+        if (error.code === 'ENOENT') {
+            runtime.logging.debug('No saved scheduler state found - starting fresh');
+        } else {
+            runtime.logging.error({ error: error?.message }, `Failed to load job state for ${scheduler.job.name}`);
+        }
+        return scheduler;
+    }
+};
+
+// Execution history isn't tied to any one job, so it's restored once at
+// plugin init (unlike per-job state, which loadJobState restores lazily as
+// each job is registered).
+export const loadExecutionHistory = async (runtime: SchedulerRuntime): Promise<void> => {
+    try {
+        const stateData = await readStateData(runtime.config.persistence.directory);
+        if (stateData?.executions) {
+            runtime.executionHistory = restoreExecutionHistory(stateData.executions);
+        }
+    } catch (error: any) {
+        if (error.code !== 'ENOENT') {
+            runtime.logging.error({ error: error?.message }, 'Failed to load execution history');
         }
     }
+};
 
-    const executionHistory = stateData.executions ? restoreExecutionHistory(stateData.executions) : [];
+export const initializePersistence = async (runtime: SchedulerRuntime): Promise<void> => {
+    try {
+        await fs.mkdir(runtime.config.persistence.directory, { recursive: true });
+        await loadExecutionHistory(runtime);
 
-    logger.debug(`Enhanced scheduler state loaded (saved at ${stateData.savedAt})`);
+        if (runtime.config.persistence.saveOnShutdown) {
+            const shutdownHandler = async () => {
+                runtime.logging.debug('Saving scheduler state before shutdown...');
+                await saveSchedulerState(runtime);
+                process.exit(0);
+            };
 
-    return { schedulers: restoredSchedulers, executionHistory };
+            process.on('SIGINT', shutdownHandler);
+            process.on('SIGTERM', shutdownHandler);
+        }
+
+        runtime.logging.debug(`Scheduler persistence initialized: ${runtime.config.persistence.directory}`);
+    } catch (error: any) {
+        runtime.logging.error({ error: error?.message }, 'Failed to initialize scheduler persistence');
+    }
 };

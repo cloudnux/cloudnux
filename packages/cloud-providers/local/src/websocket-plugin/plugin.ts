@@ -4,7 +4,7 @@ import { FastifyInstance, FastifyPluginAsync } from "fastify";
 import fsPlugin from "fastify-plugin";
 import websocketPlugin from "@fastify/websocket";
 
-import { logger } from "@cloudnux/utils";
+import "../logger/types";
 import { WebSocketConnectionGoneError } from "@cloudnux/core-cloud-provider";
 
 
@@ -51,16 +51,21 @@ export const websocketsPlugin: FastifyPluginAsync<WebSocketPluginOptions> =
                 preHandler: async (request, reply) => {
                     const connectionId = crypto.randomUUID();
                     (request as any)._wsConnectionId = connectionId;
+                    const reqId = `${request.id}:${connectionId}`;
 
                     const connectHandlers = handlers.filter(h => h.path === path && h.event === "connect");
                     for (const h of connectHandlers) {
-                        await h.handler(connectionId, "connect", null, request, reply);
+                        await app.logging.runWithLogContext(
+                            { module: h.module, reqId },
+                            () => h.handler(connectionId, "connect", null, request, reply)
+                        );
                     }
                     if (reply.statusCode !== 200)
                         return reply; // Prevent WebSocket upgrade if preHandler set an error status
                 },
             }, (socket, request) => {
                 const connectionId = (request as any)._wsConnectionId ?? crypto.randomUUID();
+                const reqId = `${request.id}:${connectionId}`;
                 const connection: WebSocketConnection = {
                     connectionId,
                     socket,
@@ -94,7 +99,10 @@ export const websocketsPlugin: FastifyPluginAsync<WebSocketPluginOptions> =
                         );
                         for (const h of routeHandlers) {
                             matched = true;
-                            h.handler(connectionId, "message", data, request).catch((e) => { logger.error(e) });
+                            app.logging.runWithLogContext(
+                                { module: h.module, reqId },
+                                () => h.handler(connectionId, "message", data, request).catch((e) => app.logging.error(e))
+                            );
                         }
                     }
 
@@ -104,7 +112,10 @@ export const websocketsPlugin: FastifyPluginAsync<WebSocketPluginOptions> =
                             h => h.event === "message" && !h.route
                         );
                         for (const h of defaultHandlers) {
-                            h.handler(connectionId, "message", data, request).catch((e) => { logger.error(e) });
+                            app.logging.runWithLogContext(
+                                { module: h.module, reqId },
+                                () => h.handler(connectionId, "message", data, request).catch((e) => app.logging.error(e))
+                            );
                         }
                     }
                 });
@@ -113,7 +124,10 @@ export const websocketsPlugin: FastifyPluginAsync<WebSocketPluginOptions> =
                 socket.on("close", () => {
                     const disconnectHandlers = pathHandlers().filter(h => h.event === "disconnect");
                     for (const h of disconnectHandlers) {
-                        h.handler(connectionId, "disconnect", null, request).catch((e) => { logger.error(e) });
+                        app.logging.runWithLogContext(
+                            { module: h.module, reqId },
+                            () => h.handler(connectionId, "disconnect", null, request).catch((e) => app.logging.error(e))
+                        );
                     }
                     connections.delete(connectionId);
                 });

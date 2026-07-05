@@ -11,3 +11,7 @@ export const cloudStorage = () => {
     _cloudStorageService = getCloudProvider().createStorageService();
     return _cloudStorageService;
 }
+
+export const resetCloudStorage = () => {
+    _cloudStorageService = null;
+}

@@ -1,5 +1,7 @@
 import { FastifyPluginOptions } from "fastify";
 
+import type { LoggingContext } from "../logger/types";
+
 export interface ScheduledJob {
     id: string;
     name: string;
@@ -27,14 +29,13 @@ export interface JobExecution {
     result?: any;
 }
 
+export type JobHandler = (job: ScheduledJob, execution: JobExecution) => Promise<void>;
+
 export interface SchedulerService {
     job: ScheduledJob;
     handler: JobHandler;
-    timerId?: NodeJS.Timeout;
     isRunning: boolean;
 }
-
-export type JobHandler = (job: ScheduledJob, execution: JobExecution) => Promise<void>;
 
 export interface JobDefinition {
     name: string;
@@ -50,16 +51,16 @@ export interface JobDefinition {
 }
 
 export interface SchedulerConfig {
+    tickIntervalMs: number;
     persistence: {
         enabled?: boolean;
         directory: string;
         saveInterval?: number;
+        saveOnShutdown?: boolean;
     };
     execution: {
         maxConcurrent: number;
         defaultTimeout: number;
-        retryOnError: boolean;
-        maxRetries: number;
     };
     cleanup: {
         maxExecutionHistory: number;
@@ -80,21 +81,13 @@ export interface SchedulerConfig {
 export interface SchedulerPluginOptions extends FastifyPluginOptions {
     prefix?: string;
     config?: Partial<SchedulerConfig>;
-    //jobs?: JobDefinition[];
-    //functionContextFactory: (job: ScheduledJob, execution: JobExecution) => ScheduleFunctionContext;
 }
 
-export interface SchedulerState {
-    schedulers: Record<string, SchedulerService>;
-    executions: Record<string, JobExecution>;
-    executionHistory: JobExecution[];
-    isShuttingDown: boolean;
-    runningExecutions: number;
-    tickInterval?: NodeJS.Timeout;
-    isDirty: boolean;
-    lastCleanupTime: number;
-    lastRestartTime: Date;
-    config: SchedulerConfig;
+export interface SchedulerDashboardJob extends ScheduledJob {
+    isRunning: boolean;
+    timeUntilNextRun: number;
+    upcomingExecutions: Date[];
+    cronDescription?: string;
 }
 
 export interface SchedulerManager {
@@ -103,17 +96,35 @@ export interface SchedulerManager {
     hasJob: (jobName: string) => boolean;
     listJobs: (module?: string) => string[];
     getJobStats: (jobName: string) => SchedulerService | null;
+    getJobsMap: () => Record<string, SchedulerService>;
+    getConfig: () => SchedulerConfig;
     enableJob: (jobName: string) => Promise<void>;
     disableJob: (jobName: string) => Promise<void>;
     triggerJob: (jobName: string) => Promise<void>;
-    getJobsMap: () => Record<string, SchedulerService>;
+    getDashboardSummary: () => { jobs: SchedulerDashboardJob[]; runningExecutions: number };
+    getExecutionsSummary: () => { executions: JobExecution[]; running: JobExecution[] };
+    getJobExecutionHistory: (jobName: string, limit?: number) => JobExecution[];
 }
 
-export interface SchedulerDecoratorOptions {
-    state: SchedulerState;
-    scheduleJobFn: (scheduler: SchedulerService) => SchedulerService;
-    executeJob: (scheduler: SchedulerService) => Promise<void>;
+// Everything every schedule-plugin function needs, bundled once in plugin.ts
+// and passed explicitly to every call - no closures, no factories. Mirrors
+// queue-plugin's QueueRuntime.
+export interface SchedulerRuntime {
     config: SchedulerConfig;
+    schedulers: Record<string, SchedulerService>;
+    executions: Record<string, JobExecution>;
+    executionHistory: JobExecution[];
+    isShuttingDown: boolean;
+    runningExecutions: number;
+    isDirty: boolean;
+    lastCleanupTime: number;
+    lastSavedAt: number;
+    lastRestartTime: Date;
+    // Read off `app.logging`, decorated once by router/index.ts (the index
+    // bundle). Reaching it this way - never by importing `../logger`
+    // directly - is what keeps schedule-plugin's separately-bundled output
+    // from inlining its own disconnected copy of the logger singleton.
+    logging: LoggingContext;
 }
 
 // Type declaration for Fastify instance

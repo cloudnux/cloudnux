@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react'
 import TerminalLogs from '../modules/TerminalLogs'
+import { useRouteHistory } from '../../hooks'
 import { getBaseUrl } from '../../utils'
 
 interface RouteDetailViewProps {
@@ -21,6 +22,7 @@ interface ExecutionRecord {
   url: string
   headers: Record<string, string>
   body?: string
+  source: 'console' | 'live'
   response: {
     status?: number
     statusText?: string
@@ -174,6 +176,33 @@ const RouteDetailView: React.FC<RouteDetailViewProps> = ({ moduleName, routeUrl,
     [routeUrl, routeParams, queryParams]
   )
 
+  // Real traffic against this route (any caller, not just this console),
+  // captured server-side by dev-console-plugin's onResponse hook.
+  const { data: liveHistoryData } = useRouteHistory(routeMethod, routeUrl)
+  const liveHistory: ExecutionRecord[] = useMemo(
+    () => (liveHistoryData?.history ?? []).map(entry => ({
+      id: entry.id,
+      executedAt: new Date(entry.timestamp),
+      method: entry.method,
+      url: entry.url,
+      headers: entry.requestHeaders as Record<string, string>,
+      body: entry.requestBody !== undefined ? JSON.stringify(entry.requestBody) : undefined,
+      source: 'live' as const,
+      response: {
+        status: entry.statusCode,
+        duration: entry.duration,
+      },
+    })),
+    [liveHistoryData]
+  )
+
+  const combinedHistory = useMemo(
+    () => [...history, ...liveHistory]
+      .sort((a, b) => b.executedAt.getTime() - a.executedAt.getTime())
+      .slice(0, 30),
+    [history, liveHistory]
+  )
+
   const handleTestRoute = async () => {
     setIsLoading(true)
     setTestResponse(null)
@@ -217,6 +246,7 @@ const RouteDetailView: React.FC<RouteDetailViewProps> = ({ moduleName, routeUrl,
         url: resolvedUrl,
         headers: parsedHeaders,
         body: testMethod !== 'GET' && testMethod !== 'HEAD' ? testBody : undefined,
+        source: 'console' as const,
         response: result,
       }, ...prev].slice(0, 20))
     } catch (error) {
@@ -232,6 +262,7 @@ const RouteDetailView: React.FC<RouteDetailViewProps> = ({ moduleName, routeUrl,
         url: resolvedUrl,
         headers: parsedHeaders,
         body: testMethod !== 'GET' && testMethod !== 'HEAD' ? testBody : undefined,
+        source: 'console' as const,
         response: result,
       }, ...prev].slice(0, 20))
     } finally {
@@ -430,23 +461,27 @@ const RouteDetailView: React.FC<RouteDetailViewProps> = ({ moduleName, routeUrl,
       </div>
 
       {/* Execution History */}
-      {history.length > 0 && (
+      {combinedHistory.length > 0 && (
         <div className="bg-white rounded-lg shadow-sm border">
           <div className="p-4 border-b border-gray-200 flex items-center justify-between">
             <h3 className="text-lg font-medium text-gray-900">Execution History</h3>
             <div className="flex items-center gap-3">
-              <span className="text-xs text-gray-500">{history.length} execution{history.length !== 1 ? 's' : ''}</span>
-              <button
-                onClick={() => setHistory([])}
-                className="text-xs text-gray-400 hover:text-red-500 transition-colors"
-              >
-                Clear
-              </button>
+              <span className="text-xs text-gray-500">
+                {combinedHistory.length} execution{combinedHistory.length !== 1 ? 's' : ''} (console + live traffic)
+              </span>
+              {history.length > 0 && (
+                <button
+                  onClick={() => setHistory([])}
+                  className="text-xs text-gray-400 hover:text-red-500 transition-colors"
+                >
+                  Clear console entries
+                </button>
+              )}
             </div>
           </div>
 
           <div className="divide-y divide-gray-100">
-            {history.map((record) => (
+            {combinedHistory.map((record) => (
               <div key={record.id}>
                 <div
                   className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"
@@ -457,6 +492,11 @@ const RouteDetailView: React.FC<RouteDetailViewProps> = ({ moduleName, routeUrl,
                       {record.method}
                     </span>
                     <span className="text-sm font-mono text-gray-700">{record.url}</span>
+                    <span className={`px-1.5 py-0.5 rounded text-xs ${
+                      record.source === 'console' ? 'bg-blue-50 text-blue-600' : 'bg-gray-100 text-gray-500'
+                    }`}>
+                      {record.source === 'console' ? 'console' : 'live'}
+                    </span>
                     {record.response.error ? (
                       <span className="text-xs text-red-600">Error</span>
                     ) : (
@@ -473,12 +513,14 @@ const RouteDetailView: React.FC<RouteDetailViewProps> = ({ moduleName, routeUrl,
                     <span className="text-xs text-gray-400">
                       {record.executedAt.toLocaleTimeString()}
                     </span>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); loadFromHistory(record) }}
-                      className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded hover:bg-blue-100 hover:text-blue-700 transition-colors"
-                    >
-                      Replay
-                    </button>
+                    {record.source === 'console' && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); loadFromHistory(record) }}
+                        className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded hover:bg-blue-100 hover:text-blue-700 transition-colors"
+                      >
+                        Replay
+                      </button>
+                    )}
                     <svg
                       className={`w-4 h-4 text-gray-400 transition-transform ${expandedHistoryId === record.id ? 'rotate-180' : ''}`}
                       fill="none" stroke="currentColor" viewBox="0 0 24 24"

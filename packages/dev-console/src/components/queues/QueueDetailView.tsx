@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useQueueDetails } from '../../hooks'
+import { useQueueDetails, useQueueHistory } from '../../hooks'
 import TerminalLogs from '../modules/TerminalLogs'
 import { getBaseUrl } from '../../utils'
 
@@ -11,6 +11,9 @@ interface QueueDetailViewProps {
 
 const QueueDetailView: React.FC<QueueDetailViewProps> = ({ moduleName, queueName, onBack }) => {
   const { data: queueData, isLoading, error } = useQueueDetails(queueName)
+  const { data: historyData } = useQueueHistory(queueName)
+  const messageHistory = historyData?.history ?? []
+  const [expandedHistoryId, setExpandedHistoryId] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<'incoming' | 'processing' | 'dlq'>('incoming')
   const [expandedMessages, setExpandedMessages] = useState<Set<string>>(new Set())
   const [showEnqueueForm, setShowEnqueueForm] = useState(false)
@@ -631,6 +634,63 @@ const QueueDetailView: React.FC<QueueDetailViewProps> = ({ moduleName, queueName
             )}
           </div>
         </div>
+      </div>
+
+      {/* Message History */}
+      <div className="bg-white rounded-lg shadow-sm border">
+        <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+          <h3 className="text-lg font-medium text-gray-900">Message History</h3>
+          <span className="text-xs text-gray-500">
+            {messageHistory.length} processed message{messageHistory.length !== 1 ? 's' : ''}
+          </span>
+        </div>
+
+        {messageHistory.length === 0 ? (
+          <div className="p-8 text-center text-gray-500 text-sm">No messages have finished processing yet</div>
+        ) : (
+          <div className="divide-y divide-gray-100">
+            {messageHistory.map((entry) => (
+              <div key={entry.id}>
+                <div
+                  className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors"
+                  onClick={() => setExpandedHistoryId(expandedHistoryId === entry.id ? null : entry.id)}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                      entry.status === 'completed' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
+                      {entry.status}
+                    </span>
+                    <span className="text-xs font-mono text-gray-500">ID: {entry.id}</span>
+                    {entry.attempts > 0 && (
+                      <span className="text-xs text-gray-400">{entry.attempts} attempt{entry.attempts !== 1 ? 's' : ''}</span>
+                    )}
+                  </div>
+                  <span className="text-xs text-gray-400">
+                    {new Date(entry.completedAt).toLocaleString()}
+                  </span>
+                </div>
+
+                {expandedHistoryId === entry.id && (
+                  <div className="px-4 pb-4 space-y-3 bg-gray-50">
+                    <div>
+                      <div className="text-xs font-medium text-gray-600 mb-1">Payload:</div>
+                      <pre className="text-xs bg-white p-2 rounded border overflow-x-auto">
+                        {JSON.stringify(entry.payload, null, 2)}
+                      </pre>
+                    </div>
+                    {entry.error && (
+                      <div>
+                        <div className="text-xs font-medium text-red-600 mb-1">Error:</div>
+                        <div className="text-sm bg-red-50 p-3 rounded border text-red-800">{entry.error}</div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Queue Logs */}
