@@ -1,5 +1,16 @@
 # @cloudnux/local-cloud-provider
 
+## 0.19.0
+
+### Minor Changes
+
+- [#21](https://github.com/cloudnux/cloudnux/pull/21) [`b714d90`](https://github.com/cloudnux/cloudnux/commit/b714d902bab76f59ac2659bf08faa42d49cd6a74) Thanks [@minawalphonce](https://github.com/minawalphonce)! - create logging service
+
+### Patch Changes
+
+- Updated dependencies [[`b714d90`](https://github.com/cloudnux/cloudnux/commit/b714d902bab76f59ac2659bf08faa42d49cd6a74)]:
+  - @cloudnux/core-cloud-provider@0.19.0
+
 ## 0.18.0
 
 ### Minor Changes
