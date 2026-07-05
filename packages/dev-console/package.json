@@ -1,6 +1,7 @@
 {
   "name": "@cloudnux/dev-console",
   "version": "0.13.0",
+  "license": "MIT",
   "description": "Web-based control panel for CloudNux development",
   "repository": {
     "type": "git",
