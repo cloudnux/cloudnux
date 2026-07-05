@@ -98,8 +98,19 @@ function formatTime(ms: number): string {
     return new Date(ms).toTimeString().slice(0, 8);
 }
 
+function circularSafeReplacer() {
+    const seen = new WeakSet<object>();
+    return (_key: string, value: unknown) => {
+        if (typeof value === "object" && value !== null) {
+            if (seen.has(value)) return "[Circular]";
+            seen.add(value);
+        }
+        return value;
+    };
+}
+
 function formatMeta(meta: Record<string, unknown>): string {
-    return EOL + chalk.dim("  " + JSON.stringify(meta));
+    return EOL + chalk.dim("  " + JSON.stringify(meta, circularSafeReplacer()));
 }
 
 function printPretty(entry: LogEntry): void {

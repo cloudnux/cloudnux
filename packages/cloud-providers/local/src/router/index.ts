@@ -38,10 +38,15 @@ export function createRouter(): RouterInstance {
   });
 
   fastify.addHook('onResponse', (request, reply, done) => {
-    logger.info(
-      { method: request.method, url: request.url, statusCode: reply.statusCode, responseTime: reply.elapsedTime },
-      `${request.method} ${request.url} ${reply.statusCode}`
-    );
+    // Skip the dev console's own traffic - otherwise its log-polling requests
+    // (and the clear-logs request itself) immediately repopulate the log
+    // store they just fetched from/cleared.
+    if (!request.url.startsWith('/console')) {
+      logger.info(
+        { method: request.method, url: request.url, statusCode: reply.statusCode, responseTime: reply.elapsedTime },
+        `${request.method} ${request.url} ${reply.statusCode}`
+      );
+    }
     done();
   });
 

@@ -6,12 +6,32 @@ interface TerminalLogsProps {
   title?: string
 }
 
+const formatTimestamp = (timestamp: string) => {
+  const date = new Date(timestamp)
+  const time = date.toLocaleTimeString('en-US', { hour12: false })
+  const ms = date.getMilliseconds().toString().padStart(3, '0')
+  return `${time}.${ms}`
+}
+
 const TerminalLogs: React.FC<TerminalLogsProps> = ({ moduleName, title }) => {
   const [isAutoScroll, setIsAutoScroll] = useState(true)
   const [filter, setFilter] = useState('')
   const [levelFilter, setLevelFilter] = useState('')
+  const [expandedMeta, setExpandedMeta] = useState<Set<string>>(new Set())
   const logsEndRef = useRef<HTMLDivElement>(null)
   const logsContainerRef = useRef<HTMLDivElement>(null)
+
+  const toggleMeta = (id: string) => {
+    setExpandedMeta(prev => {
+      const next = new Set(prev)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return next
+    })
+  }
 
   const { data: logsData, isLoading } = useLogs({
     limit: 200,
@@ -157,7 +177,7 @@ const TerminalLogs: React.FC<TerminalLogsProps> = ({ moduleName, title }) => {
                 <div className="flex items-start gap-2">
                   {/* Timestamp */}
                   <span className="text-gray-600 shrink-0 tabular-nums">
-                    {new Date(log.timestamp).toLocaleTimeString('en-US', { hour12: false })}
+                    {formatTimestamp(log.timestamp)}
                   </span>
 
                   {/* Level badge */}
@@ -187,9 +207,19 @@ const TerminalLogs: React.FC<TerminalLogsProps> = ({ moduleName, title }) => {
 
                 {/* Meta (JSON object attached to the log call) */}
                 {log.meta && Object.keys(log.meta).length > 0 && (
-                  <pre className="ml-6 mt-0.5 mb-1 text-gray-500 whitespace-pre-wrap break-all">
-                    {JSON.stringify(log.meta, null, 2)}
-                  </pre>
+                  <div className="ml-6 mt-0.5 mb-1">
+                    <button
+                      onClick={() => toggleMeta(log.id)}
+                      className="text-gray-600 hover:text-gray-400 select-none"
+                    >
+                      {expandedMeta.has(log.id) ? '▼' : '▶'} meta ({Object.keys(log.meta).length})
+                    </button>
+                    {expandedMeta.has(log.id) && (
+                      <pre className="text-gray-500 whitespace-pre-wrap break-all">
+                        {JSON.stringify(log.meta, null, 2)}
+                      </pre>
+                    )}
+                  </div>
                 )}
               </div>
             ))}

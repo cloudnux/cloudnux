@@ -687,18 +687,37 @@ async function devConsolePluginFunction(
 
   // Server-Sent Events for real-time logs
   fastify.get(`/${prefix}/logs/stream`, async (request, reply) => {
+    const { level, module, reqId } = request.query as {
+      level?: string;
+      module?: string;
+      reqId?: string;
+    };
+
+    // Mirror the same filters the REST /logs endpoint applies - otherwise a
+    // client viewing a filtered (e.g. module-scoped) log list gets every
+    // other module's activity pushed into it live, which looks exactly like
+    // cleared logs reappearing.
+    const matchesFilters = (log: LogEntry) => {
+      if (level && log.levelName !== level) return false;
+      if (module && log.module !== module) return false;
+      if (reqId && log.reqId !== reqId) return false;
+      return true;
+    };
+
     reply.type('text/event-stream');
     reply.header('Cache-Control', 'no-cache');
     reply.header('Connection', 'keep-alive');
     reply.header('Access-Control-Allow-Origin', '*');
 
     // Send initial logs
-    const initialLogs = logStore.getLogs(50);
+    const initialLogs = logStore.getLogs(50).filter(matchesFilters);
     reply.raw.write(`data: ${JSON.stringify({ type: 'initial', logs: initialLogs })}\n\n`);
 
     // Subscribe to new logs
     const unsubscribe = logStore.subscribe((log) => {
-      reply.raw.write(`data: ${JSON.stringify({ type: 'log', log })}\n\n`);
+      if (matchesFilters(log)) {
+        reply.raw.write(`data: ${JSON.stringify({ type: 'log', log })}\n\n`);
+      }
     });
 
     // Cleanup on client disconnect
