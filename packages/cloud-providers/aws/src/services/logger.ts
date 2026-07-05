@@ -66,6 +66,7 @@ export function createLoggerService(): LoggerService {
             ...(meta ? { meta } : {}),
         };
 
+        // eslint-disable-next-line no-console
         console.log(JSON.stringify(entry));
     }
 
