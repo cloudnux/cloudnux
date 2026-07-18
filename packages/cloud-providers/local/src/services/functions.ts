@@ -43,8 +43,7 @@ export function createLocalFunctionsService(): FunctionsService {
             const rawBody = request.rawBody;
             const isAuth = env("DEV_IDENTITY")
 
-            const index = request.raw.rawHeaders ? request.raw.rawHeaders?.indexOf('Authorization') : -1;
-            const authorization = index !== -1 ? request.raw.rawHeaders[index + 1] : null;
+            const authorization = request.headers.authorization ?? null;
 
             // Remove "bearer" prefix and trim whitespace
             const token = authorization ? authorization.replace(/^bearer\s+/i, '') : null;
