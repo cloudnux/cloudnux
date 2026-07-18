@@ -1,5 +1,16 @@
 # @cloudnux/local-cloud-provider
 
+## 0.20.0
+
+### Minor Changes
+
+- [`81a7cfc`](https://github.com/cloudnux/cloudnux/commit/81a7cfcab02e5ac0a98a594619382c40b6c0a757) Thanks [@minawalphonce](https://github.com/minawalphonce)! - fix: simplify authorization header extraction in createLocalFunctionsService
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @cloudnux/core-cloud-provider@0.20.0
+
 ## 0.19.0
 
 ### Minor Changes
