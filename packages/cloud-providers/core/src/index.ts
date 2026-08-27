@@ -6,5 +6,6 @@ export * from "./services/storage";
 export * from "./services/functions";
 export * from "./services/websocket";
 export * from "./services/logger";
+export * from "./services/email";
 export * from "./cloud-provider";
 export * from "./cloud-container";

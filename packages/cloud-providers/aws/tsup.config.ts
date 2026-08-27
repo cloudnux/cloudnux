@@ -14,7 +14,6 @@ export default defineConfig([
         outDir: 'dist',
         shims: false,
         cjsInterop: true,
-        noExternal: [/.*/],
         external: [
             '@cloudnux/core-cloud-provider'
         ]
@@ -32,7 +31,6 @@ export default defineConfig([
         outDir: 'dist/router',
         cjsInterop: true,
         shims: true,
-        noExternal: [/.*/],
         external: [
             '@cloudnux/core-cloud-provider',
         ]

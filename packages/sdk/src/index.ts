@@ -6,6 +6,7 @@ export * from "./services/functions";
 export * from "./services/functions/cloud-functions";
 export * from "./services/websocket";
 export * from "./services/logger";
+export * from "./services/email";
 export * from "./provider";
 
 //export http api types and interfaces
@@ -40,6 +41,10 @@ export type {
     InvokeRequest,
     InvokeResponse,
     LoggerService,
+    EmailService,
+    EmailMessage,
+    EmailAttachment,
+    EmailSendResult,
 } from "@cloudnux/core-cloud-provider";
 
 export { ErrorCode, WebSocketConnectionGoneError } from "@cloudnux/core-cloud-provider";

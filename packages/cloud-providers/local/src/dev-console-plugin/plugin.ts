@@ -14,6 +14,7 @@ import "../schedule-plugin";
 import "../websocket-plugin";
 
 import { routeRegistry } from "./route-registry";
+import { listEmailHistory, getEmailHistoryEntry, getEmailRaw } from "../services/email";
 
 interface LogEntry {
   id: string;
@@ -683,6 +684,37 @@ async function devConsolePluginFunction(
       }
       return reply.status(404).send({ error: (error as Error).message });
     }
+  });
+
+  // Emails endpoints - read straight off disk each request, since the
+  // local email service keeps no in-memory history (the .eml/.json files
+  // written to DEV_CLOUD_EMAIL_DIR are the only store).
+  fastify.get(`/${prefix}/emails`, async (request) => {
+    const { limit } = request.query as { limit?: string };
+    return { emails: await listEmailHistory(limit ? Number(limit) : undefined) };
+  });
+
+  fastify.get(`/${prefix}/emails/:id`, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const email = await getEmailHistoryEntry(id);
+
+    if (!email) {
+      return reply.status(404).send({ error: 'Email not found' });
+    }
+
+    return { email };
+  });
+
+  fastify.get(`/${prefix}/emails/:id/raw`, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const raw = await getEmailRaw(id);
+
+    if (!raw) {
+      return reply.status(404).send({ error: 'Email not found' });
+    }
+
+    reply.type('message/rfc822');
+    return raw;
   });
 
   // Server-Sent Events for real-time logs

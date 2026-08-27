@@ -142,6 +142,29 @@ export interface WebSocketInfo {
   connectionCount: number
 }
 
+export interface EmailHistoryEntry {
+  id: string
+  messageId: string
+  timestamp: string
+  from: string
+  to: string[]
+  cc?: string[]
+  subject: string
+  preview: string
+  hasAttachments: boolean
+  attachmentCount?: number
+  status: 'sent' | 'failed'
+  error?: string
+}
+
+export interface EmailsResponse {
+  emails: EmailHistoryEntry[]
+}
+
+export interface EmailDetailResponse {
+  email: EmailHistoryEntry
+}
+
 export interface Module {
   name: string
   routes: RouteInfo[]

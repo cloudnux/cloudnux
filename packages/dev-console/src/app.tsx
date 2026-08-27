@@ -6,6 +6,8 @@ import QueueDetailPage from './pages/QueueDetailPage'
 import ScheduleDetailPage from './pages/ScheduleDetailPage'
 import RouteDetailPage from './pages/RouteDetailPage'
 import WebSocketDetailPage from './pages/WebSocketDetailPage'
+import EmailsPage from './pages/EmailsPage'
+import EmailDetailPage from './pages/EmailDetailPage'
 import Header from './components/shared/Header'
 
 const queryClient = new QueryClient()
@@ -25,6 +27,8 @@ function App() {
               <Route path="/modules/:moduleName/schedules/:scheduleName" element={<ScheduleDetailPage />} />
               <Route path="/modules/:moduleName/routes" element={<RouteDetailPage />} />
               <Route path="/modules/:moduleName/websockets/*" element={<WebSocketDetailPage />} />
+              <Route path="/emails" element={<EmailsPage />} />
+              <Route path="/emails/:id" element={<EmailDetailPage />} />
             </Routes>
           </main>
         </div>
