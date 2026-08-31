@@ -63,6 +63,11 @@ const EmailsListView: React.FC<EmailsListViewProps> = ({ onSelect }) => {
                     <StatusBadge status={entry.status} />
                     <span className="text-sm font-medium text-gray-900 truncate">{entry.from}</span>
                     {entry.hasAttachments && <PaperclipIcon />}
+                    {entry.configurationSet && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 truncate">
+                        {entry.configurationSet}
+                      </span>
+                    )}
                   </div>
                   <div className="text-sm text-gray-900 truncate mt-1">{entry.subject}</div>
                   <div className="text-sm text-gray-500 truncate">{entry.preview}</div>

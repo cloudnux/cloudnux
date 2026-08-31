@@ -94,19 +94,9 @@ export type HTTPResponse = {
     status: number;
 };
 
-export type HTTPAuth = {
-    token: string;
-    appId: string;
-    memberId: string;
-    customerId: string;
-    claims: Record<string, string>;
-    identity: "facebook" | "google" | "apple" | "password";
-};
-
 export type HttpFunctionContext = FunctionContext & {
     type: "Http";
     request: HTTPRequest;
-    auth?: HTTPAuth;
     response: HTTPResponse;
     model<T = Record<string, any>>(): T;
     params<T = Record<string, string>>(): T;
@@ -235,7 +225,7 @@ export type WebSocketFunctionContext = FunctionContext & {
 //#endregion
 
 export interface FunctionsService extends IService {
-    createHttRequest(...args: any[]): [HTTPRequest, HTTPAuth?];
+    createHttRequest(...args: any[]): [HTTPRequest];
     createScheduleRequest(...args: any[]): [ScheduleRequest];
     createEventRequest(...args: any[]): [EventRequest];
     createWebSocketRequest(...args: any[]): [WebSocketRequest];

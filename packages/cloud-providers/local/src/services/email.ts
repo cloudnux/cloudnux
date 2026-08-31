@@ -22,6 +22,7 @@ export type EmailHistoryEntry = {
     preview: string;
     hasAttachments: boolean;
     attachmentCount?: number;
+    configurationSet?: string;
     status: "sent" | "failed";
     error?: string;
 };
@@ -224,6 +225,7 @@ export function createLocalEmailService(): EmailService {
                     preview: buildPreview(message),
                     hasAttachments: !!message.attachments?.length,
                     attachmentCount: message.attachments?.length || undefined,
+                    configurationSet: message.configurationSet,
                     status: 'sent',
                 };
 

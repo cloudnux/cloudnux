@@ -153,6 +153,7 @@ export interface EmailHistoryEntry {
   preview: string
   hasAttachments: boolean
   attachmentCount?: number
+  configurationSet?: string
   status: 'sent' | 'failed'
   error?: string
 }

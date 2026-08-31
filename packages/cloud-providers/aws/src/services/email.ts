@@ -57,6 +57,7 @@ export function createEmailService(): EmailService {
                     BccAddresses: toArray(message.bcc),
                 },
                 ReplyToAddresses: message.replyTo ? [message.replyTo] : undefined,
+                ConfigurationSetName: message.configurationSet,
                 Content: {
                     Simple: {
                         Subject: { Data: message.subject, Charset: 'UTF-8' },

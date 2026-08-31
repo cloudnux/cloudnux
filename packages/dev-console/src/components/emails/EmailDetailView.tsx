@@ -75,6 +75,12 @@ const EmailDetailView: React.FC<EmailDetailViewProps> = ({ id, onBack }) => {
               <div className="text-sm text-gray-900 bg-gray-50 p-2 rounded border">{email.cc.join(', ')}</div>
             </div>
           )}
+          {email.configurationSet && (
+            <div>
+              <label className="block text-sm font-medium text-gray-600 mb-1">Configuration Set</label>
+              <div className="text-sm text-gray-900 bg-gray-50 p-2 rounded border">{email.configurationSet}</div>
+            </div>
+          )}
           <div>
             <label className="block text-sm font-medium text-gray-600 mb-1">Status</label>
             <div className="text-sm text-gray-900 bg-gray-50 p-2 rounded border">

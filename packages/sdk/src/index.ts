@@ -25,7 +25,6 @@ export type {
     ReverseGeocodeParams,
     HttpFunctionContext,
     HTTPRequest,
-    HTTPAuth,
     HTTPResponse,
     ScheduleFunctionContext,
     ScheduleRequest,
@@ -48,3 +47,5 @@ export type {
 } from "@cloudnux/core-cloud-provider";
 
 export { ErrorCode, WebSocketConnectionGoneError } from "@cloudnux/core-cloud-provider";
+
+export { HttpHalt } from "./services/functions/http/halt";

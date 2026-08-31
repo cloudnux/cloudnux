@@ -20,6 +20,13 @@ export type EmailMessage = {
     attachments?: EmailAttachment[];
 
     /**
+     * Named SES configuration set to send through (event destinations,
+     * reputation/dedicated-IP behavior, etc). No-op on providers that
+     * don't have the concept.
+     */
+    configurationSet?: string;
+
+    /**
      * Provider-specific passthrough (SES tags, ACS headers, etc).
      * Adapters may use this; handlers should avoid depending on it
      * to stay provider-agnostic.

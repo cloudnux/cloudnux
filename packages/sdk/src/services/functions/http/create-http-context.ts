@@ -1,7 +1,6 @@
 import querystring from "node:querystring";
 import {
   HttpFunctionContext,
-  HTTPAuth,
   HTTPRequest,
   HTTPResponse,
   LoggerService,
@@ -19,7 +18,6 @@ import {
 
 export function createHttpContext(
   request: HTTPRequest,
-  auth: HTTPAuth | undefined,
   logger: LoggerService
 ): HttpFunctionContext {
   const response: HTTPResponse = {
@@ -67,7 +65,6 @@ export function createHttpContext(
   return {
     type: "Http" as const,
     request: request,
-    auth: auth,
     response: response,
     logger,
     model<T = Record<string, any>>() {
