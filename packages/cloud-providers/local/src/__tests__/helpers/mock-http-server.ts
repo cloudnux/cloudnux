@@ -47,6 +47,30 @@ export class MockHttpServer {
       reply.status(200).send({ messageId: message.id });
     });
 
+    // POST - Publish to a topic (mirrors queue-plugin/routes.ts's
+    // POST /topics/:topic). Recorded under a "topic:<name>" key so it
+    // doesn't collide with a same-named queue in the messages map.
+    this.server.post('/topics/:topic', async (request, reply) => {
+      const { topic } = request.params as { topic: string };
+      const body = request.body;
+      const headers = request.headers;
+
+      const message = {
+        id: Math.random().toString(36).substring(7),
+        body: typeof body === 'string' ? body : body,
+        attributes: this.extractAttributes(headers),
+        publishedAt: new Date().toISOString(),
+      };
+
+      const key = `topic:${topic}`;
+      if (!this.messages.has(key)) {
+        this.messages.set(key, []);
+      }
+
+      this.messages.get(key)!.push(message);
+      reply.status(200).send({ topicName: topic, results: [{ id: message.id }] });
+    });
+
     // GET - Peek messages
     this.server.get('/:queue', async (request, reply) => {
       const { queue } = request.params as { queue: string };

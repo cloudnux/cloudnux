@@ -110,6 +110,16 @@ export interface QueueManager {
         purged: number;
     } | null>;
     getMessageHistory: (queueName: string, limit?: number) => QueueMessageHistoryEntry[];
+    // Topics are a thin fan-out layer over queues: subscribing associates an
+    // existing queue with a topic name, and publishing enqueues the same
+    // message onto every subscribed queue so each subscriber gets its own
+    // independent backlog/DLQ/retries via the machinery above.
+    subscribeTopic: (topicName: string, queueName: string) => void;
+    publishTopic: (topicName: string, body: any, attributes: any) => Promise<{
+        id: string;
+        queueName: string;
+    }[] | null>;
+    listTopics: () => Record<string, string[]>;
 }
 
 // Everything every queue-plugin function needs, bundled once in plugin.ts and
@@ -117,6 +127,8 @@ export interface QueueManager {
 export interface QueueRuntime {
     config: QueueConfig;
     queues: Record<string, QueueService>;
+    // Map of topic name -> subscribed queue names.
+    topics: Record<string, string[]>;
     dirtyQueues: Set<string>;
     lastSavedAt: number;
     messageHistory: QueueMessageHistoryEntry[];

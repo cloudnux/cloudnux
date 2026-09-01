@@ -166,6 +166,26 @@ export interface EmailDetailResponse {
   email: EmailHistoryEntry
 }
 
+export interface TopicSubscriber {
+  queueName: string
+  module?: string
+  stats: QueueStats | null
+}
+
+export interface TopicInfo {
+  name: string
+  subscribers: TopicSubscriber[]
+}
+
+export interface TopicsResponse {
+  topics: TopicInfo[]
+}
+
+export interface TopicDetailResponse {
+  name: string
+  subscribers: TopicSubscriber[]
+}
+
 export interface Module {
   name: string
   routes: RouteInfo[]

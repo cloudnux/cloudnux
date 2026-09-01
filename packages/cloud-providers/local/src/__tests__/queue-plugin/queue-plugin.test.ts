@@ -272,4 +272,53 @@ describe('queue-plugin', () => {
       expect(summary.messages.processing).toHaveLength(0);
     });
   });
+
+  describe('topics', () => {
+    it('publishing to a topic fans the message out to every subscribed queue', async () => {
+      app = await buildApp();
+      await app.queues.addQueue('billing-orderCreated', vi.fn().mockResolvedValue(undefined));
+      await app.queues.addQueue('email-orderCreated', vi.fn().mockResolvedValue(undefined));
+      app.queues.subscribeTopic('orderCreated', 'billing-orderCreated');
+      app.queues.subscribeTopic('orderCreated', 'email-orderCreated');
+
+      const results = await app.queues.publishTopic('orderCreated', { orderId: 1 }, {});
+
+      expect(results).toHaveLength(2);
+      expect(results!.map(r => r.queueName).sort()).toEqual(['billing-orderCreated', 'email-orderCreated']);
+      expect(app.queues.getQueueStats('billing-orderCreated')!.incoming).toHaveLength(1);
+      expect(app.queues.getQueueStats('email-orderCreated')!.incoming).toHaveLength(1);
+    });
+
+    it('each subscriber keeps its own independent backlog', async () => {
+      app = await buildApp();
+      await app.queues.addQueue('subA', vi.fn().mockResolvedValue(undefined));
+      await app.queues.addQueue('subB', vi.fn().mockResolvedValue(undefined));
+      app.queues.subscribeTopic('t', 'subA');
+      app.queues.subscribeTopic('t', 'subB');
+
+      await app.queues.publishTopic('t', { n: 1 }, {});
+      await app.queues.removeQueue('subA');
+      await app.queues.publishTopic('t', { n: 2 }, {});
+
+      expect(app.queues.hasQueue('subA')).toBe(false);
+      expect(app.queues.getQueueStats('subB')!.incoming).toHaveLength(2);
+    });
+
+    it('subscribing the same queue twice does not duplicate delivery', async () => {
+      app = await buildApp();
+      await app.queues.addQueue('sub', vi.fn().mockResolvedValue(undefined));
+      app.queues.subscribeTopic('t', 'sub');
+      app.queues.subscribeTopic('t', 'sub');
+
+      await app.queues.publishTopic('t', { n: 1 }, {});
+
+      expect(app.queues.getQueueStats('sub')!.incoming).toHaveLength(1);
+    });
+
+    it('publishing to an unknown topic returns null', async () => {
+      app = await buildApp();
+      const results = await app.queues.publishTopic('doesNotExist', { n: 1 }, {});
+      expect(results).toBeNull();
+    });
+  });
 });

@@ -31,6 +31,19 @@ export const registerQueueRoutes = (
             return reply.status(200).send(result);
         });
 
+    // Topic publish: fans the message out to every queue subscribed to the
+    // topic (see queue-plugin/decorator.ts:publishTopic). Registered as its
+    // own static path segment, so it never collides with POST /:queue.
+    app.post<{ Params: { topic: string }; Body: any }>(`/${prefix}/topics/:topic`,
+        async (request: FastifyRequest<{ Params: { topic: string }; Body: any }>, reply: FastifyReply) => {
+            const topicName = request.params.topic;
+            const results = await app.queues.publishTopic(topicName, request.body, request.headers as Record<string, any>);
+            if (results === null) {
+                return reply.status(404).send({ error: "Topic not found" });
+            }
+            return reply.status(200).send({ topicName, results });
+        });
+
     app.get<{ Params: { queue: string } }>(`/${prefix}/:queue/process-dlq`,
         async (request: FastifyRequest<{ Params: { queue: string } }>, reply: FastifyReply) => {
             const queueName = request.params.queue;

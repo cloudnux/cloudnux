@@ -32,6 +32,7 @@ export const transformTriggerTemplate: Task = {
                 http:      "../.deploy/aws/http",
                 scheduler: "../.deploy/aws/scheduler",
                 sqs:       "../.deploy/aws/sqs",
+                sns:       "../.deploy/aws/sns",
                 websocket: "../.deploy/aws/websocket",
             },
             ...entrypoint,

@@ -16,6 +16,9 @@ const Header: React.FC = () => {
             <Link to="/emails" className="text-sm font-medium text-gray-600 hover:text-gray-900">
               Emails
             </Link>
+            <Link to="/topics" className="text-sm font-medium text-gray-600 hover:text-gray-900">
+              Topics
+            </Link>
           </nav>
         </div>
       </div>

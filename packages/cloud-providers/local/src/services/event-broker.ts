@@ -8,6 +8,15 @@ import { EventBrokerService, EventMessage, PeekOptions, PublishOptions, ReadOpti
  * Communicates with a message queue system over HTTP endpoints
  * @returns HTTP event broker service implementation
  */
+// Local analog of the AWS provider's `arn:aws:sns:` check - since local targets
+// are plain names/URLs rather than real ARNs, a "topic:" prefix is how a
+// publish target says "fan out to every subscriber" instead of "this one queue".
+const TOPIC_PREFIX = 'topic:';
+
+function isTopicTarget(target: string): boolean {
+    return target.startsWith(TOPIC_PREFIX);
+}
+
 export function createLocalEventBrokerService(): EventBrokerService {
     // Get base URL from environment variables or use default
     const baseURL = env("DEV_CLOUD_EVENT_BROKER_URL");
@@ -25,6 +34,16 @@ export function createLocalEventBrokerService(): EventBrokerService {
 
         // Otherwise, append it to the base URL
         return `${baseURL}/${queueName}`;
+    }
+
+    /**
+     * Get the full URL for a topic's publish endpoint
+     * @param target Target string, prefixed with "topic:"
+     * @returns Full URL for the topic publish endpoint
+     */
+    function getTopicUrl(target: string): string {
+        const topicName = target.slice(TOPIC_PREFIX.length);
+        return `${baseURL}/topics/${topicName}`;
     }
 
     /**
@@ -58,7 +77,7 @@ export function createLocalEventBrokerService(): EventBrokerService {
         async publish(target: string, message: string | Record<string, any>, options?: PublishOptions): Promise<void> {
             if (!target)
                 throw new Error("Target queue name or URL is required for publishing a message.");
-            const queueUrl = getQueueUrl(target);
+            const publishUrl = isTopicTarget(target) ? getTopicUrl(target) : getQueueUrl(target);
             const headers: Record<string, string> = {};
 
             // Add message attributes as headers
@@ -85,7 +104,7 @@ export function createLocalEventBrokerService(): EventBrokerService {
             const body = typeof message === 'string' ? message : message;
 
             // Send POST request to publish the message
-            await axios.post(queueUrl, body, { headers });
+            await axios.post(publishUrl, body, { headers });
         },
 
         /**
