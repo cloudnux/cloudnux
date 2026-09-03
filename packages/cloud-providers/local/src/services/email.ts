@@ -284,3 +284,66 @@ export async function getEmailRaw(id: string): Promise<string | undefined> {
         return undefined;
     }
 }
+
+export type EmailBody = {
+    html?: string;
+    text?: string;
+};
+
+function extractHeader(headerBlock: string, name: string): string | undefined {
+    const match = headerBlock.match(new RegExp(`^${name}:\\s*(.+)$`, 'im'));
+    return match?.[1]?.trim();
+}
+
+// Walks the MIME tree buildEml() produces (multipart/mixed wrapping
+// multipart/alternative wrapping text/plain + text/html, or any subset of
+// that) and collects the text/html and text/plain leaf parts. Not a
+// general-purpose MIME parser - just the inverse of buildEml().
+function collectParts(part: string, result: EmailBody): void {
+    const boundaryIdx = part.indexOf('\r\n\r\n');
+    const headerBlock = boundaryIdx === -1 ? part : part.slice(0, boundaryIdx);
+    const body = boundaryIdx === -1 ? '' : part.slice(boundaryIdx + 4);
+
+    const contentType = extractHeader(headerBlock, 'Content-Type') ?? 'text/plain';
+    const boundaryMatch = contentType.match(/boundary="?([^";]+)"?/i);
+
+    if (/^multipart\//i.test(contentType) && boundaryMatch) {
+        const boundary = boundaryMatch[1];
+        for (const chunk of body.split(`--${boundary}`)) {
+            const trimmed = chunk.replace(/^\r\n/, '');
+            if (!trimmed || trimmed.startsWith('--')) continue;
+            collectParts(trimmed, result);
+        }
+        return;
+    }
+
+    if (/^attachment/i.test(extractHeader(headerBlock, 'Content-Disposition') ?? '')) return;
+
+    const encoding = (extractHeader(headerBlock, 'Content-Transfer-Encoding') ?? '').toLowerCase();
+    const raw = body.replace(/\r\n$/, '');
+    const decoded = encoding === 'base64'
+        ? Buffer.from(raw.replace(/\r?\n/g, ''), 'base64').toString('utf8')
+        : raw;
+
+    if (/^text\/html/i.test(contentType)) {
+        result.html = decoded;
+    } else if (/^text\/plain/i.test(contentType)) {
+        result.text = decoded;
+    }
+}
+
+/**
+ * Reads one email's .eml and extracts its text/html and text/plain body
+ * parts, for rendering in the dev-console (rather than downloading the raw
+ * MIME file).
+ * @param id History entry id (the file basename)
+ * @returns The extracted body parts, or undefined if the email isn't found
+ */
+export async function getEmailBody(id: string): Promise<EmailBody | undefined> {
+    const raw = await getEmailRaw(id);
+    if (raw === undefined) return undefined;
+
+    const result: EmailBody = {};
+    collectParts(raw, result);
+    return result;
+}

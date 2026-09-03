@@ -7,7 +7,6 @@ import ScheduleDetailPage from './pages/ScheduleDetailPage'
 import RouteDetailPage from './pages/RouteDetailPage'
 import WebSocketDetailPage from './pages/WebSocketDetailPage'
 import EmailsPage from './pages/EmailsPage'
-import EmailDetailPage from './pages/EmailDetailPage'
 import TopicsPage from './pages/TopicsPage'
 import TopicDetailPage from './pages/TopicDetailPage'
 import Header from './components/shared/Header'
@@ -30,7 +29,7 @@ function App() {
               <Route path="/modules/:moduleName/routes" element={<RouteDetailPage />} />
               <Route path="/modules/:moduleName/websockets/*" element={<WebSocketDetailPage />} />
               <Route path="/emails" element={<EmailsPage />} />
-              <Route path="/emails/:id" element={<EmailDetailPage />} />
+              <Route path="/emails/:id" element={<EmailsPage />} />
               <Route path="/topics" element={<TopicsPage />} />
               <Route path="/topics/:topicName" element={<TopicDetailPage />} />
             </Routes>

@@ -14,7 +14,7 @@ import "../schedule-plugin";
 import "../websocket-plugin";
 
 import { routeRegistry } from "./route-registry";
-import { listEmailHistory, getEmailHistoryEntry, getEmailRaw } from "../services/email";
+import { listEmailHistory, getEmailHistoryEntry, getEmailRaw, getEmailBody } from "../services/email";
 
 interface LogEntry {
   id: string;
@@ -787,6 +787,17 @@ async function devConsolePluginFunction(
 
     reply.type('message/rfc822');
     return raw;
+  });
+
+  fastify.get(`/${prefix}/emails/:id/body`, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const body = await getEmailBody(id);
+
+    if (!body) {
+      return reply.status(404).send({ error: 'Email not found' });
+    }
+
+    return { body };
   });
 
   // Server-Sent Events for real-time logs

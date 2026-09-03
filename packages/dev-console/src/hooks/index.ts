@@ -4,5 +4,5 @@ export { useSchedules, useScheduleDetails, useScheduleExecutions } from './useSc
 export { useModules } from './useModules'
 export { useLogs, useClearLogs } from './useLogs'
 export { useWebSockets, useWebSocketPath, useSendWebSocketMessage } from './useWebSockets'
-export { useEmails, useEmailDetails } from './useEmails'
+export { useEmails, useEmailDetails, useEmailBody } from './useEmails'
 export { useTopics, useTopicDetails } from './useTopics'

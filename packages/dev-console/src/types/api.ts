@@ -166,6 +166,15 @@ export interface EmailDetailResponse {
   email: EmailHistoryEntry
 }
 
+export interface EmailBody {
+  html?: string
+  text?: string
+}
+
+export interface EmailBodyResponse {
+  body: EmailBody
+}
+
 export interface TopicSubscriber {
   queueName: string
   module?: string

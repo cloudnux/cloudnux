@@ -4,6 +4,7 @@ import { EmailHistoryEntry } from '../../types/api'
 
 interface EmailsListViewProps {
   onSelect: (id: string) => void
+  selectedId?: string
 }
 
 const PaperclipIcon: React.FC = () => (
@@ -20,7 +21,7 @@ const StatusBadge: React.FC<{ status: EmailHistoryEntry['status'] }> = ({ status
   </span>
 )
 
-const EmailsListView: React.FC<EmailsListViewProps> = ({ onSelect }) => {
+const EmailsListView: React.FC<EmailsListViewProps> = ({ onSelect, selectedId }) => {
   const { data, isLoading, error } = useEmails()
   const emails = data?.emails ?? []
 
@@ -41,45 +42,40 @@ const EmailsListView: React.FC<EmailsListViewProps> = ({ onSelect }) => {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow-sm border p-6">
-        <h1 className="text-2xl font-semibold text-gray-900">Emails</h1>
-        <p className="text-gray-600">Last {emails.length} sent via the local email provider</p>
-      </div>
-
-      <div className="bg-white rounded-lg shadow-sm border">
-        {emails.length === 0 ? (
-          <div className="p-8 text-center text-gray-500 text-sm">No emails sent yet</div>
-        ) : (
-          <div className="divide-y divide-gray-100">
-            {emails.map((entry) => (
-              <div
-                key={entry.id}
-                onClick={() => onSelect(entry.id)}
-                className="p-4 flex items-start justify-between gap-4 cursor-pointer hover:bg-gray-50 transition-colors"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <StatusBadge status={entry.status} />
-                    <span className="text-sm font-medium text-gray-900 truncate">{entry.from}</span>
-                    {entry.hasAttachments && <PaperclipIcon />}
-                    {entry.configurationSet && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 truncate">
-                        {entry.configurationSet}
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-sm text-gray-900 truncate mt-1">{entry.subject}</div>
-                  <div className="text-sm text-gray-500 truncate">{entry.preview}</div>
+    <div className="bg-white rounded-lg shadow-sm border h-full overflow-y-auto">
+      {emails.length === 0 ? (
+        <div className="p-8 text-center text-gray-500 text-sm">No emails sent yet</div>
+      ) : (
+        <div className="divide-y divide-gray-100">
+          {emails.map((entry) => (
+            <div
+              key={entry.id}
+              onClick={() => onSelect(entry.id)}
+              className={`p-4 flex items-start justify-between gap-4 cursor-pointer transition-colors ${
+                entry.id === selectedId ? 'bg-blue-50 hover:bg-blue-50' : 'hover:bg-gray-50'
+              }`}
+            >
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <StatusBadge status={entry.status} />
+                  <span className="text-sm font-medium text-gray-900 truncate">{entry.from}</span>
+                  {entry.hasAttachments && <PaperclipIcon />}
+                  {entry.configurationSet && (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 truncate">
+                      {entry.configurationSet}
+                    </span>
+                  )}
                 </div>
-                <span className="text-xs text-gray-400 whitespace-nowrap">
-                  {new Date(entry.timestamp).toLocaleString()}
-                </span>
+                <div className="text-sm text-gray-900 truncate mt-1">{entry.subject}</div>
+                <div className="text-sm text-gray-500 truncate">{entry.preview}</div>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+              <span className="text-xs text-gray-400 whitespace-nowrap">
+                {new Date(entry.timestamp).toLocaleString()}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
