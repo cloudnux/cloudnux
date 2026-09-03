@@ -12,6 +12,8 @@ import <%=svc.varName%> from "<%-svc.path%>";
 
 // __dirname is injected by the esbuild banner and resolves to the workingDir/env folder
 process.env.DEV_CLOUD_LOCATION_PATH ??= path.join(__dirname, '.local-location');
+process.env.DEV_CLOUD_STORAGE_BUCKET ??= path.join(__dirname, '.local-storage');
+process.env.DEV_CLOUD_EMAIL_DIR ??= path.join(__dirname, '.local-email');
 
 useCloudProvider(localCloudProvider<% if (serviceOverrides.length) { %>, { serviceFactories: { <%- serviceOverrides.map(svc => `"${svc.kind}": ${svc.varName}`).join(', ') %> } }<% } %>);
 
