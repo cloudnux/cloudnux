@@ -13,7 +13,7 @@ export const DEFAULT_CONFIG: QueueConfig = {
     tickIntervalMs: 50,
     persistence: {
         enabled: true,
-        directory: './.develop/queue-data',
+        directory: './.develop/.queue-data',
         saveInterval: 60000,
         saveOnShutdown: false
     }

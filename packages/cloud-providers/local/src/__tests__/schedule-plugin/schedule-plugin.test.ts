@@ -23,7 +23,7 @@ const buildApp = async (config?: Partial<SchedulerConfig>): Promise<FastifyInsta
   app.decorate('logging', { ...logger, runWithLogContext, subscribeToLogs });
   await app.register(schedulerPlugin, {
     config: {
-      persistence: { enabled: false, directory: './.develop/scheduler-data' },
+      persistence: { enabled: false, directory: './.develop/.scheduler-data' },
       ...config,
     } as Partial<SchedulerConfig>,
   });
@@ -193,7 +193,7 @@ describe('schedule-plugin', () => {
     it('fails a job that exceeds defaultTimeout and still advances its nextRun', async () => {
       vi.useFakeTimers();
       app = await buildApp({ tickIntervalMs: 1, execution: { maxConcurrent: 5, defaultTimeout: 5 } });
-      const handler = vi.fn().mockImplementation(() => new Promise(() => {})); // never resolves
+      const handler = vi.fn().mockImplementation(() => new Promise(() => { })); // never resolves
       await app.scheduler.addJob({ name: 'sync', intervalMs: 5, handler });
 
       await vi.advanceTimersByTimeAsync(5); // dispatch
@@ -229,7 +229,7 @@ describe('schedule-plugin', () => {
     it('throws when triggering a job that is already running', async () => {
       vi.useFakeTimers();
       app = await buildApp({ tickIntervalMs: 1 });
-      const handler = vi.fn().mockImplementation(() => new Promise(() => {}));
+      const handler = vi.fn().mockImplementation(() => new Promise(() => { }));
       await app.scheduler.addJob({ name: 'sync', intervalMs: 100000, handler });
 
       await app.scheduler.triggerJob('sync');
@@ -246,7 +246,7 @@ describe('schedule-plugin', () => {
     it('does not throw when removing a job that is currently running, and the tick no longer sees it', async () => {
       vi.useFakeTimers();
       app = await buildApp({ tickIntervalMs: 1 });
-      const handler = vi.fn().mockImplementation(() => new Promise(() => {}));
+      const handler = vi.fn().mockImplementation(() => new Promise(() => { }));
       await app.scheduler.addJob({ name: 'sync', intervalMs: 5, handler });
 
       await vi.advanceTimersByTimeAsync(5);

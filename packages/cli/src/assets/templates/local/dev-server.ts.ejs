@@ -23,8 +23,8 @@ import <%=module%>Entries from "./<%=module%>"
 
 const router = createRouter();
 
-router.register(queuesPlugin, { prefix: "queues", config: { persistence: { directory: path.join(__dirname, 'queue-data') } } });
-router.register(schedulerPlugin, { prefix: "schedules", config: { persistence: { directory: path.join(__dirname, 'scheduler-data') } } });
+router.register(queuesPlugin, { prefix: "queues", config: { persistence: { directory: path.join(__dirname, '.queue-data') } } });
+router.register(schedulerPlugin, { prefix: "schedules", config: { persistence: { directory: path.join(__dirname, '.scheduler-data') } } });
 router.register(devConsolePlugin, {  prefix: 'console' });
 router.register(websocketsPlugin, { prefix: "websockets" });
 router.register(invokesPlugin);
