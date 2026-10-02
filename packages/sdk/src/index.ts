@@ -26,6 +26,8 @@ export type {
     HttpFunctionContext,
     HTTPRequest,
     HTTPResponse,
+    CookieOptions,
+    SameSite,
     ScheduleFunctionContext,
     ScheduleRequest,
     EventFunctionContext,

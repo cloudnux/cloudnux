@@ -3,7 +3,7 @@ import * as querystring from "querystring"
 import "fastify-raw-body";
 import { FastifyRequest, FastifyReply } from "fastify";
 
-import { EventBatchItemResult, EventFunctionContext, EventRequest, FunctionsService, HttpFunctionContext, HttpMethod, HTTPRequest, InvokeFunctionContext, InvokeRequest, ScheduleFunctionContext, ScheduleRequest, WebSocketFunctionContext, WebSocketRequest } from "@cloudnux/core-cloud-provider";
+import { EventBatchItemResult, EventFunctionContext, EventRequest, FunctionsService, HttpFunctionContext, HttpMethod, HTTPRequest, InvokeFunctionContext, InvokeRequest, ScheduleFunctionContext, ScheduleRequest, WebSocketFunctionContext, WebSocketRequest, parseCookieHeader } from "@cloudnux/core-cloud-provider";
 
 import { QueueMessage } from "../queue-plugin/types";
 import { ScheduledJob, JobExecution } from "../schedule-plugin/types";
@@ -40,9 +40,11 @@ export function createLocalFunctionsService(): FunctionsService {
     return {
         createHttRequest(request: FastifyRequest) {
             const rawBody = request.rawBody;
+            const cookieHeader = request.headers.cookie;
             const httpRequest: HTTPRequest = {
                 body: String(rawBody),
                 headers: request.headers,
+                cookies: parseCookieHeader(Array.isArray(cookieHeader) ? cookieHeader.join("; ") : cookieHeader),
                 method: request.method as HttpMethod,
                 url: getFullUrlFromRequest(request),
                 matchingKey: request.routeOptions.url,
@@ -101,8 +103,12 @@ export function createLocalFunctionsService(): FunctionsService {
         },
 
         buildHttpResponse: (context: HttpFunctionContext, _: FastifyRequest, reply: FastifyReply) => {
+            const headers = { ...(context.response.headers ?? {}) };
+            if (context.response.cookies?.length) {
+                headers["set-cookie"] = context.response.cookies;
+            }
             reply
-                .headers(context.response.headers ?? {})
+                .headers(headers)
                 .status(context.response.status)
                 .send(context.response.body);
         },

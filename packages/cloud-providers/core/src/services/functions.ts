@@ -75,10 +75,23 @@ export enum ErrorCode {
 
 //#region [ Http ]
 
+export type SameSite = "Strict" | "Lax" | "None";
+
+export type CookieOptions = {
+    path?: string;
+    domain?: string;
+    maxAge?: number;
+    expires?: Date;
+    httpOnly?: boolean;
+    secure?: boolean;
+    sameSite?: SameSite;
+};
+
 export type HTTPRequest = {
     method: HttpMethod;
     body?: string;
     headers: Record<string, string | string[] | undefined>;
+    cookies: Record<string, string>;
     url: string;
     params: Record<string, string | undefined>
     matchingKey?: string;
@@ -90,6 +103,7 @@ export type HTTPRequest = {
 
 export type HTTPResponse = {
     headers?: Record<string, string | string[] | undefined>;
+    cookies?: string[];
     body?: string;
     status: number;
 };
@@ -112,6 +126,20 @@ export type HttpFunctionContext = FunctionContext & {
     unauthorized(message?: string): void;
     forbidden(message?: string): void;
     output(status: number, body?: string | object, headers?: Record<string, string | string[]>): void;
+
+    /**
+     * Queues a `Set-Cookie` header on the response.
+     * @param name - The cookie name.
+     * @param value - The cookie value.
+     * @param options - Cookie attributes (Path, Domain, Max-Age, Expires, HttpOnly, Secure, SameSite).
+     */
+    setCookie(name: string, value: string, options?: CookieOptions): void;
+    /**
+     * Queues a `Set-Cookie` header that expires the named cookie immediately.
+     * @param name - The cookie name.
+     * @param options - Must match the Path/Domain the cookie was originally set with.
+     */
+    deleteCookie(name: string, options?: Pick<CookieOptions, "path" | "domain">): void;
 }
 
 //#endregion

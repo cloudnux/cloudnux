@@ -8,6 +8,7 @@ import {
     WebSocketRequest, WebSocketFunctionContext,
     WebSocketTrigger,
     InvokeRequest, InvokeFunctionContext,
+    parseCookieHeader,
 } from "@cloudnux/core-cloud-provider";
 
 // Union type for supported event types
@@ -61,6 +62,7 @@ export function createFunctionsService(): FunctionsService {
             const httpRequest: HTTPRequest = {
                 body: event.body,
                 headers: event.headers,
+                cookies: parseCookieHeader(event.cookies?.join("; ")),
                 method: event.requestContext.http.method as HttpMethod,
                 url: event.rawPath,
                 matchingKey: event.routeKey.split(" ")[1],
@@ -180,6 +182,7 @@ export function createFunctionsService(): FunctionsService {
                 statusCode: response.status,
                 body: response.body,
                 headers: response.headers,
+                cookies: response.cookies,
             } as APIGatewayProxyResultV2;
         },
         buildScheduleResponse: () => {
