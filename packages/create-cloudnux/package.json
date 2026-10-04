@@ -1,0 +1,47 @@
+{
+	"name": "create-cloudnux",
+	"version": "0.1.0",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/cloudnux/cloudnux.git"
+	},
+	"bin": {
+		"create-cloudnux": "dist/cli.mjs"
+	},
+	"main": "./dist/cli.js",
+	"types": "./dist/cli.d.ts",
+	"type": "module",
+	"engines": {
+		"node": ">=22"
+	},
+	"scripts": {
+		"dev": "tsup",
+		"build": "tsup",
+		"lint": "eslint . --max-warnings 0",
+		"lint:fix": "eslint . --fix",
+		"type-check": "tsc --noEmit",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"clean": "rm -rf dist"
+	},
+	"files": [
+		"dist",
+		"package.json",
+		"README.md"
+	],
+	"dependencies": {
+		"@clack/prompts": "^0.9.1",
+		"meow": "^11.0.0"
+	},
+	"devDependencies": {
+		"@types/node": "^24.10.1",
+		"tsup": "^8.3.5",
+		"typescript": "^5.0.3",
+		"vitest": "^4.0.14"
+	},
+	"publishConfig": {
+		"access": "public",
+		"registry": "https://registry.npmjs.org/"
+	}
+}
