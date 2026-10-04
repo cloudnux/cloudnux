@@ -1,4 +1,4 @@
-import { CloudProvider, ServiceKind, IService, registerServices, LoggerService, EventBrokerService, StorageService, LocationService, FunctionsService, WebSocketService, InvokeService } from "@cloudnux/core-cloud-provider";
+import { CloudProvider, ServiceKind, IService, registerServices, LoggerService, EventBrokerService, StorageService, LocationService, FunctionsService, WebSocketService, InvokeService, EmailService } from "@cloudnux/core-cloud-provider";
 import { cloudLogger, resetCloudLogger } from "./services/logger";
 import { cloudEventBroker, resetCloudEventBroker } from "./services/event-broker";
 import { cloudStorage, resetCloudStorage } from "./services/storage";
@@ -6,6 +6,7 @@ import { cloudLocations, resetCloudLocations } from "./services/locations";
 import { cloudFunctions, resetCloudFunctions } from "./services/functions/cloud-functions";
 import { cloudWebSocket, resetCloudWebSocket } from "./services/websocket";
 import { cloudInvoke, resetCloudInvoke } from "./services/invoke";
+import { cloudEmail, resetCloudEmail } from "./services/email";
 
 export type CloudProviderOptions = {
     serviceFactories?: Partial<Record<ServiceKind, () => IService>>;
@@ -41,7 +42,8 @@ export function useCloudProvider(cloudProvider: CloudProvider, options?: CloudPr
         "location": cloudLocations,
         "functions": cloudFunctions,
         "websocket": cloudWebSocket,
-        "invoke": cloudInvoke
+        "invoke": cloudInvoke,
+        "email": cloudEmail
     }
     registerServices(services);
 
@@ -55,6 +57,7 @@ export function useCloudProvider(cloudProvider: CloudProvider, options?: CloudPr
         createFunctionsService: (options?.serviceFactories?.functions || cloudProvider.createFunctionsService) as () => FunctionsService,
         createWebSocketService: (options?.serviceFactories?.websocket || cloudProvider.createWebSocketService) as () => WebSocketService,
         createInvokeService: (options?.serviceFactories?.invoke || cloudProvider.createInvokeService) as () => InvokeService,
+        createEmailService: (options?.serviceFactories?.email || cloudProvider.createEmailService) as () => EmailService,
     };
 
     resetCloudLogger();
@@ -64,4 +67,5 @@ export function useCloudProvider(cloudProvider: CloudProvider, options?: CloudPr
     resetCloudFunctions();
     resetCloudWebSocket();
     resetCloudInvoke();
+    resetCloudEmail();
 }

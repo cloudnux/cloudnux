@@ -1,10 +1,11 @@
 import querystring from "node:querystring";
 import {
   HttpFunctionContext,
-  HTTPAuth,
   HTTPRequest,
   HTTPResponse,
   LoggerService,
+  CookieOptions,
+  serializeCookie,
 } from "@cloudnux/core-cloud-provider";
 
 import {
@@ -19,7 +20,6 @@ import {
 
 export function createHttpContext(
   request: HTTPRequest,
-  auth: HTTPAuth | undefined,
   logger: LoggerService
 ): HttpFunctionContext {
   const response: HTTPResponse = {
@@ -67,7 +67,6 @@ export function createHttpContext(
   return {
     type: "Http" as const,
     request: request,
-    auth: auth,
     response: response,
     logger,
     model<T = Record<string, any>>() {
@@ -214,6 +213,16 @@ export function createHttpContext(
     forbidden(message = "You do not have permission to perform this action") {
       // 403 — caller IS authenticated but lacks permission
       return error(HttpStatus.FORBIDDEN, ErrorCode.ACCESS_DENIED, message);
+    },
+    setCookie(name: string, value: string, options?: CookieOptions) {
+      response.cookies = [...(response.cookies ?? []), serializeCookie(name, value, options)];
+    },
+    deleteCookie(name: string, options?: Pick<CookieOptions, "path" | "domain">) {
+      response.cookies = [...(response.cookies ?? []), serializeCookie(name, "", {
+        ...options,
+        maxAge: 0,
+        expires: new Date(0),
+      })];
     }
   };
 }

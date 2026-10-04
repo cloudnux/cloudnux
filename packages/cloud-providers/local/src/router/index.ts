@@ -26,7 +26,9 @@ export function createRouter(): RouterInstance {
 
   //TODO: get config from the nux.config
   fastify.register(cors, {
-    "methods": ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    origin: true,
+    credentials: true,
   });
 
   fastify.register(fastifyPrintRoutes);

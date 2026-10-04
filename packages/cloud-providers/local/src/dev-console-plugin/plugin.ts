@@ -14,6 +14,7 @@ import "../schedule-plugin";
 import "../websocket-plugin";
 
 import { routeRegistry } from "./route-registry";
+import { listEmailHistory, getEmailHistoryEntry, getEmailRaw, getEmailBody } from "../services/email";
 
 interface LogEntry {
   id: string;
@@ -474,6 +475,78 @@ async function devConsolePluginFunction(
     }
   });
 
+  // Topics endpoints - a topic is a fan-out over queues (see
+  // queue-plugin/decorator.ts), so subscriber stats are read the same way
+  // a queue's own stats are, per subscriber queue name.
+  const summarizeSubscribers = (subscriberQueues: string[]) =>
+    subscriberQueues.map(queueName => {
+      const stats = fastify.queues.getQueueStats(queueName);
+      return {
+        queueName,
+        module: stats?.module,
+        stats: stats ? {
+          incoming: stats.incoming.length,
+          processing: stats.processing.length,
+          dlq: stats.dlq.length
+        } : null
+      };
+    });
+
+  fastify.get(`/${prefix}/topics`, async (_, reply) => {
+    const queueManager = fastify.queues;
+    if (!queueManager) {
+      return reply.status(503).send({ error: 'Queue service not available' });
+    }
+
+    const topics = Object.entries(queueManager.listTopics()).map(([name, subscriberQueues]) => ({
+      name,
+      subscribers: summarizeSubscribers(subscriberQueues)
+    }));
+
+    return { topics };
+  });
+
+  fastify.get(`/${prefix}/topics/:topicName`, async (request, reply) => {
+    const { topicName } = request.params as { topicName: string };
+    const queueManager = fastify.queues;
+
+    if (!queueManager) {
+      return reply.status(503).send({ error: 'Queue service not available' });
+    }
+
+    const subscriberQueues = queueManager.listTopics()[topicName];
+    if (!subscriberQueues) {
+      return reply.status(404).send({ error: 'Topic not found' });
+    }
+
+    return {
+      name: topicName,
+      subscribers: summarizeSubscribers(subscriberQueues)
+    };
+  });
+
+  fastify.post(`/${prefix}/topics/:topicName/publish`, async (request, reply) => {
+    const { topicName } = request.params as { topicName: string };
+    const queueManager = fastify.queues;
+
+    if (!queueManager) {
+      return reply.status(503).send({ error: 'Queue service not available' });
+    }
+
+    try {
+      const results = await queueManager.publishTopic(topicName, request.body, request.headers as Record<string, any>);
+      if (results === null) {
+        return reply.status(404).send({ error: 'Topic not found' });
+      }
+      return reply.status(200).send({ topicName, results });
+    } catch (error) {
+      return reply.status(500).send({
+        message: 'Failed to publish to topic',
+        error
+      });
+    }
+  });
+
   // Schedules endpoints - access via decorator
   fastify.get(`/${prefix}/schedules`, async (_, reply) => {
     const schedulerManager = fastify.scheduler;
@@ -683,6 +756,48 @@ async function devConsolePluginFunction(
       }
       return reply.status(404).send({ error: (error as Error).message });
     }
+  });
+
+  // Emails endpoints - read straight off disk each request, since the
+  // local email service keeps no in-memory history (the .eml/.json files
+  // written to DEV_CLOUD_EMAIL_DIR are the only store).
+  fastify.get(`/${prefix}/emails`, async (request) => {
+    const { limit } = request.query as { limit?: string };
+    return { emails: await listEmailHistory(limit ? Number(limit) : undefined) };
+  });
+
+  fastify.get(`/${prefix}/emails/:id`, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const email = await getEmailHistoryEntry(id);
+
+    if (!email) {
+      return reply.status(404).send({ error: 'Email not found' });
+    }
+
+    return { email };
+  });
+
+  fastify.get(`/${prefix}/emails/:id/raw`, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const raw = await getEmailRaw(id);
+
+    if (!raw) {
+      return reply.status(404).send({ error: 'Email not found' });
+    }
+
+    reply.type('message/rfc822');
+    return raw;
+  });
+
+  fastify.get(`/${prefix}/emails/:id/body`, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const body = await getEmailBody(id);
+
+    if (!body) {
+      return reply.status(404).send({ error: 'Email not found' });
+    }
+
+    return { body };
   });
 
   // Server-Sent Events for real-time logs

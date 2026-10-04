@@ -109,6 +109,19 @@ describe('LocalEventBrokerService', () => {
       expect(messages).toHaveLength(1);
       expect(messages[0].body).toBe(message);
     });
+
+    it('should route a "topic:" target to the topic publish endpoint instead of a queue', async () => {
+      const message = { event: 'orderCreated' };
+
+      await eventBrokerService.publish('topic:orderCreated', message);
+
+      const topicMessages = mockServer.getMessages('topic:orderCreated');
+      expect(topicMessages).toHaveLength(1);
+      expect(topicMessages[0].body).toEqual(message);
+
+      // Should not have been treated as a plain queue named "topic:orderCreated"
+      expect(mockServer.getMessages('orderCreated')).toHaveLength(0);
+    });
   });
 
   describe('peek', () => {

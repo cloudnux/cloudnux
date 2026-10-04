@@ -1,5 +1,5 @@
 export interface IService { };
-export type ServiceKind = "storage" | "location" | "event-broker" | "functions" | "websocket" | "invoke" | "logger";
+export type ServiceKind = "storage" | "location" | "event-broker" | "functions" | "websocket" | "invoke" | "logger" | "email";
 
 
 const _cloudContainer: Record<ServiceKind, (() => IService) | undefined> = {
@@ -9,7 +9,8 @@ const _cloudContainer: Record<ServiceKind, (() => IService) | undefined> = {
     functions: undefined,
     websocket: undefined,
     invoke: undefined,
-    logger: undefined
+    logger: undefined,
+    email: undefined
 };
 
 export function registerService(kind: ServiceKind, factory: () => IService) {

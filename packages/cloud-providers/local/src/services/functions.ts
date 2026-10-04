@@ -3,8 +3,7 @@ import * as querystring from "querystring"
 import "fastify-raw-body";
 import { FastifyRequest, FastifyReply } from "fastify";
 
-import { env, tokenUtils } from "@cloudnux/utils";
-import { EventBatchItemResult, EventFunctionContext, EventRequest, FunctionsService, HTTPAuth, HttpFunctionContext, HttpMethod, HTTPRequest, InvokeFunctionContext, InvokeRequest, ScheduleFunctionContext, ScheduleRequest, WebSocketFunctionContext, WebSocketRequest } from "@cloudnux/core-cloud-provider";
+import { EventBatchItemResult, EventFunctionContext, EventRequest, FunctionsService, HttpFunctionContext, HttpMethod, HTTPRequest, InvokeFunctionContext, InvokeRequest, ScheduleFunctionContext, ScheduleRequest, WebSocketFunctionContext, WebSocketRequest, parseCookieHeader } from "@cloudnux/core-cloud-provider";
 
 import { QueueMessage } from "../queue-plugin/types";
 import { ScheduledJob, JobExecution } from "../schedule-plugin/types";
@@ -41,15 +40,11 @@ export function createLocalFunctionsService(): FunctionsService {
     return {
         createHttRequest(request: FastifyRequest) {
             const rawBody = request.rawBody;
-            const isAuth = env("DEV_IDENTITY")
-
-            const authorization = request.headers.authorization ?? null;
-
-            // Remove "bearer" prefix and trim whitespace
-            const token = authorization ? authorization.replace(/^bearer\s+/i, '') : null;
+            const cookieHeader = request.headers.cookie;
             const httpRequest: HTTPRequest = {
                 body: String(rawBody),
                 headers: request.headers,
+                cookies: parseCookieHeader(Array.isArray(cookieHeader) ? cookieHeader.join("; ") : cookieHeader),
                 method: request.method as HttpMethod,
                 url: getFullUrlFromRequest(request),
                 matchingKey: request.routeOptions.url,
@@ -60,29 +55,7 @@ export function createLocalFunctionsService(): FunctionsService {
                 moduleName: (request.routeOptions.config as { module?: string } | undefined)?.module,
             };
 
-            const jwtClaims = token && tokenUtils.decodeAccessToken(token) as Record<string, string>;
-            const httpAuth: HTTPAuth | undefined = isAuth ? {
-                appId: env("DEV_APP_ID"),
-                memberId: env("DEV_MEMBER_ID"),
-                customerId: env("DEV_CUSTOMER_ID"),
-                identity: env("DEV_IDENTITY") as HTTPAuth["identity"],
-                token: token ?? "",
-                claims: {
-                    app_id: env("DEV_APP_ID"),
-                    member_id: env("DEV_MEMBER_ID"),
-                    customer_id: env("DEV_CUSTOMER_ID"),
-                    identity: env("DEV_IDENTITY", "facebook" as const)
-                }
-            } : jwtClaims ? {
-                token: token,
-                claims: jwtClaims,
-                appId: jwtClaims.app_id,
-                memberId: jwtClaims.member_id,
-                customerId: jwtClaims.customer_id,
-                identity: jwtClaims.identity as HTTPAuth["identity"]
-            } : undefined;
-
-            return [httpRequest, httpAuth];
+            return [httpRequest];
         },
         createScheduleRequest: (job: ScheduledJob, execution: JobExecution) => {
             const scheduleName = job.name
@@ -130,8 +103,12 @@ export function createLocalFunctionsService(): FunctionsService {
         },
 
         buildHttpResponse: (context: HttpFunctionContext, _: FastifyRequest, reply: FastifyReply) => {
+            const headers = { ...(context.response.headers ?? {}) };
+            if (context.response.cookies?.length) {
+                headers["set-cookie"] = context.response.cookies;
+            }
             reply
-                .headers(context.response.headers ?? {})
+                .headers(headers)
                 .status(context.response.status)
                 .send(context.response.body);
         },

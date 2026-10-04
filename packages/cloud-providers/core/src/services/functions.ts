@@ -75,10 +75,23 @@ export enum ErrorCode {
 
 //#region [ Http ]
 
+export type SameSite = "Strict" | "Lax" | "None";
+
+export type CookieOptions = {
+    path?: string;
+    domain?: string;
+    maxAge?: number;
+    expires?: Date;
+    httpOnly?: boolean;
+    secure?: boolean;
+    sameSite?: SameSite;
+};
+
 export type HTTPRequest = {
     method: HttpMethod;
     body?: string;
     headers: Record<string, string | string[] | undefined>;
+    cookies: Record<string, string>;
     url: string;
     params: Record<string, string | undefined>
     matchingKey?: string;
@@ -90,23 +103,14 @@ export type HTTPRequest = {
 
 export type HTTPResponse = {
     headers?: Record<string, string | string[] | undefined>;
+    cookies?: string[];
     body?: string;
     status: number;
-};
-
-export type HTTPAuth = {
-    token: string;
-    appId: string;
-    memberId: string;
-    customerId: string;
-    claims: Record<string, string>;
-    identity: "facebook" | "google" | "apple" | "password";
 };
 
 export type HttpFunctionContext = FunctionContext & {
     type: "Http";
     request: HTTPRequest;
-    auth?: HTTPAuth;
     response: HTTPResponse;
     model<T = Record<string, any>>(): T;
     params<T = Record<string, string>>(): T;
@@ -122,6 +126,20 @@ export type HttpFunctionContext = FunctionContext & {
     unauthorized(message?: string): void;
     forbidden(message?: string): void;
     output(status: number, body?: string | object, headers?: Record<string, string | string[]>): void;
+
+    /**
+     * Queues a `Set-Cookie` header on the response.
+     * @param name - The cookie name.
+     * @param value - The cookie value.
+     * @param options - Cookie attributes (Path, Domain, Max-Age, Expires, HttpOnly, Secure, SameSite).
+     */
+    setCookie(name: string, value: string, options?: CookieOptions): void;
+    /**
+     * Queues a `Set-Cookie` header that expires the named cookie immediately.
+     * @param name - The cookie name.
+     * @param options - Must match the Path/Domain the cookie was originally set with.
+     */
+    deleteCookie(name: string, options?: Pick<CookieOptions, "path" | "domain">): void;
 }
 
 //#endregion
@@ -235,7 +253,7 @@ export type WebSocketFunctionContext = FunctionContext & {
 //#endregion
 
 export interface FunctionsService extends IService {
-    createHttRequest(...args: any[]): [HTTPRequest, HTTPAuth?];
+    createHttRequest(...args: any[]): [HTTPRequest];
     createScheduleRequest(...args: any[]): [ScheduleRequest];
     createEventRequest(...args: any[]): [EventRequest];
     createWebSocketRequest(...args: any[]): [WebSocketRequest];

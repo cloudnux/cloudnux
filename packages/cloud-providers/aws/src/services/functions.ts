@@ -1,16 +1,15 @@
-import { APIGatewayProxyEvent, APIGatewayProxyEventV2WithJWTAuthorizer, APIGatewayProxyResultV2, Context, ScheduledEvent, SQSRecord, SNSEventRecord } from "aws-lambda";
+import { APIGatewayProxyEvent, APIGatewayProxyEventV2, APIGatewayProxyResultV2, Context, ScheduledEvent, SQSRecord, SNSEventRecord } from "aws-lambda";
 import { SQSClient, ChangeMessageVisibilityCommand } from "@aws-sdk/client-sqs";
 import {
     FunctionsService, HttpMethod,
-    HTTPRequest, HTTPAuth, HttpFunctionContext,
+    HTTPRequest, HttpFunctionContext,
     ScheduleRequest,
     EventRequest, EventFunctionContext, EventBatchItemResult,
     WebSocketRequest, WebSocketFunctionContext,
     WebSocketTrigger,
     InvokeRequest, InvokeFunctionContext,
+    parseCookieHeader,
 } from "@cloudnux/core-cloud-provider";
-
-import { tokenUtils } from "@cloudnux/utils"
 
 // Union type for supported event types
 type EventRecord = SQSRecord | SNSEventRecord;
@@ -59,10 +58,11 @@ function extractParams(template: string, actualPath: string): Record<string, str
 
 export function createFunctionsService(): FunctionsService {
     return {
-        createHttRequest(event: APIGatewayProxyEventV2WithJWTAuthorizer, ctx: Context) {
+        createHttRequest(event: APIGatewayProxyEventV2, ctx: Context) {
             const httpRequest: HTTPRequest = {
                 body: event.body,
                 headers: event.headers,
+                cookies: parseCookieHeader(event.cookies?.join("; ")),
                 method: event.requestContext.http.method as HttpMethod,
                 url: event.rawPath,
                 matchingKey: event.routeKey.split(" ")[1],
@@ -72,21 +72,7 @@ export function createFunctionsService(): FunctionsService {
                 host: event.requestContext.domainName,
                 moduleName: ctx.functionName.split("_")[0],
             };
-            let httpAuth: HTTPAuth | undefined = undefined;
-            if (event.headers.Authorization || event.headers.authorization) {
-                const header = event.headers.Authorization ?? event.headers.authorization;
-                const token = header!.replace("bearer ", "").replace("Bearer ", "");
-                const jwtClaims = tokenUtils.decodeAccessToken(token) as Record<string, string>;
-                httpAuth = {
-                    token: token,
-                    claims: jwtClaims,
-                    appId: jwtClaims["app_id"],
-                    memberId: jwtClaims["member_id"],
-                    customerId: jwtClaims["customer_id"],
-                    identity: jwtClaims["identity"] as HTTPAuth["identity"],
-                };
-            }
-            return [httpRequest, httpAuth];
+            return [httpRequest];
         },
         createScheduleRequest: (event: ScheduledEvent, ctx: Context) => {
             const ndx = event.resources[0].lastIndexOf("/");
@@ -196,6 +182,7 @@ export function createFunctionsService(): FunctionsService {
                 statusCode: response.status,
                 body: response.body,
                 headers: response.headers,
+                cookies: response.cookies,
             } as APIGatewayProxyResultV2;
         },
         buildScheduleResponse: () => {

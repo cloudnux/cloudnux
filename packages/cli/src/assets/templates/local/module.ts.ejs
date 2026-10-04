@@ -34,11 +34,20 @@ async function entries(app: RouterInstance) {
           return scheduleHandler(src["<%= entry.handler %>"], job,execution)
        }});
     <%_ } _%>
-    <%_ if(entry.trigger.type === "event") { _%>
-         app.queues.addQueue("<%=entry.trigger.options.source%>",
+    <%_ if(entry.trigger.type === "event") {
+          // SNS-sourced entries get their own subscriber queue - a topic can have
+          // multiple independent subscribers, unlike a plain SQS-sourced queue
+          // which is addressed directly and only ever has the one consumer.
+          const isTopic = entry.trigger.options.sourceType === "sns";
+          const queueName = isTopic ? `${entry.trigger.options.source}--${module}--${name}` : entry.trigger.options.source;
+    _%>
+         app.queues.addQueue("<%=queueName%>",
           (msg) => eventBrokerHandler(src["<%= entry.handler %>"], msg),
           "<%=module%>"
           );
+      <%_ if(isTopic) { _%>
+         app.queues.subscribeTopic("<%=entry.trigger.options.source%>", "<%=queueName%>");
+      <%_ } _%>
     <%_ } _%>
     <%_ if(entry.trigger.type === "invoke") { _%>
         app.invokes.register("<%=module%>","<%= entry.trigger.options.name %>",

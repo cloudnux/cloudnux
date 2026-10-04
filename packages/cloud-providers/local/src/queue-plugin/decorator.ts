@@ -207,6 +207,35 @@ export const getMessageHistory = (runtime: QueueRuntime, queueName: string, limi
         .reverse();
 };
 
+export const subscribeTopic = (runtime: QueueRuntime, topicName: string, queueName: string): void => {
+    const subscribers = runtime.topics[topicName] ?? (runtime.topics[topicName] = []);
+    if (!subscribers.includes(queueName)) {
+        subscribers.push(queueName);
+    }
+
+    runtime.logging.info({ topicName, queueName }, `Subscribed queue '${queueName}' to topic '${topicName}'`);
+};
+
+// Fans a published message out to every queue subscribed to the topic, reusing
+// enqueueMessage so each subscriber gets its own independent backlog/DLQ/retries.
+export const publishTopic = async (runtime: QueueRuntime, topicName: string, body: any, attributes: any) => {
+    const subscribers = runtime.topics[topicName];
+    if (!subscribers || subscribers.length === 0) {
+        return null;
+    }
+
+    const results = await Promise.all(
+        subscribers.map(queueName => enqueueMessage(runtime, queueName, body, attributes))
+    );
+
+    return results.filter((result): result is { id: string; queueName: string } => result !== null);
+};
+
+export const listTopics = (runtime: QueueRuntime): Record<string, string[]> => {
+    // Return a copy to prevent external modification
+    return Object.fromEntries(Object.entries(runtime.topics).map(([name, queues]) => [name, [...queues]]));
+};
+
 // The one place runtime gets bound into the public app.queues shape -
 // Fastify needs a plain object of methods with no runtime param, so this
 // wraps each plain function above with `runtime` pre-applied. Everything
@@ -226,4 +255,7 @@ export const createQueueManager = (runtime: QueueRuntime): QueueManager => ({
     processDlq: (queueName) => processDlq(runtime, queueName),
     purgeDlq: (queueName) => purgeDlq(runtime, queueName),
     getMessageHistory: (queueName, limit) => getMessageHistory(runtime, queueName, limit),
+    subscribeTopic: (topicName, queueName) => subscribeTopic(runtime, topicName, queueName),
+    publishTopic: (topicName, body, attributes) => publishTopic(runtime, topicName, body, attributes),
+    listTopics: () => listTopics(runtime),
 });

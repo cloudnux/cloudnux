@@ -16,6 +16,7 @@ export const queuesPlugin: FastifyPluginAsync<QueuePluginOptions> =
         const runtime: QueueRuntime = {
             config: mergeConfig(DEFAULT_CONFIG, options.config),
             queues: {},
+            topics: {},
             dirtyQueues: new Set<string>(),
             lastSavedAt: Date.now(),
             messageHistory: [],

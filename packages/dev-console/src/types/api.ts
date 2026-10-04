@@ -142,6 +142,59 @@ export interface WebSocketInfo {
   connectionCount: number
 }
 
+export interface EmailHistoryEntry {
+  id: string
+  messageId: string
+  timestamp: string
+  from: string
+  to: string[]
+  cc?: string[]
+  subject: string
+  preview: string
+  hasAttachments: boolean
+  attachmentCount?: number
+  configurationSet?: string
+  status: 'sent' | 'failed'
+  error?: string
+}
+
+export interface EmailsResponse {
+  emails: EmailHistoryEntry[]
+}
+
+export interface EmailDetailResponse {
+  email: EmailHistoryEntry
+}
+
+export interface EmailBody {
+  html?: string
+  text?: string
+}
+
+export interface EmailBodyResponse {
+  body: EmailBody
+}
+
+export interface TopicSubscriber {
+  queueName: string
+  module?: string
+  stats: QueueStats | null
+}
+
+export interface TopicInfo {
+  name: string
+  subscribers: TopicSubscriber[]
+}
+
+export interface TopicsResponse {
+  topics: TopicInfo[]
+}
+
+export interface TopicDetailResponse {
+  name: string
+  subscribers: TopicSubscriber[]
+}
+
 export interface Module {
   name: string
   routes: RouteInfo[]

@@ -99,6 +99,25 @@ module "sqs_trigger_for_<%= namespace %>_<%= module %>" {
 <%_ } _%>
 
 <%_
+// ── Event (SNS) triggers ─────────────────────────────────────────────────────
+const snsEntries = Object.entries(entries).filter(([, e]) => e.trigger.type.toLowerCase() === "event" && e.trigger.options.sourceType?.toLowerCase() === "sns");
+_%>
+<%_ if (snsEntries.length > 0) { _%>
+module "sns_trigger_for_<%= namespace %>_<%= module %>" {
+  source      = "<%= tfModules.sns %>"
+  lambda_name = "<%= namespace %>_<%= module %>"
+  lambda_arn  = data.aws_lambda_function.this.arn
+  event_sources = {
+  <%_ for (const [key, entry] of snsEntries) { _%>
+    "<%= key %>" = {
+      topic_name = "<%= entry.trigger.options.source %>"
+    }
+  <%_ } _%>
+  }
+}
+<%_ } _%>
+
+<%_
 // ── WebSocket triggers ───────────────────────────────────────────────────────
 const wsEntries = Object.entries(entries).filter(([, e]) => e.trigger.type.toLowerCase() === "websocket");
 const wsByGateway = wsEntries.reduce((acc, entry) => {
