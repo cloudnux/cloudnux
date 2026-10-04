@@ -1,5 +1,11 @@
 # @cloudnux/cli
 
+## 0.21.0
+
+### Minor Changes
+
+- [#23](https://github.com/cloudnux/cloudnux/pull/23) [`3922866`](https://github.com/cloudnux/cloudnux/commit/392286669aac571684ee0b7c7d8f219444c4af86) Thanks [@minawalphonce](https://github.com/minawalphonce)! - email service .
+
 ## 0.20.0
 
 ## 0.19.0
