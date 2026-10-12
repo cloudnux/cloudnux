@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import * as path from 'path';
-import { createLocalStorageService } from '../../services/storage';
+import { createLocalStorageService, listStorageBuckets, listStorageObjects } from '../../services/storage';
 import { createTempDir, cleanupDir, fileExists, readFileContent, readJsonFile } from '../helpers/test-utils';
 
 describe('LocalStorageService', () => {
@@ -20,6 +20,18 @@ describe('LocalStorageService', () => {
     delete process.env.DEV_CLOUD_STORAGE_BUCKET;
   });
 
+  describe('configuration', () => {
+    it('should throw when DEV_CLOUD_STORAGE_BUCKET is not set', () => {
+      delete process.env.DEV_CLOUD_STORAGE_BUCKET;
+      expect(() => createLocalStorageService()).toThrow('DEV_CLOUD_STORAGE_BUCKET is not set');
+    });
+
+    it('should throw when DEV_CLOUD_STORAGE_BUCKET is relative', () => {
+      process.env.DEV_CLOUD_STORAGE_BUCKET = '.local-storage';
+      expect(() => createLocalStorageService()).toThrow('must be an absolute path');
+    });
+  });
+
   describe('write', () => {
     it('should write a file to storage', async () => {
       const bucket = 'test-bucket';
@@ -28,11 +40,12 @@ describe('LocalStorageService', () => {
 
       const result = await storageService.write(filePath, content, bucket);
 
-      expect(result).toMatchObject({
+      expect(result).toEqual({
         bucket,
         key: filePath,
+        encodedKey: filePath,
       });
-      expect(result.url).toContain('test-file.txt');
+      expect(result).not.toHaveProperty('url');
 
       // Verify file exists
       const fullPath = path.join(tempDir, bucket, filePath);
@@ -96,10 +109,36 @@ describe('LocalStorageService', () => {
       expect(readFileContent(fullPath)).toBe(content);
     });
 
+    it('should return the raw key and the key encoded per path segment', async () => {
+      const result = await storageService.write('my folder/sub dir/photo #1.png', 'x', 'test-bucket');
+
+      expect(result.key).toBe('my folder/sub dir/photo #1.png');
+      expect(result.encodedKey).toBe('my%20folder/sub%20dir/photo%20%231.png');
+      expect(fileExists(path.join(tempDir, 'test-bucket', 'my folder', 'sub dir', 'photo #1.png'))).toBe(true);
+    });
+
+    it('should strip ./ segments from the returned key', async () => {
+      const result = await storageService.write('./a/./b/../c.txt', 'x', 'test-bucket');
+      expect(result.key).toBe('a/c.txt');
+    });
+
+    it('should round-trip the returned key through read and delete', async () => {
+      const { key, bucket } = await storageService.write('my folder/a #1.txt', 'round trip', 'test-bucket');
+
+      expect((await storageService.read(key, bucket)).toString()).toBe('round trip');
+      await storageService.delete(key, bucket);
+      await expect(storageService.read(key, bucket)).rejects.toThrow('File not found');
+    });
+
     it('should throw error if bucket is not provided', async () => {
       await expect(
         storageService.write('test.txt', 'content', '')
       ).rejects.toThrow('Bucket name is required');
+    });
+
+    it('should reject bucket names that escape the storage directory', async () => {
+      await expect(storageService.write('a.txt', 'x', '..')).rejects.toThrow('Invalid bucket name');
+      await expect(storageService.write('a.txt', 'x', 'a/b')).rejects.toThrow('Invalid bucket name');
     });
 
     it('should prevent directory traversal attacks', async () => {
@@ -107,7 +146,9 @@ describe('LocalStorageService', () => {
       const maliciousPath = '../../../etc/passwd';
       const content = 'malicious content';
 
-      await storageService.write(maliciousPath, content, bucket);
+      const result = await storageService.write(maliciousPath, content, bucket);
+      expect(result.key).toBe('etc/passwd');
+      expect(result.encodedKey).toBe('etc/passwd');
 
       // Should normalize the path and keep it within the bucket
       const fullPath = path.join(tempDir, bucket, 'etc', 'passwd');
@@ -217,6 +258,25 @@ describe('LocalStorageService', () => {
       await expect(
         storageService.delete('test.txt', '')
       ).rejects.toThrow('Bucket name is required');
+    });
+  });
+
+  describe('dev console listing', () => {
+    it('should list buckets and nested objects without metadata sidecars', async () => {
+      await storageService.write('a/b/c.txt', 'abc', 'bucket-1', { contentType: 'text/plain' });
+      await storageService.write('root file.txt', 'r', 'bucket-1');
+      await storageService.write('x.txt', 'x', 'bucket-2');
+
+      expect(await listStorageBuckets()).toEqual([{ name: 'bucket-1' }, { name: 'bucket-2' }]);
+
+      const objects = await listStorageObjects('bucket-1');
+      expect(objects!.map(o => o.key)).toEqual(['a/b/c.txt', 'root file.txt']);
+      expect(objects![0]).toMatchObject({ encodedKey: 'a/b/c.txt', size: 3, contentType: 'text/plain' });
+      expect(objects![1].encodedKey).toBe('root%20file.txt');
+    });
+
+    it('should return undefined for a missing bucket', async () => {
+      expect(await listStorageObjects('nope')).toBeUndefined();
     });
   });
 

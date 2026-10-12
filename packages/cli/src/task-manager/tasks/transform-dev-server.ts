@@ -24,6 +24,7 @@ export const transformDevServer: Task = {
             source: "./src",
             moduleNames,
             port,
+            envDir: path.resolve(workingDir),
             serviceOverrides: buildServiceOverrides(services)
         });
 

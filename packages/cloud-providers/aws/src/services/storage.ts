@@ -1,5 +1,7 @@
 import { S3Client, GetObjectCommand, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { Readable } from 'stream';
+
+import { encodeStorageKey, StorageService, StorageWriteOptions, StorageWriteResult } from '@cloudnux/core-cloud-provider';
 /**
  * Convert a readable stream to a buffer
  * @param stream Readable stream
@@ -18,7 +20,7 @@ async function streamToBuffer(stream: Readable): Promise<Buffer> {
  * Create AWS S3 storage service
  * @returns AWS S3 storage service implementation
  */
-export function createStorageService() {
+export function createStorageService(): StorageService {
 
     // Create S3 client
     const s3Client = new S3Client();
@@ -55,9 +57,9 @@ export function createStorageService() {
          * @param data Data to write
          * @param bucket S3 bucket name
          * @param options Optional configuration for the write operation
-         * @returns Promise resolving with the URL of the stored file
+         * @returns Promise resolving with the bucket, key and encoded key
          */
-        async write(path: string, data: Buffer | string, bucket: string, options?: any): Promise<any> {
+        async write(path: string, data: Buffer | string, bucket: string, options?: StorageWriteOptions): Promise<StorageWriteResult> {
             if (!bucket) {
                 throw new Error('Bucket name is required');
             }
@@ -73,13 +75,10 @@ export function createStorageService() {
 
             await s3Client.send(command);
 
-            // Generate public URL
-            const publicUrl = `https://${bucket}.s3.${s3Client.config.region}.amazonaws.com/${encodeURIComponent(path)}`;
-
             return {
-                url: publicUrl,
                 bucket,
-                key: path
+                key: path,
+                encodedKey: encodeStorageKey(path)
             };
         },
 

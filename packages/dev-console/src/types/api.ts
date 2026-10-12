@@ -206,3 +206,23 @@ export interface Module {
 export interface ModulesResponse {
   modules: Module[]
 }
+export interface StorageBucket {
+  name: string
+}
+
+export interface StorageBucketsResponse {
+  buckets: StorageBucket[]
+}
+
+export interface StorageObject {
+  key: string
+  encodedKey: string
+  size: number
+  lastModified: string
+  contentType?: string
+}
+
+export interface StorageObjectsResponse {
+  bucket: string
+  objects: StorageObject[]
+}

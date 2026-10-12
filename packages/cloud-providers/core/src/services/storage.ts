@@ -15,7 +15,7 @@ export interface StorageService extends IService {
      * @param data Data to write
      * @param bucket Bucket or container name
      * @param options Optional configuration for the write operation
-     * @returns Promise resolving with the result including URL of the stored file
+     * @returns Promise resolving with the bucket, key and encoded key of the stored file
      */
     write(path: string, data: Buffer | string, bucket: string, options?: StorageWriteOptions): Promise<StorageWriteResult>;
 
@@ -39,16 +39,30 @@ export interface StorageWriteOptions {
 
 export interface StorageWriteResult {
     /**
-     * URL to access the stored file
-     */
-    url: string;
-    /**
      * Storage bucket or container name
      */
     bucket: string;
 
     /**
-     * Storage key or path
+     * Storage key of the written object as stored, not encoded
+     * (e.g. `my folder/a #1.png`). Pass it back to read() / delete().
      */
     key: string;
+
+    /**
+     * The key URL-encoded per path segment, `/` separators kept
+     * (e.g. `my%20folder/a%20%231.png`).
+     *
+     * cloudnux does not build URLs: the client prepends its own base URL
+     * for the bucket, e.g. a CloudFront domain in the cloud or
+     * `http://localhost:<port>/__storage/<bucket>` with the local provider.
+     */
+    encodedKey: string;
+}
+
+/**
+ * URL-encode a storage key segment by segment, keeping `/` separators.
+ */
+export function encodeStorageKey(key: string): string {
+    return key.split('/').map(encodeURIComponent).join('/');
 }

@@ -15,6 +15,7 @@ import "../websocket-plugin";
 
 import { routeRegistry } from "./route-registry";
 import { listEmailHistory, getEmailHistoryEntry, getEmailRaw, getEmailBody } from "../services/email";
+import { listStorageBuckets, listStorageObjects } from "../services/storage";
 
 interface LogEntry {
   id: string;
@@ -798,6 +799,26 @@ async function devConsolePluginFunction(
     }
 
     return { body };
+  });
+
+  // Storage endpoints - read straight off the local storage directory each
+  // request. Object contents are served by the storage plugin under
+  // /__storage/<bucket>/<encodedKey>.
+  fastify.get(`/${prefix}/storage`, async () => {
+    return { buckets: await listStorageBuckets() };
+  });
+
+  fastify.get(`/${prefix}/storage/:bucket`, async (request, reply) => {
+    const { bucket } = request.params as { bucket: string };
+    try {
+      const objects = await listStorageObjects(bucket);
+      if (!objects) {
+        return reply.status(404).send({ error: `Bucket not found: ${bucket}` });
+      }
+      return { bucket, objects };
+    } catch (error) {
+      return reply.status(400).send({ error: (error as Error).message });
+    }
   });
 
   // Server-Sent Events for real-time logs
