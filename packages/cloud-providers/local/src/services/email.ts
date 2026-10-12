@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { randomUUID } from 'crypto';
 
-import { env } from "@cloudnux/utils";
+import { requireEnvDir } from "../utils/dirs";
 
 import { EmailAttachment, EmailMessage, EmailSendResult, EmailService, getService, LoggerService } from "@cloudnux/core-cloud-provider";
 
@@ -27,8 +27,9 @@ export type EmailHistoryEntry = {
     error?: string;
 };
 
+// No fallback: the dev server sets this to a folder inside the environment folder
 function resolveBaseDir(): string {
-    return env("DEV_CLOUD_EMAIL_DIR", path.join(process.cwd(), '.local-email'))!;
+    return requireEnvDir("DEV_CLOUD_EMAIL_DIR");
 }
 
 function toArray(value?: string | string[]): string[] {

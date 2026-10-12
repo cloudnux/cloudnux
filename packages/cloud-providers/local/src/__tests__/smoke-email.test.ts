@@ -19,6 +19,14 @@ describe('local email smoke test', () => {
         fs.rmSync(dir, { recursive: true, force: true });
     });
 
+    it('throws when DEV_CLOUD_EMAIL_DIR is missing or relative', () => {
+        delete process.env.DEV_CLOUD_EMAIL_DIR;
+        expect(() => createLocalEmailService()).toThrow('DEV_CLOUD_EMAIL_DIR is not set');
+        process.env.DEV_CLOUD_EMAIL_DIR = '.local-email';
+        expect(() => createLocalEmailService()).toThrow('must be an absolute path');
+        process.env.DEV_CLOUD_EMAIL_DIR = dir;
+    });
+
     it('writes .eml + .json, lists/reads history, and serves it via dev-console-plugin', async () => {
         const emailService = createLocalEmailService();
 

@@ -1,8 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-import { env } from "@cloudnux/utils";
-
+import { requireEnvDir } from "../utils/dirs";
 import { encodeStorageKey, getService, LoggerService, StorageService, StorageWriteOptions, StorageWriteResult } from "@cloudnux/core-cloud-provider";
 
 // Use fs.promises for async file operations
@@ -21,14 +20,7 @@ export const METADATA_SUFFIX = ".metadata.json";
  * @returns Absolute path of the storage directory
  */
 export function getLocalStorageDir(): string {
-    const dir = env(STORAGE_DIR_ENV);
-    if (!dir) {
-        throw new Error(`${STORAGE_DIR_ENV} is not set. The dev server must set it to the storage directory inside the environment folder.`);
-    }
-    if (!path.isAbsolute(dir)) {
-        throw new Error(`${STORAGE_DIR_ENV} must be an absolute path, got "${dir}".`);
-    }
-    return dir;
+    return requireEnvDir(STORAGE_DIR_ENV);
 }
 
 /**

@@ -322,3 +322,42 @@ describe('queue-plugin', () => {
     });
   });
 });
+
+describe('queue-plugin persistence directory', () => {
+  const register = (persistence: Partial<QueueConfig['persistence']>) => {
+    const app = Fastify();
+    app.decorate('logging', { ...logger, runWithLogContext, subscribeToLogs });
+    app.register(queuesPlugin, { config: { persistence } as Partial<QueueConfig> });
+    return app;
+  };
+
+  it('fails to register when persistence is enabled without a directory', async () => {
+    await expect(register({ enabled: true }).ready()).rejects.toThrow('queues persistence.directory is not set');
+  });
+
+  it('fails to register when the persistence directory is relative', async () => {
+    await expect(register({ enabled: true, directory: './.develop/.queue-data' }).ready()).rejects.toThrow('must be an absolute path');
+  });
+
+  it('does not touch the filesystem when persistence is disabled', async () => {
+    const app = register({ enabled: false });
+    await app.ready();
+    await app.close();
+  });
+
+  it('creates the persistence directory when enabled with an absolute path', async () => {
+    const fs = await import('fs');
+    const os = await import('os');
+    const path = await import('path');
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'queue-plugin-test-'));
+    const directory = path.join(root, '.queue-data');
+    try {
+      const app = register({ enabled: true, directory });
+      await app.ready();
+      expect(fs.existsSync(directory)).toBe(true);
+      await app.close();
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+});

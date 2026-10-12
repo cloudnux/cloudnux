@@ -7,7 +7,8 @@ export const DEFAULT_CONFIG: SchedulerConfig = {
     tickIntervalMs: 1000,
     persistence: {
         enabled: true,
-        directory: './.develop/.scheduler-data',
+        // no default: must be an absolute path inside the environment folder
+        directory: '',
         saveInterval: 30000, // 30 seconds
         saveOnShutdown: false,
     },

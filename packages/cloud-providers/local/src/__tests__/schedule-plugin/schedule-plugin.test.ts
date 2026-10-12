@@ -23,7 +23,7 @@ const buildApp = async (config?: Partial<SchedulerConfig>): Promise<FastifyInsta
   app.decorate('logging', { ...logger, runWithLogContext, subscribeToLogs });
   await app.register(schedulerPlugin, {
     config: {
-      persistence: { enabled: false, directory: './.develop/.scheduler-data' },
+      persistence: { enabled: false },
       ...config,
     } as Partial<SchedulerConfig>,
   });
@@ -261,6 +261,20 @@ describe('schedule-plugin', () => {
   });
 
   describe('persistence', () => {
+    it('fails to register when persistence is enabled without a directory', async () => {
+      const app = Fastify();
+      app.decorate('logging', { ...logger, runWithLogContext, subscribeToLogs });
+      app.register(schedulerPlugin, { config: { persistence: { enabled: true } } as Partial<SchedulerConfig> });
+      await expect(app.ready()).rejects.toThrow('schedules persistence.directory is not set');
+    });
+
+    it('fails to register when the persistence directory is relative', async () => {
+      const app = Fastify();
+      app.decorate('logging', { ...logger, runWithLogContext, subscribeToLogs });
+      app.register(schedulerPlugin, { config: { persistence: { enabled: true, directory: './.develop/.scheduler-data' } } as Partial<SchedulerConfig> });
+      await expect(app.ready()).rejects.toThrow('must be an absolute path');
+    });
+
     it('restores a job\'s run count and lastRun from disk when re-added after a restart', async () => {
       // Real timers here, not fake - this exercises real fs writes/reads,
       // and fake timers don't drive the real event loop those need to

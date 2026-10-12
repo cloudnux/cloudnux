@@ -5,6 +5,7 @@ import { SchedulerPluginOptions, SchedulerRuntime } from "./types";
 import { DEFAULT_CONFIG, mergeConfig } from "./core";
 import { tick } from "./processing";
 import { initializePersistence } from "./persistence";
+import { requireAbsoluteDir } from "../utils/dirs";
 import { createSchedulerManager } from "./decorator";
 import { registerSchedulerRoutes } from "./routes";
 
@@ -13,8 +14,13 @@ export const schedulerPlugin: FastifyPluginAsync<SchedulerPluginOptions> =
         app: FastifyInstance,
         options: SchedulerPluginOptions
     ) => {
+        const config = mergeConfig(DEFAULT_CONFIG, options.config);
+        if (config.persistence.enabled) {
+            requireAbsoluteDir(config.persistence.directory, "schedules persistence.directory");
+        }
+
         const runtime: SchedulerRuntime = {
-            config: mergeConfig(DEFAULT_CONFIG, options.config),
+            config,
             schedulers: {},
             executions: {},
             executionHistory: [],

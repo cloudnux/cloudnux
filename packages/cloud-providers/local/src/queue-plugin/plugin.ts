@@ -7,14 +7,20 @@ import { tick } from "./processing";
 import { initializePersistence } from "./persistence";
 import { createQueueManager } from "./decorator";
 import { registerQueueRoutes } from "./routes";
+import { requireAbsoluteDir } from "../utils/dirs";
 
 export const queuesPlugin: FastifyPluginAsync<QueuePluginOptions> =
     fsPlugin(async (
         app: FastifyInstance,
         options: QueuePluginOptions
     ) => {
+        const config = mergeConfig(DEFAULT_CONFIG, options.config);
+        if (config.persistence.enabled) {
+            requireAbsoluteDir(config.persistence.directory, "queues persistence.directory");
+        }
+
         const runtime: QueueRuntime = {
-            config: mergeConfig(DEFAULT_CONFIG, options.config),
+            config,
             queues: {},
             topics: {},
             dirtyQueues: new Set<string>(),
@@ -32,5 +38,7 @@ export const queuesPlugin: FastifyPluginAsync<QueuePluginOptions> =
         app.decorate('queues', createQueueManager(runtime));
         registerQueueRoutes(app, options.prefix);
 
-        await initializePersistence(runtime);
+        if (runtime.config.persistence.enabled) {
+            await initializePersistence(runtime);
+        }
     });

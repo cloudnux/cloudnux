@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import path from 'node:path';
 import { useCloudProvider } from "@cloudnux/cloud-sdk";
 import { createRouter, localCloudProvider } from '@cloudnux/local-cloud-provider';
@@ -11,11 +12,19 @@ import { storagePlugin } from "@cloudnux/local-cloud-provider/storage-plugin";
 import <%=svc.varName%> from "<%-svc.path%>";
 <%_ } _%>
 
-// __dirname is injected by the esbuild banner and resolves to the workingDir/env folder
-process.env.DEV_CLOUD_LOCATION_PATH ??= path.join(__dirname, '.local-location');
-// absolute paths are kept as-is, relative ones resolve against the env folder
-process.env.DEV_CLOUD_STORAGE_BUCKET = path.resolve(<%- JSON.stringify(envDir) %>, process.env.DEV_CLOUD_STORAGE_BUCKET || '.local-storage');
-process.env.DEV_CLOUD_EMAIL_DIR ??= path.join(__dirname, '.local-email');
+// The environment folder is resolved by the CLI at render time. Every local
+// data folder lives inside it; the dev server must never run without it.
+const ENV_DIR = <%- JSON.stringify(envDir) %>;
+if (!fs.existsSync(ENV_DIR)) {
+  throw new Error(`Environment folder not found: ${ENV_DIR}`);
+}
+
+// Absolute paths are kept as-is, relative ones resolve against the env folder
+const envPath = (value: string | undefined, defaultName: string) => path.resolve(ENV_DIR, value || defaultName);
+
+process.env.DEV_CLOUD_LOCATION_PATH = envPath(process.env.DEV_CLOUD_LOCATION_PATH, '.local-location');
+process.env.DEV_CLOUD_STORAGE_BUCKET = envPath(process.env.DEV_CLOUD_STORAGE_BUCKET, '.local-storage');
+process.env.DEV_CLOUD_EMAIL_DIR = envPath(process.env.DEV_CLOUD_EMAIL_DIR, '.local-email');
 
 useCloudProvider(localCloudProvider<% if (serviceOverrides.length) { %>, { serviceFactories: { <%- serviceOverrides.map(svc => `"${svc.kind}": ${svc.varName}`).join(', ') %> } }<% } %>);
 
@@ -25,8 +34,8 @@ import <%=module%>Entries from "./<%=module%>"
 
 const router = createRouter();
 
-router.register(queuesPlugin, { prefix: "queues", config: { persistence: { directory: path.join(__dirname, '.queue-data') } } });
-router.register(schedulerPlugin, { prefix: "schedules", config: { persistence: { directory: path.join(__dirname, '.scheduler-data') } } });
+router.register(queuesPlugin, { prefix: "queues", config: { persistence: { directory: path.join(ENV_DIR, '.queue-data') } } });
+router.register(schedulerPlugin, { prefix: "schedules", config: { persistence: { directory: path.join(ENV_DIR, '.scheduler-data') } } });
 router.register(devConsolePlugin, {  prefix: 'console' });
 router.register(websocketsPlugin, { prefix: "websockets" });
 router.register(invokesPlugin);

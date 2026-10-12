@@ -13,7 +13,7 @@ import {
     getService,
     LoggerService
 } from "@cloudnux/core-cloud-provider";
-import { env } from "@cloudnux/utils";
+import { requireEnvDir } from "../utils/dirs";
 
 // Use fs.promises for async file operations
 const { readFile, writeFile, access, mkdir } = fs.promises;
@@ -303,8 +303,8 @@ function toLocationAddress(location: StoredLocation): LocationAddress {
  * @returns Local mock location service implementation
  */
 export function createLocalLocationService(): LocationService {
-    // Get base directory from environment variables or use default
-    const baseDir = env("DEV_CLOUD_LOCATION_PATH", path.join(process.cwd(), '.develop', '.local-location'))!;
+    // No fallback: the dev server sets this to a folder inside the environment folder
+    const baseDir = requireEnvDir("DEV_CLOUD_LOCATION_PATH");
     const placesFilePath = path.join(baseDir, 'places.json');
 
     const logger = getService<LoggerService>("logger");

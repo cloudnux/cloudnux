@@ -19,6 +19,18 @@ describe('LocalLocationService', () => {
     delete process.env.DEV_CLOUD_LOCATION_PATH;
   });
 
+  describe('configuration', () => {
+    it('should throw when DEV_CLOUD_LOCATION_PATH is not set', () => {
+      delete process.env.DEV_CLOUD_LOCATION_PATH;
+      expect(() => createLocalLocationService()).toThrow('DEV_CLOUD_LOCATION_PATH is not set');
+    });
+
+    it('should throw when DEV_CLOUD_LOCATION_PATH is relative', () => {
+      process.env.DEV_CLOUD_LOCATION_PATH = '.local-location';
+      expect(() => createLocalLocationService()).toThrow('must be an absolute path');
+    });
+  });
+
   describe('getSuggestions', () => {
     it('should return location suggestions based on query', async () => {
       const suggestions = await locationService.getSuggestions({
