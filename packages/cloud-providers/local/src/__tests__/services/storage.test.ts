@@ -261,6 +261,33 @@ describe('LocalStorageService', () => {
     });
   });
 
+  describe('exists', () => {
+    it('should return true for an existing file', async () => {
+      await storageService.write('dir/test.txt', 'hi', 'test-bucket');
+      expect(await storageService.exists('dir/test.txt', 'test-bucket')).toBe(true);
+    });
+
+    it('should return false for a missing file', async () => {
+      await storageService.write('test.txt', 'hi', 'test-bucket');
+      expect(await storageService.exists('missing.txt', 'test-bucket')).toBe(false);
+    });
+
+    it('should return false for a directory prefix', async () => {
+      await storageService.write('dir/test.txt', 'hi', 'test-bucket');
+      expect(await storageService.exists('dir', 'test-bucket')).toBe(false);
+    });
+
+    it('should return false after delete', async () => {
+      await storageService.write('test.txt', 'hi', 'test-bucket');
+      await storageService.delete('test.txt', 'test-bucket');
+      expect(await storageService.exists('test.txt', 'test-bucket')).toBe(false);
+    });
+
+    it('should throw for an empty bucket name', async () => {
+      await expect(storageService.exists('test.txt', '')).rejects.toThrow('Bucket name is required');
+    });
+  });
+
   describe('dev console listing', () => {
     it('should list buckets and nested objects without metadata sidecars', async () => {
       await storageService.write('a/b/c.txt', 'abc', 'bucket-1', { contentType: 'text/plain' });

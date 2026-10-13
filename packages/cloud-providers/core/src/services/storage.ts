@@ -26,6 +26,14 @@ export interface StorageService extends IService {
      * @returns Promise resolving when delete is complete
      */
     delete(path: string, bucket: string): Promise<void>;
+
+    /**
+     * Check whether an object exists in a bucket
+     * @param path Path to the file/object
+     * @param bucket Bucket or container name
+     * @returns Promise resolving to true if the key exists, false otherwise
+     */
+    exists(path: string, bucket: string): Promise<boolean>;
 }
 
 export interface StorageWriteOptions {

@@ -187,6 +187,26 @@ export function createLocalStorageService(): StorageService {
                 }
                 throw error;
             }
+        },
+
+        /**
+         * Check whether a file exists in the local filesystem
+         * @param filePath Path to the file
+         * @param bucket Bucket (folder) name
+         * @returns Promise resolving to true if the key exists, false otherwise
+         */
+        async exists(filePath: string, bucket: string): Promise<boolean> {
+            assertValidBucket(bucket);
+
+            try {
+                const info = await stat(getFullPath(bucket, filePath));
+                return info.isFile();
+            } catch (error) {
+                if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+                    return false;
+                }
+                throw error;
+            }
         }
     };
 }

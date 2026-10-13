@@ -1,4 +1,4 @@
-import { S3Client, GetObjectCommand, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, GetObjectCommand, PutObjectCommand, DeleteObjectCommand, HeadObjectCommand } from '@aws-sdk/client-s3';
 import { Readable } from 'stream';
 
 import { encodeStorageKey, StorageService, StorageWriteOptions, StorageWriteResult } from '@cloudnux/core-cloud-provider';
@@ -99,6 +99,32 @@ export function createStorageService(): StorageService {
             });
 
             await s3Client.send(command);
+        },
+
+        /**
+         * Check whether an object exists in S3
+         * @param path Path to the object in the bucket
+         * @param bucket S3 bucket name
+         * @returns Promise resolving to true if the key exists, false otherwise
+         */
+        async exists(path: string, bucket: string): Promise<boolean> {
+            if (!bucket) {
+                throw new Error('Bucket name is required');
+            }
+
+            try {
+                await s3Client.send(new HeadObjectCommand({
+                    Bucket: bucket,
+                    Key: path,
+                }));
+                return true;
+            } catch (error) {
+                const err = error as { name?: string; $metadata?: { httpStatusCode?: number } };
+                if (err.name === 'NotFound' || err.name === 'NoSuchKey' || err.$metadata?.httpStatusCode === 404) {
+                    return false;
+                }
+                throw error;
+            }
         }
     };
 }
