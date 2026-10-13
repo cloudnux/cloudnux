@@ -1,5 +1,20 @@
 # @cloudnux/dev-console
 
+## 0.22.0
+
+### Minor Changes
+
+- [`61ac5fe`](https://github.com/cloudnux/cloudnux/commit/61ac5feb4e41b34bea60c30ee726cebcc94e768a) Thanks [@minawalphonce](https://github.com/minawalphonce)! - feat(storage): implement local storage service with bucket and object management
+
+  - Add `createStorageService` to handle S3-like storage operations.
+  - Introduce `StorageService` interface with methods for writing and reading objects.
+  - Implement `listStorageBuckets` and `listStorageObjects` for bucket and object retrieval.
+  - Create a storage plugin for serving files via Fastify.
+  - Develop a storage page in the dev console for managing and viewing storage objects.
+  - Add hooks for fetching storage buckets and objects using React Query.
+  - Implement UI components for displaying storage objects and their details.
+  - Enhance error handling and validation for bucket names and paths.
+
 ## 0.21.0
 
 ### Minor Changes
