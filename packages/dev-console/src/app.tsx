@@ -4,6 +4,7 @@ import ModulesView from './pages/ModulesPage'
 import ModuleDetailPage from './pages/ModuleDetailPage'
 import QueueDetailPage from './pages/QueueDetailPage'
 import ScheduleDetailPage from './pages/ScheduleDetailPage'
+import InvokeDetailPage from './pages/InvokeDetailPage'
 import RouteDetailPage from './pages/RouteDetailPage'
 import WebSocketDetailPage from './pages/WebSocketDetailPage'
 import EmailsPage from './pages/EmailsPage'
@@ -27,6 +28,7 @@ function App() {
               <Route path="/modules/:moduleName" element={<ModuleDetailPage />} />
               <Route path="/modules/:moduleName/queues/:queueName" element={<QueueDetailPage />} />
               <Route path="/modules/:moduleName/schedules/:scheduleName" element={<ScheduleDetailPage />} />
+              <Route path="/modules/:moduleName/invokes/:invokeName" element={<InvokeDetailPage />} />
               <Route path="/modules/:moduleName/routes" element={<RouteDetailPage />} />
               <Route path="/modules/:moduleName/websockets/*" element={<WebSocketDetailPage />} />
               <Route path="/emails" element={<EmailsPage />} />

@@ -23,3 +23,4 @@ export const localCloudProvider: CloudProvider = {
 };
 
 export * from "./router";
+export { configureLocalInvoke, type LocalInvokeConfig } from "./services/invoke";

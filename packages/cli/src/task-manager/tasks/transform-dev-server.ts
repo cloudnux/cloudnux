@@ -9,6 +9,8 @@ import { buildServiceOverrides } from "../build-service-overrides.js";
  * @param {string} moduleNames
  * @param {string} devServerTemplateFunc
  * @param {string} workingDir
+ * @param {string} namespace this dev server's namespace
+ * @param {Record<string,string>} namespaces namespace -> dev server url of other namespaces
  */
 export const transformDevServer: Task = {
     title: `Transform Dev Server`,
@@ -19,13 +21,17 @@ export const transformDevServer: Task = {
         workingDir,
         port,
         services,
+        namespace,
+        namespaces,
     }) => {
         const rendered = devServerTemplateFunc({
             source: "./src",
             moduleNames,
             port,
             envDir: path.resolve(workingDir),
-            serviceOverrides: buildServiceOverrides(services)
+            serviceOverrides: buildServiceOverrides(services),
+            namespace,
+            namespaces,
         });
 
         await fs.mkdir(path.join(workingDir), { recursive: true });

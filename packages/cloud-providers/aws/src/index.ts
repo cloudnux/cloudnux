@@ -21,3 +21,4 @@ export const awsCloudProvider: CloudProvider = {
     createLoggerService,
     createEmailService,
 };
+export { setCurrentModule } from "./services/invoke";

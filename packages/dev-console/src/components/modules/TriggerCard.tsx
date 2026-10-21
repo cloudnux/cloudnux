@@ -1,16 +1,16 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router'
-import { RouteInfo, QueueInfo, ScheduleInfo, WebSocketInfo } from '../../types/api'
+import { RouteInfo, QueueInfo, ScheduleInfo, WebSocketInfo, InvokeInfo } from '../../types/api'
 
-type TriggerType = 'http' | 'queue' | 'schedule' | 'websocket'
-type ColorType = 'green' | 'blue' | 'purple' | 'indigo'
+type TriggerType = 'http' | 'queue' | 'schedule' | 'websocket' | 'invoke'
+type ColorType = 'green' | 'blue' | 'purple' | 'indigo' | 'orange'
 
 interface TriggerCardProps {
   type: TriggerType
   title: string
   count: number
   color: ColorType
-  items: RouteInfo[] | QueueInfo[] | ScheduleInfo[] | WebSocketInfo[]
+  items: RouteInfo[] | QueueInfo[] | ScheduleInfo[] | WebSocketInfo[] | InvokeInfo[]
   moduleName?: string
 }
 
@@ -28,6 +28,8 @@ const TriggerCard: React.FC<TriggerCardProps> = ({ type, title, count, color, it
         return { bg: 'bg-purple-50', border: 'border-purple-200', header: 'bg-purple-100', text: 'text-purple-800', badge: 'bg-purple-500' }
       case 'indigo':
         return { bg: 'bg-indigo-50', border: 'border-indigo-200', header: 'bg-indigo-100', text: 'text-indigo-800', badge: 'bg-indigo-500' }
+      case 'orange':
+        return { bg: 'bg-orange-50', border: 'border-orange-200', header: 'bg-orange-100', text: 'text-orange-800', badge: 'bg-orange-500' }
     }
   }
 
@@ -118,6 +120,29 @@ const TriggerCard: React.FC<TriggerCardProps> = ({ type, title, count, color, it
           <div className="flex items-center justify-between">
             <span className="font-mono font-medium">{ws.path}</span>
             <span className="text-indigo-600">{ws.connectionCount} conn</span>
+          </div>
+        </div>
+      )
+    }
+
+    if (type === 'invoke') {
+      const invoke = item as InvokeInfo
+      return (
+        <div
+          key={index}
+          className="p-2 bg-white rounded border text-xs cursor-pointer hover:bg-orange-50 transition-colors"
+          onClick={() => moduleName && navigate(`/modules/${moduleName}/invokes/${encodeURIComponent(invoke.name)}`)}
+        >
+          <div className="flex items-center justify-between">
+            <span className="font-medium">{invoke.name}</span>
+            <div className="flex items-center space-x-2">
+              {invoke.lastStatus && (
+                <span className={invoke.lastStatus === 'completed' ? 'text-green-600' : 'text-red-600'}>
+                  {invoke.lastStatus === 'completed' ? 'OK' : 'ERR'}
+                </span>
+              )}
+              <span className="text-orange-600">{invoke.callCount} calls</span>
+            </div>
           </div>
         </div>
       )

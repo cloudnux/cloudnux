@@ -7,7 +7,7 @@ interface ModuleCardProps {
 }
 
 const ModuleCard: React.FC<ModuleCardProps> = ({ module, onSelect }) => {
-  const totalResources = module.routes.length + module.queues.length + module.schedules.length + (module.websockets?.length ?? 0)
+  const totalResources = module.routes.length + module.queues.length + module.schedules.length + (module.websockets?.length ?? 0) + (module.invokes?.length ?? 0)
 
   return (
     <div 
@@ -78,6 +78,15 @@ const ModuleCard: React.FC<ModuleCardProps> = ({ module, onSelect }) => {
             </div>
             <div className="text-xs font-medium text-indigo-700 uppercase tracking-wide">
               WebSockets
+            </div>
+          </div>
+
+          <div className="text-center p-3 bg-orange-50 rounded-lg border border-orange-100">
+            <div className="text-2xl font-bold text-orange-600 mb-1">
+              {module.invokes?.length ?? 0}
+            </div>
+            <div className="text-xs font-medium text-orange-700 uppercase tracking-wide">
+              Invokes
             </div>
           </div>
         </div>

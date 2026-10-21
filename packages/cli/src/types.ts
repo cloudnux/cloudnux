@@ -68,7 +68,7 @@ export type Environment<TTaskParams extends TaskParamBase = any> = {
 export type Config<TTaskParams extends TaskParamBase = any> = {
     /**
      * Namespace prefix for all resources (lambdas, state keys, etc.)
-     * @default root package.json `name` field
+     * @default the `name` of the package.json in the directory the cli is invoked from (set in defaults.ts)
      */
     namespace?: string,
 
@@ -112,6 +112,15 @@ export type Config<TTaskParams extends TaskParamBase = any> = {
      * @default undefined
      */
     services?: Record<string, string>,
+
+    /**
+     * Other namespaces (separate repos / processes) this one can invoke locally:
+     * maps a namespace to the base url of the dev server running it.
+     * Only used by the local provider; on aws the lambda name `<namespace>_<module>` is used.
+     * @example { billing: "http://localhost:3001" }
+     * @default undefined
+     */
+    namespaces?: Record<string, string>,
 }
 
 export type Args = {

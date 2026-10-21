@@ -1,5 +1,5 @@
 import { createRouter } from "@cloudnux/aws-cloud-provider/router";
-import { awsCloudProvider } from "@cloudnux/aws-cloud-provider";
+import { awsCloudProvider, setCurrentModule } from "@cloudnux/aws-cloud-provider";
 import {
     httpHandler,
     eventBrokerHandler,
@@ -15,6 +15,8 @@ import <%=svc.varName%> from "<%-svc.path%>";
 <%_ } _%>
 
 useCloudProvider(awsCloudProvider<% if (serviceOverrides.length) { %>, { serviceFactories: { <%- serviceOverrides.map(svc => `"${svc.kind}": ${svc.varName}`).join(', ') %> } }<% } %>);
+
+setCurrentModule("<%=module%>");
 
 const router = createRouter();
 <%_ for(var [key,entry] of Object.entries(entries)) { _%>

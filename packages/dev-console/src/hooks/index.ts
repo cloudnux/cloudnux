@@ -7,3 +7,5 @@ export { useWebSockets, useWebSocketPath, useSendWebSocketMessage } from './useW
 export { useEmails, useEmailDetails, useEmailBody } from './useEmails'
 export { useTopics, useTopicDetails } from './useTopics'
 export { useStorageBuckets, useStorageObjects } from './useStorage'
+
+export { useInvokeHistory } from './useInvokes'

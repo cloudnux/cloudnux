@@ -1,3 +1,6 @@
+import fs from "node:fs";
+import path from "node:path";
+
 import { Config } from "../types.js";
 
 import {
@@ -15,7 +18,17 @@ import { transformTriggerTemplate } from "../task-manager/tasks/transform-trigge
 import { buildServer } from "../task-manager/tasks/build-server.js";
 
 
+/** the `name` of the package.json in the directory the cli is invoked from */
+function readPackageName(): string | undefined {
+    try {
+        return JSON.parse(fs.readFileSync(path.join(process.cwd(), 'package.json'), 'utf-8')).name;
+    } catch {
+        return undefined; // no (readable) package.json at cwd
+    }
+}
+
 export const defaultConfig: Config = {
+    namespace: readPackageName(),
     modulesPath: './packages/modules/**/entrypoint.json',
     cloudProvider: 'aws',
     workingDir: "./.nux",

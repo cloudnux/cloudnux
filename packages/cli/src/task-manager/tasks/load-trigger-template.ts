@@ -3,7 +3,6 @@ import path from "node:path";
 import ejs from "ejs";
 
 import { Task } from "../../types.js";
-import { transformTriggerTemplate } from "./transform-trigger-template.js";
 
 
 /**

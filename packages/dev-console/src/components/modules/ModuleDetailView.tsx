@@ -39,12 +39,14 @@ const ModuleDetailView: React.FC<ModuleDetailViewProps> = ({ moduleName, onBack 
   const queues = module.queues
   const schedules = module.schedules
   const websockets = module.websockets ?? []
+  const invokes = module.invokes ?? []
 
   const triggerCards = [
     httpRoutes.length > 0 && { type: 'http' as const, title: 'HTTP Endpoints', count: httpRoutes.length, color: 'green' as const, items: httpRoutes },
     queues.length > 0 && { type: 'queue' as const, title: 'Event Queues', count: queues.length, color: 'blue' as const, items: queues },
     schedules.length > 0 && { type: 'schedule' as const, title: 'Scheduled Jobs', count: schedules.length, color: 'purple' as const, items: schedules },
     websockets.length > 0 && { type: 'websocket' as const, title: 'WebSockets', count: websockets.length, color: 'indigo' as const, items: websockets },
+    invokes.length > 0 && { type: 'invoke' as const, title: 'Invokes', count: invokes.length, color: 'orange' as const, items: invokes },
   ].filter(Boolean) as { type: any; title: string; count: number; color: any; items: any[] }[]
 
   const gridCols = triggerCards.length <= 2 ? 'md:grid-cols-2' : triggerCards.length === 3 ? 'md:grid-cols-3' : 'md:grid-cols-4'
@@ -71,6 +73,7 @@ const ModuleDetailView: React.FC<ModuleDetailViewProps> = ({ moduleName, onBack 
             {queues.length > 0 && <span>{queues.length} queues</span>}
             {schedules.length > 0 && <span>{schedules.length} schedules</span>}
             {websockets.length > 0 && <span>{websockets.length} websockets</span>}
+            {invokes.length > 0 && <span>{invokes.length} invokes</span>}
           </div>
         </div>
       </div>

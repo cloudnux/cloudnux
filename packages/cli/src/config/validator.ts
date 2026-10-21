@@ -96,5 +96,23 @@ export function validateConfig<TTaskParams extends TaskParamBase>(config: unknow
         }
     }
 
+    // Validate namespaces, if present
+    if (typedConfig.namespaces !== undefined) {
+        if (typeof typedConfig.namespaces !== 'object' || typedConfig.namespaces === null || Array.isArray(typedConfig.namespaces)) {
+            throw new Error('Config.namespaces must be an object mapping a namespace to the url of its dev server');
+        }
+
+        for (const [name, url] of Object.entries(typedConfig.namespaces)) {
+            if (!isString(url)) {
+                throw new Error(`Config.namespaces.${name} must be a string url`);
+            }
+            try {
+                new URL(url);
+            } catch {
+                throw new Error(`Config.namespaces.${name} is not a valid url: ${url}`);
+            }
+        }
+    }
+
     return true;
 }

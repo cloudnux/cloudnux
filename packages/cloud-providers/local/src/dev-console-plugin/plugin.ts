@@ -12,6 +12,7 @@ import "../logger/types";
 import "../queue-plugin";
 import "../schedule-plugin";
 import "../websocket-plugin";
+import "../invoke-plugin/types";
 
 import { routeRegistry } from "./route-registry";
 import { listEmailHistory, getEmailHistoryEntry, getEmailRaw, getEmailBody } from "../services/email";
@@ -239,6 +240,9 @@ async function devConsolePluginFunction(
       if (p.module) moduleSet.add(p.module);
     });
 
+    const invokeManager = fastify.invokes;
+    invokeManager?.entries().forEach(entry => moduleSet.add(entry.module));
+
     // Create module objects
     const modules = Array.from(moduleSet).map(moduleName => {
       // Get routes for this module
@@ -279,16 +283,46 @@ async function devConsolePluginFunction(
         }))
         : [];
 
+      // Get invoke triggers for this module
+      const moduleInvokes = (invokeManager?.entries(moduleName) ?? []).map(({ name }) => {
+        const executions = invokeManager.getHistory(moduleName, name);
+        return {
+          name,
+          callCount: executions.length,
+          lastStatus: executions[0]?.status
+        };
+      });
+
       return {
         name: moduleName,
         routes: moduleRoutes,
         queues: moduleQueues,
         schedules: moduleSchedules,
-        websockets: moduleWebSockets
+        websockets: moduleWebSockets,
+        invokes: moduleInvokes
       };
     });
 
     return { modules };
+  });
+
+  // Invoke endpoints. Calling a trigger from the console goes through the
+  // invoke plugin's own POST /__invoke/:module/:trigger, so there is no
+  // console-specific call endpoint: history is recorded around the handler
+  // itself and shows calls from every caller.
+  fastify.get(`/${prefix}/invokes/:module/:trigger/history`, async (request, reply) => {
+    const { module, trigger } = request.params as { module: string; trigger: string };
+    const invokeManager = fastify.invokes;
+
+    if (!invokeManager) {
+      return reply.status(503).send({ error: 'Invoke service not available' });
+    }
+
+    if (!invokeManager.get(module, trigger)) {
+      return reply.status(404).send({ error: `Invoke trigger ${module}:${trigger} not found` });
+    }
+
+    return { history: invokeManager.getHistory(module, trigger) };
   });
 
   // Queues endpoints - access via decorator

@@ -195,12 +195,36 @@ export interface TopicDetailResponse {
   subscribers: TopicSubscriber[]
 }
 
+export interface InvokeInfo {
+  name: string
+  callCount: number
+  lastStatus?: 'completed' | 'failed'
+}
+
+export interface InvokeExecution {
+  id: string
+  module: string
+  name: string
+  status: 'completed' | 'failed'
+  startTime: string
+  endTime: string
+  duration: number
+  payload?: any
+  result?: any
+  error?: string
+}
+
+export interface InvokeHistoryResponse {
+  history: InvokeExecution[]
+}
+
 export interface Module {
   name: string
   routes: RouteInfo[]
   queues: QueueInfo[]
   schedules: ScheduleInfo[]
   websockets?: WebSocketInfo[]
+  invokes?: InvokeInfo[]
 }
 
 export interface ModulesResponse {
