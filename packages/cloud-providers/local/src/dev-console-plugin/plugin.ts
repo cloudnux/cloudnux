@@ -11,6 +11,7 @@ import "../logger/types";
 
 import "../queue-plugin";
 import "../schedule-plugin";
+import { detectExpressionType } from "../schedule-plugin/cron-utils";
 import "../websocket-plugin";
 import "../invoke-plugin/types";
 
@@ -271,7 +272,8 @@ async function devConsolePluginFunction(
           enabled: jobStats?.job.enabled || false,
           isRunning: jobStats?.isRunning || false,
           cronExpression: jobStats?.job.cronExpression,
-          timezone: jobStats?.job.timezone
+          timezone: jobStats?.job.timezone,
+          scheduleType: detectExpressionType(jobStats?.job.cronExpression),
         };
       });
 
@@ -582,6 +584,17 @@ async function devConsolePluginFunction(
     }
   });
 
+  // Console-facing view of a job's timing: the original expression plus what
+  // it means (type, human description, next fires) so rate()/cron() read well
+  const describeScheduleJob = (name: string) => {
+    const dashboardJob = fastify.scheduler.getDashboardSummary().jobs.find(j => j.name === name);
+    return {
+      scheduleType: detectExpressionType(dashboardJob?.cronExpression),
+      description: dashboardJob?.cronDescription,
+      upcomingExecutions: dashboardJob?.upcomingExecutions ?? [],
+    };
+  };
+
   // Schedules endpoints - access via decorator
   fastify.get(`/${prefix}/schedules`, async (_, reply) => {
     const schedulerManager = fastify.scheduler;
@@ -597,7 +610,8 @@ async function devConsolePluginFunction(
         enabled: jobStats?.job.enabled || false,
         isRunning: jobStats?.isRunning || false,
         cronExpression: jobStats?.job.cronExpression,
-        timezone: jobStats?.job.timezone
+        timezone: jobStats?.job.timezone,
+        ...describeScheduleJob(name),
       };
     });
 
@@ -621,6 +635,7 @@ async function devConsolePluginFunction(
       name: jobName,
       job: jobStats.job,
       isRunning: jobStats.isRunning,
+      ...describeScheduleJob(jobName),
       timerId: jobStats.timerId ? 'scheduled' : 'not_scheduled'
     };
   });

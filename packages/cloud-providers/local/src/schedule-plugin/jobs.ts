@@ -1,5 +1,5 @@
 import { JobDefinition, JobExecution, JobHandler, ScheduledJob, SchedulerConfig, SchedulerService } from "./types";
-import { detectExpressionType, convertRateToCron } from "./cron-utils";
+import { getExpressionError } from "./cron-utils";
 import { generateExecutionId, generateJobId, calculateNextRun, calculateNextRunFromLastRun } from "./utils";
 
 // Pure function to validate a job definition before it's turned into a job.
@@ -11,8 +11,9 @@ export const validateJobDefinition = (jobDef: JobDefinition): void => {
         throw new Error(`Job ${jobDef.name} must specify a cronExpression, intervalMs, or delayMs`);
     }
 
-    if (jobDef.cronExpression && detectExpressionType(jobDef.cronExpression) === "unknown") {
-        throw new Error(`Invalid cron expression for job: ${jobDef.name}`);
+    const expressionError = jobDef.cronExpression ? getExpressionError(jobDef.cronExpression) : undefined;
+    if (expressionError) {
+        throw new Error(`Invalid cron expression for job: ${jobDef.name} (${expressionError})`);
     }
 };
 
@@ -20,15 +21,10 @@ export const validateJobDefinition = (jobDef: JobDefinition): void => {
 export const createJobFromDefinition = (jobDef: JobDefinition, config: SchedulerConfig): ScheduledJob => {
     validateJobDefinition(jobDef);
 
-    const expressionType = detectExpressionType(jobDef.cronExpression);
-    const cronExpression = expressionType === "rate"
-        ? convertRateToCron(jobDef.cronExpression!).cronExpression
-        : jobDef.cronExpression;
-
     const job: ScheduledJob = {
         id: generateJobId(),
         name: jobDef.name,
-        cronExpression,
+        cronExpression: jobDef.cronExpression?.trim(),
         intervalMs: jobDef.intervalMs,
         delayMs: jobDef.delayMs,
         nextRun: new Date(),

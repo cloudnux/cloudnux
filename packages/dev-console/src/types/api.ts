@@ -92,6 +92,9 @@ export interface ScheduleInfo {
   isRunning: boolean
   cronExpression?: string
   timezone?: string
+  scheduleType?: 'cron' | 'rate' | 'unknown'
+  description?: string
+  upcomingExecutions?: string[]
 }
 
 export interface ScheduleDetails extends ScheduleInfo {

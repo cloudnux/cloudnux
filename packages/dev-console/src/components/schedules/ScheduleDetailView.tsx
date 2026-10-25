@@ -251,11 +251,26 @@ const ScheduleDetailView: React.FC<ScheduleDetailViewProps> = ({ moduleName, sch
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-600 mb-1">Cron Expression</label>
+              <label className="block text-sm font-medium text-gray-600 mb-1">
+                {scheduleData.scheduleType === 'rate' ? 'Rate Expression' : 'Cron Expression'}
+              </label>
               <code className="block text-sm font-mono bg-gray-50 p-2 rounded border">
                 {scheduleData.job.cronExpression}
               </code>
+              {scheduleData.description && (
+                <div className="text-xs text-gray-500 mt-1">{scheduleData.description}</div>
+              )}
             </div>
+            {scheduleData.upcomingExecutions && scheduleData.upcomingExecutions.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-1">Next Runs</label>
+                <ul className="text-sm text-gray-700 space-y-0.5">
+                  {scheduleData.upcomingExecutions.map(d => (
+                    <li key={d}>{new Date(d).toLocaleString()}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1">Created At</label>
               <div className="text-sm text-gray-700">

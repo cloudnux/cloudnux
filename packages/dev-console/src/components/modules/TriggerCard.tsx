@@ -102,7 +102,14 @@ const TriggerCard: React.FC<TriggerCardProps> = ({ type, title, count, color, it
               <span className="font-medium">{schedule.name}</span>
             </div>
             {schedule.cronExpression && (
-              <span className="font-mono text-gray-600">{schedule.cronExpression}</span>
+              <span className="flex items-center gap-1">
+                {schedule.scheduleType && schedule.scheduleType !== 'unknown' && (
+                  <span className="px-1 py-0.5 rounded text-xs bg-orange-100 text-orange-700 uppercase">
+                    {schedule.scheduleType}
+                  </span>
+                )}
+                <span className="font-mono text-gray-600">{schedule.cronExpression}</span>
+              </span>
             )}
           </div>
         </div>
