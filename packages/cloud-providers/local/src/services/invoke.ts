@@ -1,4 +1,4 @@
-import { InvokeService, parseInvokeTarget } from "@cloudnux/core-cloud-provider";
+import { InvokeService, parseInvokeTarget, unwrapInvokeResponse } from "@cloudnux/core-cloud-provider";
 
 import { InvokeManager } from "../invoke-plugin/types";
 
@@ -36,11 +36,12 @@ async function invokeRemote<TResponse>(
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ payload }),
     });
-    const body = await response.json().catch(() => ({})) as { result?: TResponse, error?: string };
+    const body = await response.json().catch(() => ({})) as { result?: unknown, error?: string };
     if (!response.ok) {
+        // transport failure or the callee threw — not an error response
         throw new Error(body.error ?? `Remote invoke ${namespace}/${module}:${triggerName} failed with status ${response.status}`);
     }
-    return body.result as TResponse;
+    return unwrapInvokeResponse<TResponse>(body.result, `${namespace}/${module}`, triggerName);
 }
 
 export function createLocalInvokeService(): InvokeService {
@@ -64,7 +65,7 @@ export function createLocalInvokeService(): InvokeService {
                 invokeTriggerName: triggerName,
                 payload,
             };
-            return await handler(envelope) as TResponse;
+            return unwrapInvokeResponse<TResponse>(await handler(envelope), target, triggerName);
         }
     };
 }

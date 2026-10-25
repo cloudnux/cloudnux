@@ -48,6 +48,6 @@ export type {
     EmailSendResult,
 } from "@cloudnux/core-cloud-provider";
 
-export { ErrorCode, WebSocketConnectionGoneError } from "@cloudnux/core-cloud-provider";
+export { ErrorCode, WebSocketConnectionGoneError, InvokeError } from "@cloudnux/core-cloud-provider";
 
 export { HttpHalt } from "./services/functions/http/halt";

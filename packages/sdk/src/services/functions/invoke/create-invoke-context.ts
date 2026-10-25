@@ -16,14 +16,16 @@ export function createInvokeContext(request: InvokeRequest, logger: LoggerServic
             response.status = "success";
             response.body = data;
         },
-        error(message: string, code?: ErrorCode) {
+        error(message: string, code?: ErrorCode | string, details?: Record<string, any>) {
             response.status = "error";
             response.body = message;
             response.code = code;
+            response.details = details;
         },
         serverError(err: Error) {
             response.status = "error";
-            response.body = err;
+            // an Error object serializes to {} — keep the message
+            response.body = err?.message ?? String(err);
             response.code = ErrorCode.UNKNOWN_ERROR;
         },
         notFound(resource: string, id?: string | number) {

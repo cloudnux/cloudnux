@@ -39,7 +39,11 @@ export const invokesPlugin: FastifyPluginAsync<InvokePluginOptions> =
                     };
                     try {
                         const result = await handler(envelope);
-                        finish({ status: 'completed', result });
+                        if (result?.status === 'error') {
+                            finish({ status: 'failed', result, error: typeof result.body === 'string' ? result.body : 'error response' });
+                        } else {
+                            finish({ status: 'completed', result });
+                        }
                         return result;
                     } catch (error) {
                         finish({ status: 'failed', error: (error as Error).message });

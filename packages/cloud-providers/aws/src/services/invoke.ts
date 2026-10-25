@@ -1,6 +1,6 @@
 import { LambdaClient, InvokeCommand } from "@aws-sdk/client-lambda";
 
-import { InvokeService, parseInvokeTarget } from "@cloudnux/core-cloud-provider";
+import { InvokeService, parseInvokeTarget, unwrapInvokeResponse } from "@cloudnux/core-cloud-provider";
 
 let _currentModule: string | undefined;
 
@@ -46,16 +46,16 @@ export function createInvokeService(): InvokeService {
             });
 
             const response = await lambdaClient.send(command);
+            const raw = response.Payload ? Buffer.from(response.Payload).toString() : "";
 
             if (response.FunctionError) {
-                throw new Error(`Lambda invocation error: ${response.FunctionError}`);
+                // the callee threw — Payload holds { errorMessage, errorType }
+                let detail = response.FunctionError;
+                try { detail = JSON.parse(raw).errorMessage ?? detail; } catch { /* keep FunctionError */ }
+                throw new Error(`Lambda invocation error (${target}:${triggerName}): ${detail}`);
             }
 
-            if (response.Payload) {
-                return JSON.parse(Buffer.from(response.Payload).toString()) as TResponse;
-            }
-
-            return undefined as TResponse;
+            return unwrapInvokeResponse<TResponse>(raw ? JSON.parse(raw) : undefined, target, triggerName);
         }
     };
 }

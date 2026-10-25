@@ -204,14 +204,29 @@ export type InvokeRequest = {
     requestId?: string,
 }
 
+/**
+ * What an invoked function returns to its caller, the same on every provider.
+ * The invoke client unwraps it: `success` → the caller gets `body`,
+ * `error` → the caller gets an `InvokeError` thrown.
+ */
 export type InvokeResponse = {
     status: "success" | "error",
+    /** success: the data passed to `success()` · error: the error message */
     body?: any,
-    code?: ErrorCode,
+    /** error only — an `ErrorCode` or any domain code, e.g. `directory_not_empty` */
+    code?: ErrorCode | string,
+    /** error only — structured details for the caller, e.g. validation issues */
+    details?: Record<string, any>,
 }
 
-export type InvokeFunctionContext = FunctionContext & {
+export type InvokeFunctionContext = Omit<FunctionContext, "error"> & {
     type: "Invoke";
+    /**
+     * Ends the invocation with an error; the caller's `invoke()` throws an `InvokeError`
+     * carrying `message`, `code` and `details`.
+     * @param code - An `ErrorCode` or any domain code string.
+     */
+    error(message: string, code?: ErrorCode | string, details?: Record<string, any>): void;
     request: InvokeRequest;
     response: InvokeResponse;
     payload<T = Record<string, any>>(): T;

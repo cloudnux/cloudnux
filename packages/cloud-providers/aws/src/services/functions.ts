@@ -221,7 +221,8 @@ export function createFunctionsService(): FunctionsService {
             return { statusCode: 200 };
         },
         buildInvokeResponse: (ctx: InvokeFunctionContext) => {
-            return ctx.response.body;
+            // the whole response — the caller's invoke client unwraps it (body or InvokeError)
+            return ctx.response;
         },
     }
 }

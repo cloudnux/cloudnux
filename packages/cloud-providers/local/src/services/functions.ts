@@ -137,10 +137,8 @@ export function createLocalFunctionsService(): FunctionsService {
             return undefined;
         },
         buildInvokeResponse: (context: InvokeFunctionContext) => {
-            if (context.response.status === "error") {
-                throw new Error(JSON.stringify(context.response.body));
-            }
-            return context.response.body;
+            // the whole response, same as AWS — the caller's invoke client unwraps it
+            return context.response;
         },
     }
 }
