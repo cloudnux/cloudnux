@@ -1,5 +1,20 @@
 # @cloudnux/dev-console
 
+## 0.23.0
+
+### Minor Changes
+
+- [`7df9fd0`](https://github.com/cloudnux/cloudnux/commit/7df9fd08833186e861f6cec7a0ca59063c316736) Thanks [@minawalphonce](https://github.com/minawalphonce)! - Support AWS-style `rate()` and `cron()` schedule expressions in the local scheduler (alongside plain unix cron). Rates run at a true fixed interval, `cron()` handles AWS day-of-week numbering, `?`, `L`, `#` and the year field, and invalid expressions now report the reason. The dev console shows a RATE/CRON badge, a human-readable description and the next runs for each schedule.
+
+- [`2dada90`](https://github.com/cloudnux/cloudnux/commit/2dada90162869d80ed88ba2959f0c32049a776c5) Thanks [@minawalphonce](https://github.com/minawalphonce)! - feat(invoke): namespace-qualified invoke targets
+
+  `invoke(target, trigger, payload)` now accepts `module` (caller's own namespace) or `namespace/module`.
+
+  - aws: fix the lambda name, which was missing the namespace; it is now `<namespace>_<module>`. The caller's own namespace is derived from `AWS_LAMBDA_FUNCTION_NAME`
+  - local: add `POST /__invoke/:module/:trigger` to the invoke plugin, and call other namespaces over http
+  - cli: add `namespaces` to the nux config (namespace -> dev server url) used by the local provider
+  - dev-console: show invoke triggers per module, with a detail page to call a trigger with a JSON payload and an execution history of every call (in-process, other namespaces and console)
+
 ## 0.22.0
 
 ### Minor Changes

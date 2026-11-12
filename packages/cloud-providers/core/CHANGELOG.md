@@ -1,5 +1,22 @@
 # @cloudnux/core-cloud-provider
 
+## 0.23.0
+
+### Minor Changes
+
+- [`a4e1506`](https://github.com/cloudnux/cloudnux/commit/a4e15069bb6872ec31f1425ebbe076464676b58d) Thanks [@minawalphonce](https://github.com/minawalphonce)! - Invoke responses now behave the same on AWS and locally. `invoke()` returns the data passed to `context.success()`, and throws an `InvokeError` (with `code` and `details`) when the invoked function ends with `context.error()`, `notFound()` or `serverError()`. `context.error()` on an invoke context accepts any string code and an optional `details` object. A function that throws still surfaces as a plain `Error`.
+
+  Breaking: the invoked function now returns the whole response object to the invoke client, so caller and callee must both run this version.
+
+- [`2dada90`](https://github.com/cloudnux/cloudnux/commit/2dada90162869d80ed88ba2959f0c32049a776c5) Thanks [@minawalphonce](https://github.com/minawalphonce)! - feat(invoke): namespace-qualified invoke targets
+
+  `invoke(target, trigger, payload)` now accepts `module` (caller's own namespace) or `namespace/module`.
+
+  - aws: fix the lambda name, which was missing the namespace; it is now `<namespace>_<module>`. The caller's own namespace is derived from `AWS_LAMBDA_FUNCTION_NAME`
+  - local: add `POST /__invoke/:module/:trigger` to the invoke plugin, and call other namespaces over http
+  - cli: add `namespaces` to the nux config (namespace -> dev server url) used by the local provider
+  - dev-console: show invoke triggers per module, with a detail page to call a trigger with a JSON payload and an execution history of every call (in-process, other namespaces and console)
+
 ## 0.22.0
 
 ### Minor Changes

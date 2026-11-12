@@ -1,5 +1,18 @@
 # @cloudnux/cloud-sdk
 
+## 0.23.0
+
+### Minor Changes
+
+- [`a4e1506`](https://github.com/cloudnux/cloudnux/commit/a4e15069bb6872ec31f1425ebbe076464676b58d) Thanks [@minawalphonce](https://github.com/minawalphonce)! - Invoke responses now behave the same on AWS and locally. `invoke()` returns the data passed to `context.success()`, and throws an `InvokeError` (with `code` and `details`) when the invoked function ends with `context.error()`, `notFound()` or `serverError()`. `context.error()` on an invoke context accepts any string code and an optional `details` object. A function that throws still surfaces as a plain `Error`.
+
+  Breaking: the invoked function now returns the whole response object to the invoke client, so caller and callee must both run this version.
+
+### Patch Changes
+
+- Updated dependencies [[`a4e1506`](https://github.com/cloudnux/cloudnux/commit/a4e15069bb6872ec31f1425ebbe076464676b58d), [`2dada90`](https://github.com/cloudnux/cloudnux/commit/2dada90162869d80ed88ba2959f0c32049a776c5)]:
+  - @cloudnux/core-cloud-provider@0.23.0
+
 ## 0.22.0
 
 ### Minor Changes
