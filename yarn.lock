@@ -1971,6 +1971,37 @@
   dependencies:
     tslib "^2.6.2"
 
+"@azure/communication-common@^2.3.1":
+  version "2.5.0"
+  resolved "https://registry.yarnpkg.com/@azure/communication-common/-/communication-common-2.5.0.tgz#063b352c1d7f490ddf7d18796b294e216be2a103"
+  integrity sha512-6Z5OSOk8tWlOAZHAxgHGfLt8V755BHOvMks/7xLx2auQLmS+DJObgtq+1yE9gVYLu66tzpX/J779H8D9HDVNAQ==
+  dependencies:
+    "@azure-rest/core-client" "^2.3.3"
+    "@azure/abort-controller" "^2.1.2"
+    "@azure/core-auth" "^1.9.0"
+    "@azure/core-rest-pipeline" "^1.17.0"
+    "@azure/core-tracing" "^1.2.0"
+    "@azure/core-util" "^1.11.0"
+    "@azure/logger" "^1.1.4"
+    events "^3.3.0"
+    jwt-decode "^4.0.0"
+    tslib "^2.8.1"
+
+"@azure/communication-email@^1.1.0":
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/@azure/communication-email/-/communication-email-1.1.0.tgz#8488d017f1d2c88d04f08af4b1bd9dfc36c0c16d"
+  integrity sha512-n9ATpXyxb4MIhEp/Vtv5BU8GdUZH0vYpm/1pKXVu9AeiQ78MG3OIaiQQ2PmQfA0XPdTx5/g+tUxkwVuD6U4u4w==
+  dependencies:
+    "@azure/abort-controller" "^2.1.2"
+    "@azure/communication-common" "^2.3.1"
+    "@azure/core-auth" "^1.9.0"
+    "@azure/core-client" "^1.9.2"
+    "@azure/core-lro" "^2.7.2"
+    "@azure/core-rest-pipeline" "^1.18.0"
+    "@azure/core-util" "^1.11.0"
+    "@azure/logger" "^1.1.4"
+    tslib "^2.8.1"
+
 "@azure/core-amqp@^4.3.2":
   version "4.5.1"
   resolved "https://registry.yarnpkg.com/@azure/core-amqp/-/core-amqp-4.5.1.tgz#75d9c03d0d9a60efc68a53d793bb07aae08afe5c"
@@ -2039,7 +2070,7 @@
   resolved "https://registry.yarnpkg.com/@azure/core-process/-/core-process-1.0.0.tgz#c3af1c17223d6538e1b36967ddc94cdae532cb83"
   integrity sha512-/shnJ+ooO8WPxDhPEeI/2oRQuubn16gZ6CvlbpWbEswZfzwI9tI/sMAHmF3x1LuQ9yZYXfLW3TjzGMLEC5blKg==
 
-"@azure/core-rest-pipeline@^1.17.0", "@azure/core-rest-pipeline@^1.19.0", "@azure/core-rest-pipeline@^1.19.1", "@azure/core-rest-pipeline@^1.22.0", "@azure/core-rest-pipeline@^1.22.2", "@azure/core-rest-pipeline@^1.24.0", "@azure/core-rest-pipeline@^1.8.0":
+"@azure/core-rest-pipeline@^1.17.0", "@azure/core-rest-pipeline@^1.18.0", "@azure/core-rest-pipeline@^1.19.0", "@azure/core-rest-pipeline@^1.19.1", "@azure/core-rest-pipeline@^1.22.0", "@azure/core-rest-pipeline@^1.22.2", "@azure/core-rest-pipeline@^1.24.0", "@azure/core-rest-pipeline@^1.8.0":
   version "1.25.1"
   resolved "https://registry.yarnpkg.com/@azure/core-rest-pipeline/-/core-rest-pipeline-1.25.1.tgz#344522466c9afe45b2b2b9737654b4aaaf48109f"
   integrity sha512-fTIA3CAm/cdODqiXkO6jYOIkU2Ylld7vq65KGc70gTwl12sLQsC8v7I5t6tp2N2CfUONzZBXyeFw7KEu6Ks2zg==
@@ -8480,6 +8511,11 @@ jws@^4.0.1:
   dependencies:
     jwa "^2.0.1"
     safe-buffer "^5.0.1"
+
+jwt-decode@^4.0.0:
+  version "4.0.0"
+  resolved "https://registry.yarnpkg.com/jwt-decode/-/jwt-decode-4.0.0.tgz#2270352425fd413785b2faf11f6e755c5151bd4b"
+  integrity sha512-+KJGIyHgkGuIq3IEBNftfhW/LfWhXUIY6OmyVWjliu5KH1y0fw7VQ8YndE2O4qZdMSd9SqbnC8GOcZEy0Om7sA==
 
 keyv@^4.5.4:
   version "4.5.4"
