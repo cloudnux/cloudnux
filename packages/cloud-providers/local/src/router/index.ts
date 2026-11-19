@@ -23,6 +23,11 @@ export function createRouter(): RouterInstance {
     field: 'rawBody',
     encoding: 'utf8',
   });
+  fastify.addContentTypeParser(
+    "application/x-www-form-urlencoded",
+    { parseAs: "string" },
+    (_request, body, done) => done(null, body),
+  );
 
   //TODO: get config from the nux.config
   fastify.register(cors, {
