@@ -96,6 +96,21 @@ export function validateConfig<TTaskParams extends TaskParamBase>(config: unknow
         }
     }
 
+    // Validate hooks, if present
+    if (typedConfig.hooks !== undefined) {
+        if (typeof typedConfig.hooks !== 'object' || typedConfig.hooks === null || Array.isArray(typedConfig.hooks)) {
+            throw new Error('Config.hooks must be an object mapping a hook name to a module path');
+        }
+        for (const [name, modulePath] of Object.entries(typedConfig.hooks)) {
+            if (!['coldStart'].includes(name)) {
+                throw new Error(`Config.hooks.${name} is not a known hook (known hooks: coldStart)`);
+            }
+            if (modulePath !== undefined && !isString(modulePath)) {
+                throw new Error(`Config.hooks.${name} must be a string path to a module`);
+            }
+        }
+    }
+
     // Validate namespaces, if present
     if (typedConfig.namespaces !== undefined) {
         if (typeof typedConfig.namespaces !== 'object' || typedConfig.namespaces === null || Array.isArray(typedConfig.namespaces)) {

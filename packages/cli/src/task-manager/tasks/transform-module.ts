@@ -4,6 +4,7 @@ import path from "node:path";
 import { Task } from "../../types.js";
 import { loadEntrypoint } from "../load-entrypoint.js";
 import { buildServiceOverrides } from "../build-service-overrides.js";
+import { buildHookImports } from "../build-hooks.js";
 
 const helpers = {
     $$convertRouteParamstoFastifyRouteTemplate: (route: string) => {
@@ -15,12 +16,13 @@ export const transformModule: Task = {
     title: ({ moduleName }) => `Transform module ${moduleName}`,
     skip: () => false,
     action: async (params) => {
-        const { workingDir, moduleName, entrypointPath, source, moduleTemplateFunc, services } = params;
+        const { workingDir, moduleName, entrypointPath, source, moduleTemplateFunc, services, hooks } = params;
         const entrypoint = await loadEntrypoint(entrypointPath);
         const rendered = moduleTemplateFunc({
             source: (process.platform === "win32") ? source.replace(/\\/g, "/") : source,
             module: moduleName,
             serviceOverrides: buildServiceOverrides(services),
+            hooks: buildHookImports(hooks),
             ...entrypoint,
             ...helpers
         });

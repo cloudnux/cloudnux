@@ -48,6 +48,13 @@ describe('scaffoldProject', () => {
         expect(rootTsconfig.compilerOptions.types).toEqual(['node']);
 
         await expect(readFile(path.join(targetDir, '.gitignore'), 'utf8')).resolves.toContain('node_modules');
+        await expect(readFile(path.join(targetDir, '.gitignore'), 'utf8')).resolves.toMatch(/^\.secrets\.json$/m);
+
+        // local secrets file next to .env, wired into the develop environment
+        expect(JSON.parse(await readFile(path.join(targetDir, '.secrets.json'), 'utf8'))).toEqual({});
+        expect(nuxConfig).toContain('import { defaultConfig } from "@cloudnux/cli/defaults";');
+        expect(nuxConfig).toContain('...defaultConfig.environments.develop');
+        expect(nuxConfig).toContain('"secretsFile": "./.secrets.json"');
 
         const moduleDir = path.join(targetDir, 'packages', 'modules', 'core');
         const modulePackageJson = JSON.parse(await readFile(path.join(moduleDir, 'package.json'), 'utf8'));

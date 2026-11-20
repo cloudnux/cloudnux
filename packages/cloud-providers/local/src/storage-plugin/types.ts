@@ -6,4 +6,10 @@ export interface StoragePluginOptions extends FastifyPluginOptions {
      * giving URLs of the form /<prefix>/<bucket>/<key>
      */
     prefix?: string;
+
+    /**
+     * Largest body accepted by an upload through a signed URL, in bytes
+     * @default 524288000 (500 MB)
+     */
+    uploadBodyLimit?: number;
 }

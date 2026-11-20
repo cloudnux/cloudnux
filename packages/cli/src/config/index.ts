@@ -108,6 +108,24 @@ export async function loadConfig(
             );
         }
 
+        // Resolve hook paths relative to the directory the cli was invoked from
+        if (mergedConfig.hooks) {
+            mergedConfig.hooks = Object.fromEntries(
+                Object.entries(mergedConfig.hooks)
+                    .filter(([, modulePath]) => modulePath !== undefined)
+                    .map(([name, modulePath]) => {
+                        if (typeof modulePath !== 'string') {
+                            throw new Error(`Config.hooks.${name} must be a string path to a module`);
+                        }
+                        const resolvedPath = path.resolve(process.cwd(), modulePath);
+                        if (!fs.existsSync(resolvedPath)) {
+                            throw new Error(`Config.hooks.${name} points to a module that does not exist: ${resolvedPath}`);
+                        }
+                        return [name, resolvedPath];
+                    })
+            );
+        }
+
         if (validateConfig(mergedConfig))
             return mergedConfig;
     }

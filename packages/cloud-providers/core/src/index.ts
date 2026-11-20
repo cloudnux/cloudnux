@@ -8,5 +8,6 @@ export * from "./utils/cookies";
 export * from "./services/websocket";
 export * from "./services/logger";
 export * from "./services/email";
+export * from "./services/secrets";
 export * from "./cloud-provider";
 export * from "./cloud-container";

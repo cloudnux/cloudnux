@@ -18,6 +18,7 @@ import "../invoke-plugin/types";
 import { routeRegistry } from "./route-registry";
 import { listEmailHistory, getEmailHistoryEntry, getEmailRaw, getEmailBody } from "../services/email";
 import { listStorageBuckets, listStorageObjects } from "../services/storage";
+import { addNotificationRule, deleteNotificationRule, listNotificationRules, validateRule, withRuleId } from "../services/storage-notifications";
 
 interface LogEntry {
   id: string;
@@ -868,6 +869,83 @@ async function devConsolePluginFunction(
     } catch (error) {
       return reply.status(400).send({ error: (error as Error).message });
     }
+  });
+
+  async function checkNotificationTarget(rule: { queue?: string; topic?: string }): Promise<string | undefined> {
+    const brokerUrl = (process.env.DEV_CLOUD_EVENT_BROKER_URL ?? "").replace(/\/+$/, "");
+
+    if (!brokerUrl) {
+      if (rule.queue && !fastify.queues.hasQueue(rule.queue)) {
+        return `Queue not found: ${rule.queue}. Known queues: ${fastify.queues.listQueues().join(", ") || "none"}`;
+      }
+      if (rule.topic && !(fastify.queues.listTopics()[rule.topic]?.length)) {
+        return `Topic not found: ${rule.topic}. Known topics: ${Object.keys(fastify.queues.listTopics()).join(", ") || "none"}`;
+      }
+      return undefined;
+    }
+
+    const url = rule.queue
+      ? `${brokerUrl}/${encodeURIComponent(rule.queue)}`
+      : `${brokerUrl}/topics/${encodeURIComponent(rule.topic!)}`;
+    try {
+      const response = await fetch(url);
+      if (response.status === 404) {
+        return rule.queue
+          ? `Queue not found on ${brokerUrl}: ${rule.queue}`
+          : `Topic not found on ${brokerUrl}: ${rule.topic} (no queue subscribed to it)`;
+      }
+      if (!response.ok) {
+        return `Could not check the target on ${brokerUrl}: HTTP ${response.status}`;
+      }
+      return undefined;
+    } catch (error) {
+      return `Could not reach the event broker at ${brokerUrl}: ${(error as Error).message}`;
+    }
+  }
+
+  // Storage notification rules (local counterpart of S3 event notifications),
+  // stored in <storage dir>/notifications.metadata.json
+  fastify.get(`/${prefix}/storage-notifications`, async (_request, reply) => {
+    try {
+      return { rules: await listNotificationRules() };
+    } catch (error) {
+      return reply.status(500).send({ error: (error as Error).message });
+    }
+  });
+
+  fastify.post(`/${prefix}/storage-notifications`, async (request, reply) => {
+    let rule;
+    try {
+      const body = request.body;
+      // the id is optional: a readable one is generated from bucket and target
+      rule = validateRule(body && typeof body === "object" && !Array.isArray(body)
+        ? await withRuleId(body as Record<string, unknown>)
+        : body);
+    } catch (error) {
+      return reply.status(400).send({ error: (error as Error).message });
+    }
+
+    // The target must exist where messages are delivered, so a typo does not
+    // silently drop notifications: on the dev server DEV_CLOUD_EVENT_BROKER_URL
+    // points to (this one by default, or another one), else in this one.
+    const targetError = await checkNotificationTarget(rule);
+    if (targetError) {
+      return reply.status(400).send({ error: targetError });
+    }
+
+    try {
+      return reply.status(201).send({ rule: await addNotificationRule(rule) });
+    } catch (error) {
+      return reply.status(409).send({ error: (error as Error).message });
+    }
+  });
+
+  fastify.delete(`/${prefix}/storage-notifications/:id`, async (request, reply) => {
+    const { id } = request.params as { id: string };
+    if (!(await deleteNotificationRule(id))) {
+      return reply.status(404).send({ error: `Rule not found: ${id}` });
+    }
+    return reply.status(204).send();
   });
 
   // Server-Sent Events for real-time logs

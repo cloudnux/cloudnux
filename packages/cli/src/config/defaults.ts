@@ -36,6 +36,8 @@ export const defaultConfig: Config = {
     environments: {
         develop: {
             port: 3000,
+            // secrets of the local secrets service, next to .env (not in the disposable .nux folder)
+            secretsFile: "./.secrets.json",
             moduleTemplatePath: "./templates/local/module.ts.ejs",
             devServerTemplatePath: "./templates/local/dev-server.ts.ejs",
             tasks: [

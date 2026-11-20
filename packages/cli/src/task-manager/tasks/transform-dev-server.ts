@@ -3,6 +3,7 @@ import path from "node:path";
 
 import { Task } from "../../types.js";
 import { buildServiceOverrides } from "../build-service-overrides.js";
+import { buildHookImports } from "../build-hooks.js";
 
 /**
  * convert the module template into a compilable function
@@ -21,15 +22,23 @@ export const transformDevServer: Task = {
         workingDir,
         port,
         services,
+        hooks,
         namespace,
         namespaces,
+        secretsFile,
     }) => {
+        if (secretsFile !== undefined && typeof secretsFile !== "string") {
+            throw new Error("environments.develop.secretsFile must be a string path");
+        }
         const rendered = devServerTemplateFunc({
             source: "./src",
             moduleNames,
             port,
             envDir: path.resolve(workingDir),
             serviceOverrides: buildServiceOverrides(services),
+            hooks: buildHookImports(hooks),
+            // absolute, so the dev server finds it whatever its working directory
+            secretsFile: secretsFile ? path.resolve(process.cwd(), secretsFile) : undefined,
             namespace,
             namespaces,
         });

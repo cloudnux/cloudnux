@@ -11,6 +11,9 @@ import { storagePlugin } from "@cloudnux/local-cloud-provider/storage-plugin";
 <%_ for(const svc of serviceOverrides){ _%>
 import <%=svc.varName%> from "<%-svc.path%>";
 <%_ } _%>
+<%_ if (hooks.coldStart) { _%>
+import coldStart from "<%-hooks.coldStart%>";
+<%_ } _%>
 
 // The environment folder is resolved by the CLI at render time. Every local
 // data folder lives inside it; the dev server must never run without it.
@@ -25,13 +28,28 @@ const envPath = (value: string | undefined, defaultName: string) => path.resolve
 process.env.DEV_CLOUD_LOCATION_PATH = envPath(process.env.DEV_CLOUD_LOCATION_PATH, '.local-location');
 process.env.DEV_CLOUD_STORAGE_BUCKET = envPath(process.env.DEV_CLOUD_STORAGE_BUCKET, '.local-storage');
 process.env.DEV_CLOUD_EMAIL_DIR = envPath(process.env.DEV_CLOUD_EMAIL_DIR, '.local-email');
+<%_ if (secretsFile) { _%>
+// Local secrets service: environments.develop.secretsFile in nux.config
+process.env.DEV_CLOUD_SECRETS_FILE = <%- JSON.stringify(secretsFile) %>;
+<%_ } _%>
+// Queues and topics live in this dev server unless DEV_CLOUD_EVENT_BROKER_URL
+// points to another one (the queue plugin is registered under /queues)
+process.env.DEV_CLOUD_EVENT_BROKER_URL = process.env.DEV_CLOUD_EVENT_BROKER_URL || 'http://localhost:<%=port%>/queues';
+// Public base URL of the storage plugin, used to build signed upload/download URLs
+process.env.DEV_CLOUD_STORAGE_URL = process.env.DEV_CLOUD_STORAGE_URL || 'http://localhost:<%=port%>/__storage';
 
 useCloudProvider(localCloudProvider<% if (serviceOverrides.length) { %>, { serviceFactories: { <%- serviceOverrides.map(svc => `"${svc.kind}": ${svc.varName}`).join(', ') %> } }<% } %>);
 
 configureLocalInvoke({ namespace: <%- JSON.stringify(namespace) %>, namespaces: <%- JSON.stringify(namespaces ?? {}) %> });
 
+// Modules are loaded only after the cloud provider is set up. With a cold start
+// hook, the hook runs for each module before that module's code is loaded,
+// the same order as a cold start in the cloud.
 <%_ for(const module of moduleNames){ _%>
-import <%=module%>Entries from "./<%=module%>"
+<%_ if (hooks.coldStart) { _%>
+await coldStart("<%=module%>");
+<%_ } _%>
+const <%=module%>Entries = (await import("./<%=module%>")).default;
 <%_ } _%>
 
 const router = createRouter();

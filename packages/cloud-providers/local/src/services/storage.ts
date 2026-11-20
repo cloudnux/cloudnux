@@ -1,8 +1,25 @@
+import { createHash } from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
 
 import { requireEnvDir } from "../utils/dirs";
-import { encodeStorageKey, getService, LoggerService, StorageService, StorageWriteOptions, StorageWriteResult } from "@cloudnux/core-cloud-provider";
+import {
+    encodeStorageKey,
+    getService,
+    LoggerService,
+    SignedDownloadOptions,
+    SignedUploadOptions,
+    SignedUrl,
+    StorageObjectCreated,
+    StorageService,
+    StorageWriteOptions,
+    StorageWriteResult,
+} from "@cloudnux/core-cloud-provider";
+import { getStorageBaseUrl, signUpload } from "./storage-signing";
+import { notifyObjectCreated, OBJECT_CREATED_MESSAGE_TYPE } from "./storage-notifications";
+
+/** Default lifetime of signed URLs, in seconds */
+const DEFAULT_EXPIRES_IN = 300;
 
 // Use fs.promises for async file operations
 const { mkdir, writeFile, readFile, unlink, access, readdir, stat } = fs.promises;
@@ -27,13 +44,48 @@ export function getLocalStorageDir(): string {
  * Validate a bucket name so it maps to exactly one folder under the storage directory
  * @param bucket Bucket name
  */
-function assertValidBucket(bucket: string): void {
+export function assertValidBucket(bucket: string): void {
     if (!bucket) {
         throw new Error('Bucket name is required');
     }
     if (bucket === '.' || bucket === '..' || /[\\/]/.test(bucket)) {
         throw new Error(`Invalid bucket name: ${bucket}`);
     }
+}
+
+/**
+ * The key an object is stored under: normalized, `/` separated, no leading `../`
+ * (the same key write() reports back)
+ * @param filePath Requested key
+ */
+export function toStoredKey(filePath: string): string {
+    const normalized = path.normalize(filePath).replace(/^(\.\.(\/|\\|$))+/, '');
+    return path.join('/', normalized).slice(1).split(path.sep).join('/');
+}
+
+/**
+ * Read the object-created message sent by a local storage notification rule
+ * @param message Message body (object or JSON string)
+ * @returns The created object, or null for any other message
+ */
+export function parseLocalObjectCreated(message: unknown): StorageObjectCreated | null {
+    let body: any = message;
+    if (typeof body === 'string') {
+        try {
+            body = JSON.parse(body);
+        } catch {
+            return null;
+        }
+    }
+    if (!body || typeof body !== 'object' || body.type !== OBJECT_CREATED_MESSAGE_TYPE) return null;
+    if (typeof body.bucket !== 'string' || typeof body.key !== 'string') return null;
+    return {
+        bucket: body.bucket,
+        key: body.key,
+        size: body.size,
+        contentType: body.contentType,
+        eTag: body.eTag,
+    };
 }
 
 /**
@@ -150,6 +202,15 @@ export function createLocalStorageService(): StorageService {
             // Key as actually stored: normalized, `/` separated, no `../` or `./`
             const storedKey = path.relative(path.join(baseDir, bucket), fullPath).split(path.sep).join('/');
 
+            // Like S3 event notifications: every successful write is announced to
+            // the matching notification rules (never fails the write itself)
+            const buffer = typeof data === 'string' ? Buffer.from(data) : data;
+            await notifyObjectCreated(bucket, storedKey, {
+                size: buffer.length,
+                contentType: options?.contentType,
+                eTag: createHash('md5').update(buffer).digest('hex'),
+            });
+
             return {
                 bucket,
                 key: storedKey,
@@ -207,6 +268,67 @@ export function createLocalStorageService(): StorageService {
                 }
                 throw error;
             }
+        },
+
+        /**
+         * Signed PUT URL to the storage plugin (PUT /__storage/<bucket>/<key>).
+         * Content type, size and If-None-Match are part of the signature,
+         * checked by the plugin like S3 checks a presigned URL.
+         */
+        async createUploadUrl(filePath: string, bucket: string, options: SignedUploadOptions): Promise<SignedUrl> {
+            assertValidBucket(bucket);
+            if (!options?.contentType) {
+                throw new Error('contentType is required for an upload URL');
+            }
+
+            const key = toStoredKey(filePath);
+            const expiresIn = options.expiresIn ?? DEFAULT_EXPIRES_IN;
+            const expires = Math.floor(Date.now() / 1000) + expiresIn;
+            const ifNoneMatch = !(options.overwrite ?? false);
+
+            const query = signUpload({
+                bucket,
+                key,
+                expires,
+                contentType: options.contentType,
+                contentLength: options.contentLength,
+                ifNoneMatch,
+            });
+
+            const headers: Record<string, string> = { 'content-type': options.contentType };
+            if (ifNoneMatch) headers['if-none-match'] = '*';
+
+            return {
+                url: `${getStorageBaseUrl()}/${encodeURIComponent(bucket)}/${encodeStorageKey(key)}?${query.toString()}`,
+                method: 'PUT',
+                headers,
+                expiresAt: new Date(expires * 1000),
+                bucket,
+                key,
+            };
+        },
+
+        /**
+         * Download URL of the storage plugin. The dev server ignores access
+         * control, so the URL is not signed and does not expire.
+         */
+        async createDownloadUrl(filePath: string, bucket: string, options?: SignedDownloadOptions): Promise<SignedUrl> {
+            assertValidBucket(bucket);
+            const key = toStoredKey(filePath);
+            const expiresIn = options?.expiresIn ?? DEFAULT_EXPIRES_IN;
+
+            return {
+                url: `${getStorageBaseUrl()}/${encodeURIComponent(bucket)}/${encodeStorageKey(key)}`,
+                method: 'GET',
+                headers: {},
+                expiresAt: new Date(Date.now() + expiresIn * 1000),
+                bucket,
+                key,
+            };
+        },
+
+        parseObjectCreated(message: unknown): StorageObjectCreated | null {
+            return parseLocalObjectCreated(message);
         }
     };
 }

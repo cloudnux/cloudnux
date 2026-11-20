@@ -6,6 +6,12 @@ export { useLogs, useClearLogs } from './useLogs'
 export { useWebSockets, useWebSocketPath, useSendWebSocketMessage } from './useWebSockets'
 export { useEmails, useEmailDetails, useEmailBody } from './useEmails'
 export { useTopics, useTopicDetails } from './useTopics'
-export { useStorageBuckets, useStorageObjects } from './useStorage'
+export {
+  useStorageBuckets,
+  useStorageObjects,
+  useStorageNotificationRules,
+  useAddStorageNotificationRule,
+  useDeleteStorageNotificationRule,
+} from './useStorage'
 
 export { useInvokeHistory } from './useInvokes'

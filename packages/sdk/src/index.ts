@@ -7,6 +7,7 @@ export * from "./services/functions/cloud-functions";
 export * from "./services/websocket";
 export * from "./services/logger";
 export * from "./services/email";
+export * from "./services/secrets";
 export * from "./provider";
 
 //export http api types and interfaces
@@ -17,6 +18,11 @@ export type {
     EventBrokerService,
     EventMessage,
     StorageWriteOptions,
+    StorageWriteResult,
+    SignedUploadOptions,
+    SignedDownloadOptions,
+    SignedUrl,
+    StorageObjectCreated,
     StorageService,
     LocationService,
     LocationAddress,
@@ -46,8 +52,9 @@ export type {
     EmailMessage,
     EmailAttachment,
     EmailSendResult,
+    SecretsService,
 } from "@cloudnux/core-cloud-provider";
 
-export { ErrorCode, WebSocketConnectionGoneError, InvokeError } from "@cloudnux/core-cloud-provider";
+export { ErrorCode, WebSocketConnectionGoneError, InvokeError, SecretsNotFoundError } from "@cloudnux/core-cloud-provider";
 
 export { HttpHalt } from "./services/functions/http/halt";

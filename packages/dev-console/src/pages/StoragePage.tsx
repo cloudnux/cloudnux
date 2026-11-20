@@ -4,6 +4,7 @@ import { useStorageBuckets, useStorageObjects } from '../hooks'
 import { StorageObject } from '../types/api'
 import StorageTree from '../components/storage/StorageTree'
 import StorageObjectViewer from '../components/storage/StorageObjectViewer'
+import StorageNotifications from '../components/storage/StorageNotifications'
 
 const StoragePage: React.FC = () => {
   const navigate = useNavigate()
@@ -77,6 +78,8 @@ const StoragePage: React.FC = () => {
           )}
         </div>
       </div>
+
+      <StorageNotifications defaultBucket={bucket} />
     </div>
   )
 }

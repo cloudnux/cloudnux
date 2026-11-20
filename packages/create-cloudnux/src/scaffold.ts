@@ -8,7 +8,8 @@ import {
     modulePackageJson,
     nuxConfigJs,
     rootPackageJson,
-    rootTsconfigJson
+    rootTsconfigJson,
+    secretsJson
 } from './templates.js';
 
 export interface ScaffoldOptions {
@@ -30,6 +31,7 @@ export async function scaffoldProject(options: ScaffoldOptions): Promise<void> {
     await writeFileEnsuringDir(path.join(targetDir, 'nux.config.js'), nuxConfigJs(provider));
     await writeFileEnsuringDir(path.join(targetDir, 'tsconfig.json'), rootTsconfigJson());
     await writeFileEnsuringDir(path.join(targetDir, '.gitignore'), gitignore());
+    await writeFileEnsuringDir(path.join(targetDir, '.secrets.json'), secretsJson());
 
     const moduleDirPath = path.join(targetDir, 'packages', 'modules', moduleDir);
     await writeFileEnsuringDir(path.join(moduleDirPath, 'package.json'), modulePackageJson(projectName, moduleDir, provider));

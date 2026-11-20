@@ -9,14 +9,27 @@ import {
     useCloudProvider,
   } from "@cloudnux/cloud-sdk";
 
-import * as src from "../../../packages/modules/<%=module%>/src";
 <%_ for(const svc of serviceOverrides){ _%>
 import <%=svc.varName%> from "<%-svc.path%>";
+<%_ } _%>
+<%_ if (hooks.coldStart) { _%>
+import coldStart from "<%-hooks.coldStart%>";
 <%_ } _%>
 
 useCloudProvider(awsCloudProvider<% if (serviceOverrides.length) { %>, { serviceFactories: { <%- serviceOverrides.map(svc => `"${svc.kind}": ${svc.varName}`).join(', ') %> } }<% } %>);
 
 setCurrentModule("<%=module%>");
+<%_ if (hooks.coldStart) { _%>
+
+// Cold start hook: runs once per Lambda instance, in the init phase,
+// before the module's code is loaded. A thrown error fails the init.
+await coldStart("<%=module%>");
+<%_ } _%>
+
+// The module is loaded only now, after the cloud provider (and the cold start
+// hook), so its import-time code can use cloudnux services and sees the
+// prepared environment. esbuild keeps this import inside the bundle.
+const src = await import("../../../packages/modules/<%=module%>/src");
 
 const router = createRouter();
 <%_ for(var [key,entry] of Object.entries(entries)) { _%>

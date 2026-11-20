@@ -60,6 +60,14 @@ export type Environment<TTaskParams extends TaskParamBase = any> = {
      */
     watch?: Task,
     /**
+     * Local secrets file read by the local secrets service (develop environment):
+     * a JSON object mapping secret names, the same names as in the cloud store,
+     * to their values. Resolved relative to the directory the cli is invoked from.
+     * Keep it out of version control.
+     * @default "./.secrets.json" (develop)
+     */
+    secretsFile?: string,
+    /**
      * additional parameters for this environment
      */
     [key: string]: any
@@ -114,6 +122,13 @@ export type Config<TTaskParams extends TaskParamBase = any> = {
     services?: Record<string, string>,
 
     /**
+     * Lifecycle hooks. Each value is the path of a module whose default export is the hook.
+     * Paths are resolved relative to the directory the cli is invoked from.
+     * @default undefined
+     */
+    hooks?: Hooks,
+
+    /**
      * Other namespaces (separate repos / processes) this one can invoke locally:
      * maps a namespace to the base url of the dev server running it.
      * Only used by the local provider; on aws the lambda name `<namespace>_<module>` is used.
@@ -121,6 +136,17 @@ export type Config<TTaskParams extends TaskParamBase = any> = {
      * @default undefined
      */
     namespaces?: Record<string, string>,
+}
+
+export type Hooks = {
+    /**
+     * Runs once per function instance, before the module's code is loaded:
+     * `export default async function coldStart(moduleName: string): Promise<void>`.
+     * Use it to prepare the environment (e.g. load secrets into process.env).
+     * On aws it runs in the Lambda init phase; locally it runs once per module
+     * before the dev server loads that module. A thrown error fails the start.
+     */
+    coldStart?: string,
 }
 
 export type Args = {

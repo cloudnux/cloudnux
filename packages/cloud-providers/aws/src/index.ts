@@ -8,6 +8,7 @@ import { createWebSocketService } from "./services/websocket";
 import { createInvokeService } from "./services/invoke";
 import { createLoggerService } from "./services/logger";
 import { createEmailService } from "./services/email";
+import { createSecretsService } from "./services/secrets";
 
 export const awsCloudProvider: CloudProvider = {
     name: "aws-cloud-provider",
@@ -20,5 +21,7 @@ export const awsCloudProvider: CloudProvider = {
     createInvokeService,
     createLoggerService,
     createEmailService,
+    createSecretsService,
 };
 export { setCurrentModule } from "./services/invoke";
+export { SECRETS_STORE_ENV, type AwsSecretsStore } from "./services/secrets";

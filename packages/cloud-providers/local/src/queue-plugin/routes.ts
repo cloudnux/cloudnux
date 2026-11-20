@@ -31,6 +31,19 @@ export const registerQueueRoutes = (
             return reply.status(200).send(result);
         });
 
+    // Topic lookup: the queues subscribed to a topic, 404 if it has none.
+    // Used e.g. by the dev console to check a storage notification target,
+    // also on another dev server.
+    app.get<{ Params: { topic: string } }>(`/${prefix}/topics/:topic`,
+        async (request: FastifyRequest<{ Params: { topic: string } }>, reply: FastifyReply) => {
+            const topicName = request.params.topic;
+            const subscribers = app.queues.listTopics()[topicName];
+            if (!subscribers || subscribers.length === 0) {
+                return reply.status(404).send({ error: "Topic not found" });
+            }
+            return reply.status(200).send({ topicName, subscribers });
+        });
+
     // Topic publish: fans the message out to every queue subscribed to the
     // topic (see queue-plugin/decorator.ts:publishTopic). Registered as its
     // own static path segment, so it never collides with POST /:queue.

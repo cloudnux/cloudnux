@@ -51,18 +51,33 @@ export function rootPackageJson(projectName: string, moduleDirs: string[]): stri
 }
 
 export function nuxConfigJs(provider: ProviderKey): string {
-    return `export default {
+    return `import { defaultConfig } from "@cloudnux/cli/defaults";
+
+export default {
     "cloudProvider": "${provider}",
     "modulesPath": "./packages/modules/**/entrypoint.json",
     "workingDir": "./.nux",
     "externalPackages": [],
     "environments": {
+        "develop": {
+            ...defaultConfig.environments.develop,
+            // secrets of the local secrets service, by the same names as in the cloud store
+            "secretsFile": "./.secrets.json"
+        },
         "staging": {
             "tasks": []
         }
     }
 }
 `;
+}
+
+/**
+ * Local secrets for `nux develop`: a JSON object of secret name -> value,
+ * read by the local secrets service. Git-ignored.
+ */
+export function secretsJson(): string {
+    return '{}\n';
 }
 
 export function rootTsconfigJson(): string {
@@ -104,6 +119,7 @@ export function gitignore(): string {
 .nux
 .develop
 dist
+.secrets.json
 `;
 }
 

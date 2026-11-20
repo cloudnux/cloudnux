@@ -5,10 +5,30 @@ import { FastifyInstance, FastifyPluginAsync } from "fastify";
 import fsPlugin from "fastify-plugin";
 import fastifyStatic from "@fastify/static";
 
-import { getLocalStorageDir, METADATA_SUFFIX } from "../services/storage";
+import { createLocalStorageService, getLocalStorageDir, METADATA_SUFFIX } from "../services/storage";
+import { verifyUpload } from "../services/storage-signing";
 import { StoragePluginOptions } from "./types";
 
 const DEFAULT_PREFIX = "__storage";
+const DEFAULT_UPLOAD_BODY_LIMIT = 500 * 1024 * 1024;
+
+/**
+ * Split "/<prefix>/<bucket>/<encoded key>" into bucket and decoded key
+ */
+function parseObjectUrl(urlPath: string, urlPrefix: string): { bucket: string; key: string } | null {
+    if (!urlPath.startsWith(urlPrefix)) return null;
+    const rest = urlPath.slice(urlPrefix.length);
+    const slash = rest.indexOf("/");
+    if (slash <= 0 || slash === rest.length - 1) return null;
+    try {
+        return {
+            bucket: decodeURIComponent(rest.slice(0, slash)),
+            key: rest.slice(slash + 1).split("/").map(decodeURIComponent).join("/"),
+        };
+    } catch {
+        return null;
+    }
+}
 
 /**
  * Read the content type recorded in an object's metadata sidecar, if any
@@ -39,6 +59,48 @@ export const storagePlugin: FastifyPluginAsync<StoragePluginOptions> =
         if (!fs.existsSync(root)) {
             fs.mkdirSync(root, { recursive: true });
         }
+
+        // Uploads through a signed URL (storage.createUploadUrl), the local
+        // counterpart of a presigned S3 PUT: the body is taken as raw bytes
+        // whatever its content type, checked against the signature, and written
+        // through the local storage service - which also fires the matching
+        // storage notification rules.
+        await app.register(async (uploads) => {
+            uploads.removeAllContentTypeParsers();
+            uploads.addContentTypeParser(
+                "*",
+                { parseAs: "buffer", bodyLimit: options.uploadBodyLimit ?? DEFAULT_UPLOAD_BODY_LIMIT },
+                (_request, body, done) => done(null, body),
+            );
+
+            uploads.put(`${urlPrefix}*`, async (request, reply) => {
+                const target = parseObjectUrl(request.url.split("?")[0], urlPrefix);
+                if (!target) {
+                    return reply.status(400).send({ error: `Expected PUT ${urlPrefix}<bucket>/<key>` });
+                }
+
+                const body = Buffer.isBuffer(request.body) ? request.body : Buffer.alloc(0);
+                const verification = verifyUpload({
+                    bucket: target.bucket,
+                    key: target.key,
+                    query: request.query as Record<string, string | undefined>,
+                    contentType: request.headers["content-type"],
+                    ifNoneMatch: request.headers["if-none-match"] as string | undefined,
+                    bodyLength: body.length,
+                });
+                if (!verification.ok) {
+                    return reply.status(verification.status).send({ error: verification.error });
+                }
+
+                const storage = createLocalStorageService();
+                if (verification.ifNoneMatch && await storage.exists(target.key, target.bucket)) {
+                    return reply.status(412).send({ error: "PreconditionFailed: the object already exists" });
+                }
+
+                await storage.write(target.key, body, target.bucket, { contentType: verification.contentType });
+                return reply.status(200).send();
+            });
+        });
 
         // Encapsulated scope so the onSend hook only applies to storage routes
         await app.register(async (scope) => {

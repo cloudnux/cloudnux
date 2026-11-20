@@ -64,6 +64,7 @@ export abstract class BaseTaskManager {
             workingDir: path.resolve(this.config.workingDir, this.environment),
             externalPackages: this.config.externalPackages,
             services: this.config.services ?? {},
+            hooks: this.config.hooks ?? {},
             namespaces: this.config.namespaces ?? {},
             ...this.taskResults,
         };

@@ -8,6 +8,7 @@ import { createLocalWebSocketService } from "./services/websocket";
 import { createLocalInvokeService } from "./services/invoke";
 import { createLocalLoggerService } from "./services/logger";
 import { createLocalEmailService } from "./services/email";
+import { createLocalSecretsService } from "./services/secrets";
 
 export const localCloudProvider: CloudProvider = {
     name: "local-cloud-provider",
@@ -20,6 +21,7 @@ export const localCloudProvider: CloudProvider = {
     createInvokeService: createLocalInvokeService,
     createLoggerService: createLocalLoggerService,
     createEmailService: createLocalEmailService,
+    createSecretsService: createLocalSecretsService,
 };
 
 export * from "./router";

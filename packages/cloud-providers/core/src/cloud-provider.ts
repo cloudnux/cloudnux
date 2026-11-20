@@ -6,6 +6,7 @@ import { WebSocketService } from "./services/websocket";
 import { InvokeService } from "./services/invoke";
 import { LoggerService } from "./services/logger";
 import { EmailService } from "./services/email";
+import { SecretsService } from "./services/secrets";
 
 export interface CloudProvider {
     name: string;
@@ -19,4 +20,5 @@ export interface CloudProvider {
     createInvokeService(): InvokeService;
     createLoggerService(): LoggerService;
     createEmailService(): EmailService;
+    createSecretsService(): SecretsService;
 }
